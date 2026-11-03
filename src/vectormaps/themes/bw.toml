@@ -1,0 +1,82 @@
+# Black and white theme, made to print on a mono laser/inkjet printer: greys
+# only, no large black areas (ink), and widths that stay legible on paper.
+
+[page]
+background = "#ffffff"
+ink = "#000000"
+frame-width = 0.3
+
+[layers.water.water]
+fill = "#e0e0e0"
+stroke = "#000000"
+stroke-width = 0.1
+
+[layers.water.stream]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.15
+stroke-dasharray = "1.2 0.6"
+
+[layers.water.canal]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.3
+
+[layers.water.river]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.5
+
+[layers.green.green]
+fill = "#f0f0f0"
+stroke = "none"
+
+[layers.buildings.building]
+fill = "#bdbdbd"
+stroke = "#000000"
+stroke-width = 0.1
+
+[layers.railways.rail]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.35
+stroke-dasharray = "1.6 1.6"
+
+[layers.railways.tram]
+fill = "none"
+stroke = "#555555"
+stroke-width = 0.2
+
+[layers.roads.path]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.12
+stroke-dasharray = "0.8 0.5"
+
+[layers.roads.service]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.2
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.minor]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.35
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.secondary]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.6
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.major]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.9
+stroke-linecap = "round"
+stroke-linejoin = "round"

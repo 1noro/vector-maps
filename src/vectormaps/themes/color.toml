@@ -1,0 +1,83 @@
+# Colour theme. Every attribute under [layers.<layer>.<class>] is copied as an
+# SVG presentation attribute (so it works in any editor), lengths in mm.
+
+[page]
+background = "#f7f4ee"
+ink = "#333333"
+frame-width = 0.3
+
+[layers.water.water]
+fill = "#aad3df"
+stroke = "none"
+
+[layers.water.stream]
+fill = "none"
+stroke = "#aad3df"
+stroke-width = 0.2
+stroke-linecap = "round"
+
+[layers.water.canal]
+fill = "none"
+stroke = "#aad3df"
+stroke-width = 0.4
+stroke-linecap = "round"
+
+[layers.water.river]
+fill = "none"
+stroke = "#aad3df"
+stroke-width = 0.7
+stroke-linecap = "round"
+
+[layers.green.green]
+fill = "#cde5b0"
+stroke = "none"
+
+[layers.buildings.building]
+fill = "#d9d0c9"
+stroke = "#b8a99d"
+stroke-width = 0.1
+
+[layers.railways.rail]
+fill = "none"
+stroke = "#777777"
+stroke-width = 0.35
+stroke-dasharray = "1.6 1.6"
+
+[layers.railways.tram]
+fill = "none"
+stroke = "#999999"
+stroke-width = 0.2
+
+[layers.roads.path]
+fill = "none"
+stroke = "#c28b7a"
+stroke-width = 0.15
+stroke-dasharray = "0.8 0.5"
+
+[layers.roads.service]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.3
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.minor]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.55
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.secondary]
+fill = "none"
+stroke = "#fdd9a0"
+stroke-width = 0.8
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.major]
+fill = "none"
+stroke = "#f9a97d"
+stroke-width = 1.1
+stroke-linecap = "round"
+stroke-linejoin = "round"

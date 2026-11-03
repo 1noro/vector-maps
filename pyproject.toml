@@ -1,0 +1,17 @@
+[project]
+name = "vectormaps"
+version = "0.1.0"
+description = "SVG maps from OpenStreetMap, by layers, in colour or black and white, ready to print"
+requires-python = ">=3.12"
+license = { text = "GPL-3.0-or-later" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]

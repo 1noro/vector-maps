@@ -1,0 +1,4 @@
+# El contexto de build solo necesita los requirements.
+*
+!requirements.txt
+!requirements-dev.txt
