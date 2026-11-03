@@ -104,6 +104,7 @@ make docker                   # reconstruye la imagen (Dockerfile o requirements
 make map TL=lat,lon BR=lat,lon [PAPER=A4] [THEME=color|bw] [LAYERS=a,b] [OUT=out/x.svg]
 make map … THEME=monochrome TINT=#7a2e1f                        # el bw tintado de un color
 make map … PDF=1                                                # también el PDF, al lado
+make map … LEGEND=minimal                                       # leyenda corta (con © OSM)
 make map … INCLUDE_LAYERS=hillshade,contours | EXCLUDE_LAYERS=railways # añadir | quitar capas
 make map … LABEL_LANG=gl                                         # idioma de los nombres (es por defecto)
 make map … TL2=lat,lon BR2=lat,lon [THEME2=bw] [OPACITY2=0.7]   # superponer otra zona

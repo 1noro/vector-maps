@@ -44,7 +44,8 @@ añadidos fechados: dilo en el informe para que se corrija la lista. Comprueba:
   el negro como el tinte y el blanco blanco? ¿Un `TINT` con otro tema da error?
 - **Leyenda**: ¿lleva las esquinas del mapa en el papel (no las pedidas), la
   atribución, las escalas y la marca «Generated with vector-maps by 1noro»?
-  ¿Cabe en la hoja con el margen mínimo y en A5?
+  ¿Cabe en la hoja con el margen mínimo y en A5? ¿`LEGEND=minimal` sigue
+  llevando `© OpenStreetMap` (y el crédito de Copernicus si hay relieve)?
 - **Fuentes**: ¿`PbfSource.check` falla antes de cortar si el área está fuera
   del PBF?
 - **Tests**: ¿alguno toca la red?

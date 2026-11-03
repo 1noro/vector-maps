@@ -59,6 +59,8 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   `LAYERS` o de las de por defecto.
 - **`INCLUDE_LAYERS`** (`INCLUDE_LAYERS2` en la superposición): añade capas a
   `LAYERS` o a las de por defecto, p. ej. `INCLUDE_LAYERS=street-names,places`.
+- **`LEGEND=minimal`**: la leyenda en una línea, con las esquinas, la escala y
+  `© OpenStreetMap`, y la marca arriba (ADR 0004).
 - **Tema `monochrome`**: el `bw` tintado del color de `TINT=#rrggbb` (`TINT2`
   para la zona de encima; ADR 0004).
 

@@ -78,3 +78,15 @@ corta `#fa0`). No es un `.toml` más: se construye al cargar, a partir de
   zona también es `monochrome`, hereda el `TINT`.
 - El estilo sigue yendo como atributos de presentación (lo decidido arriba):
   el SVG lleva ya los colores tintados, no un filtro.
+
+## Añadido del 03/11/2026: la leyenda mínima
+
+`LEGEND=minimal` (`--legend minimal`) deja la leyenda en lo justo: una línea abajo
+con las esquinas, la escala de cada zona y `© OpenStreetMap`, y la marca arriba.
+Sin el papel, la orientación ni el «contributors (ODbL)».
+
+- **La atribución de OSM no se quita** (decisión 5): el usuario pidió quitarla y
+  se le consultó; se queda en la forma corta, que las normas de atribución de
+  OSM aceptan. Sigue sin haber opción para quitarla del todo.
+- Con relieve, el crédito de Copernicus (ADR 0008) sigue saliendo igual.
+- La leyenda completa sigue siendo la de por defecto.

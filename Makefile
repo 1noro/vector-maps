@@ -25,6 +25,7 @@ Uso: make <objetivo> [VARIABLE=valor …]
              LABEL_LANG=es       idioma de los nombres (es, gl, en…; local)
              OUT=out/map.svg     fichero de salida
              PDF=1               también un PDF del tamaño del papel
+             LEGEND=minimal      leyenda corta: esquinas, escala, © OpenStreetMap y marca
              PBF=data/pbf/x.osm.pbf   datos de un extracto local, no de Overpass
            superponer otra zona encima (mismo papel, otro zoom):
              TL2=lat,lon BR2=lat,lon [LAYERS2=…] [INCLUDE_LAYERS2=…]
@@ -115,6 +116,7 @@ list: .image
 #          [ORIENTATION=auto|landscape|portrait] [MARGIN=10] [OUT=out/map.svg]
 #          [LABEL_LANG=es]   (idioma de los nombres: es, gl, en… o varios: gl,es)
 #          [PDF=1]           (además del SVG, un PDF del tamaño del papel al lado)
+#          [LEGEND=minimal]  (solo esquinas, escala, © OpenStreetMap y la marca; ADR 0004)
 #          [THEME=monochrome TINT=#1f3b5c]   (el bw tintado de un color; # opcional)
 # Datos: por defecto Overpass; con PBF=ruta.osm.pbf, desde un extracto local.
 # Y, para superponer una segunda área encima (mismo papel, otro zoom):
@@ -140,6 +142,7 @@ map: .image data-dir
 		$(if $(LABEL_LANG),--lang $(LABEL_LANG)) \
 		$(if $(OUT),--out $(OUT)) \
 		$(if $(PDF),--pdf) \
+		$(if $(LEGEND),--legend $(LEGEND)) \
 		$(if $(PBF),--pbf $(PBF)) \
 		$(if $(TL2),--over-tl="$(TL2)") $(if $(BR2),--over-br="$(BR2)") \
 		$(if $(LAYERS2),--over-layers $(LAYERS2)) \

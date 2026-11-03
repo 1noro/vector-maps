@@ -9,7 +9,7 @@ La primera vez, `make` construye la imagen sola; `make docker` la reconstruye.
 ```bash
 make map TL=lat,lon BR=lat,lon [PAPER=A4] [ORIENTATION=auto] [MARGIN=10] \
          [LAYERS=water,roads] [INCLUDE_LAYERS=places] [EXCLUDE_LAYERS=railways] [THEME=color] [TINT=#1f3b5c] [LABEL_LANG=es] [PBF=ruta] \
-         [OUT=out/map.svg] [PDF=1]
+         [OUT=out/map.svg] [PDF=1] [LEGEND=minimal]
 ```
 
 | Variable | Defecto | Qué hace |
@@ -27,6 +27,7 @@ make map TL=lat,lon BR=lat,lon [PAPER=A4] [ORIENTATION=auto] [MARGIN=10] \
 | `PBF` | (Overpass) | Extracto local `.osm.pbf` en vez de Overpass |
 | `OUT` | `out/map.svg` | Fichero de salida |
 | `PDF` | — | `PDF=1`: además, un PDF del tamaño del papel al lado (`out/map.pdf`) |
+| `LEGEND` | `full` | `minimal`: solo las esquinas, la escala, `© OpenStreetMap` y la marca |
 
 La zona pedida **se amplía, nunca se recorta**, hasta tener la forma del papel;
 el log dice cuánto ("grown 11 % to fit the paper") y la escala (`1:4120`).
@@ -123,6 +124,16 @@ las que pediste: la zona crece hasta la forma de la hoja). Pasadas de vuelta a
 rectángulo; para repetir un mapa exacto, repite las esquinas que pediste. El
 margen de arriba, a la derecha, lleva la marca
 «Generated with vector-maps by 1noro». Con dos zonas se listan las dos esquinas.
+
+Con `LEGEND=minimal` el pie se queda en una sola línea, sin el papel ni la
+orientación:
+
+```
+TL 43.29888, -8.32043 · BR 43.27792, -8.27935 · A 1:12102 · © OpenStreetMap
+```
+
+y la marca arriba. `© OpenStreetMap` no se puede quitar: la licencia de los
+datos (ODbL) pide que el mapa lo diga (ADR 0004).
 
 ## Superponer dos zonas
 

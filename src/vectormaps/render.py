@@ -25,6 +25,8 @@ from vectormaps.theme import Theme
 MIN_POLYGON_MM2 = 0.005  # below this a polygon is a speck on paper
 MARK = "Generated with vector-maps by 1noro"
 ATTRIBUTION = "© OpenStreetMap contributors (ODbL)"
+SHORT_ATTRIBUTION = "© OpenStreetMap"  # the short form OSM accepts; the minimal legend keeps it
+LEGENDS = ("full", "minimal")
 LEGEND_SIZE = 2.4  # mm; smaller on small margins or long lines, so everything fits
 
 
@@ -207,8 +209,14 @@ def _corner(c: tuple[float, float]) -> str:
     return f"{c[0]:.5f}, {c[1]:.5f}"
 
 
-def legend_lines(jobs: list[Job]) -> tuple[str, str]:
-    """The two lines of the legend: attribution, paper and scales; then the corners."""
+def legend_lines(jobs: list[Job], legend: str = "full") -> tuple[str, ...]:
+    """The bottom lines of the legend.
+
+    Full: attribution, paper and scales; then the corners. Minimal: one line with the
+    corners, the scales and the short attribution (ODbL asks for it on every map).
+    """
+    if legend not in LEGENDS:
+        raise ValueError(f"unknown legend {legend!r}; use {', '.join(LEGENDS)}")
     f = jobs[0].frame
     scales = " + ".join(f"{j.label.upper()} 1:{j.frame.scale}" for j in jobs)
     zones = []
@@ -216,29 +224,34 @@ def legend_lines(jobs: list[Job]) -> tuple[str, str]:
         tl, br = j.frame.corners()
         prefix = f"{j.label.upper()}: " if len(jobs) > 1 else ""
         zones.append(f"{prefix}TL {_corner(tl)} · BR {_corner(br)}")
-    return f"{ATTRIBUTION} · {f.paper} {f.orientation} · {scales}", "   |   ".join(zones)
+    corners = "   |   ".join(zones)
+    if legend == "minimal":
+        return (f"{corners} · {scales} · {SHORT_ATTRIBUTION}",)
+    return f"{ATTRIBUTION} · {f.paper} {f.orientation} · {scales}", corners
 
 
 def uses_relief(jobs: list[Job]) -> bool:
     return any(j.features.get(layer.name) for j in jobs for layer in j.layers if layer.dem)
 
 
-def _legend(jobs: list[Job], ink: str) -> list[str]:
+def _legend(jobs: list[Job], ink: str, legend: str) -> list[str]:
     f = jobs[0].frame
-    line1, line2 = legend_lines(jobs)
+    lines = legend_lines(jobs, legend)
     # The relief's attribution (its licence asks for it) goes top left, beside the mark.
     top = relief.ATTRIBUTION if uses_relief(jobs) else ""
-    widest = max(len(line1), len(line2), len(top) + len(MARK) + 4)
+    widest = max(*(len(line) for line in lines), len(top) + len(MARK) + 4)
     size = min(LEGEND_SIZE, f.margin / 3, f.map_w / (widest * CHAR_WIDTH))
-    # Two lines centred in the bottom margin, the mark centred in the top one.
-    pad = (f.margin - 2.35 * size) / 2
+    # The lines centred in the bottom margin, the mark centred in the top one.
+    pad = (f.margin - size - (len(lines) - 1) * 1.35 * size) / 2
     y1 = f.page_h - f.margin + pad + 0.85 * size
-    y2 = y1 + 1.35 * size
     common = f'font-family="sans-serif" font-size="{_num(size)}" fill="{ink}"'
     return [
         '<g id="legend" inkscape:groupmode="layer" inkscape:label="legend">',
-        f'<text x="{_num(f.margin)}" y="{_num(y1)}" {common}>{escape(line1)}</text>',
-        f'<text x="{_num(f.margin)}" y="{_num(y2)}" {common}>{escape(line2)}</text>',
+        *(
+            f'<text x="{_num(f.margin)}" y="{_num(y1 + i * 1.35 * size)}" {common}>'
+            f"{escape(line)}</text>"
+            for i, line in enumerate(lines)
+        ),
         f'<text x="{_num(f.page_w - f.margin)}" y="{_num(f.margin / 2 + 0.35 * size)}" '
         f'text-anchor="end" {common}>{escape(MARK)}</text>',
         *(
@@ -257,7 +270,7 @@ def _credits(jobs: list[Job]) -> tuple[str, ...]:
     return ((relief.ATTRIBUTION,) if uses_relief(jobs) else ()) + (MARK,)
 
 
-def render(jobs: list[Job]) -> str:
+def render(jobs: list[Job], legend: str = "full") -> str:
     first = jobs[0]
     f = first.frame
     page = first.theme.page
@@ -269,7 +282,7 @@ def render(jobs: list[Job]) -> str:
         'xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" '
         f'width="{_num(f.page_w)}mm" height="{_num(f.page_h)}mm" '
         f'viewBox="0 0 {_num(f.page_w)} {_num(f.page_h)}">',
-        f"<title>{escape(' — '.join(legend_lines(jobs) + _credits(jobs)))}</title>",
+        f"<title>{escape(' — '.join(legend_lines(jobs, legend) + _credits(jobs)))}</title>",
         '<g id="page" inkscape:groupmode="layer" inkscape:label="page">',
         f'<rect width="{_num(f.page_w)}" height="{_num(f.page_h)}" fill="{page["background"]}"/>',
         "</g>",
@@ -281,7 +294,7 @@ def render(jobs: list[Job]) -> str:
         f'height="{_num(f.map_h)}" fill="none" stroke="{ink}" '
         f'stroke-width="{page["frame-width"]}"/>',
         "</g>",
-        *_legend(jobs, ink),
+        *_legend(jobs, ink, legend),
         "</svg>",
     ]
     return "\n".join(parts) + "\n"

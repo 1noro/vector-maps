@@ -7,7 +7,7 @@ from vectormaps.area import fit
 from vectormaps.labels import CHAR_WIDTH
 from vectormaps.layers import select
 from vectormaps.pipeline import Item
-from vectormaps.render import Job, legend_lines, path_data, render
+from vectormaps.render import MARK, Job, legend_lines, path_data, render
 from vectormaps.theme import load
 
 NS = {"svg": "http://www.w3.org/2000/svg", "ink": "http://www.inkscape.org/namespaces/inkscape"}
@@ -122,6 +122,17 @@ def test_legend_has_the_corners_the_attribution_and_the_mark():
     assert tl[0] >= TL[0] and br[0] <= BR[0] and tl[1] <= TL[1] and br[1] >= BR[1]
 
 
+def test_minimal_legend_keeps_the_corners_the_scale_the_credit_and_the_mark():
+    job = make_job("a", TL, BR, "color")
+    root = ET.fromstring(render([job], "minimal"))
+    texts = [t.text for t in root.findall(".//svg:g[@id='legend']/svg:text", NS)]
+    tl, br = job.frame.corners()
+    corners = f"TL {tl[0]:.5f}, {tl[1]:.5f} · BR {br[0]:.5f}, {br[1]:.5f}"
+    assert texts == [f"{corners} · A 1:{job.frame.scale} · © OpenStreetMap", MARK]
+    with pytest.raises(ValueError, match="unknown legend"):
+        render([job], "none")
+
+
 def test_overlay_legend_lists_both_zones():
     a = make_job("a", TL, BR, "color")
     b = make_job("b", TL2, BR2, "bw")
@@ -129,12 +140,13 @@ def test_overlay_legend_lists_both_zones():
     assert corners.startswith("A: TL ") and "   |   B: TL " in corners
 
 
+@pytest.mark.parametrize("legend", ["full", "minimal"])
 @pytest.mark.parametrize("paper,margin", [("A5", 6), ("A5", 10), ("A0", 6)])
-def test_legend_text_stays_inside_the_page(paper, margin):
+def test_legend_text_stays_inside_the_page(paper, margin, legend):
     frame = fit(TL, BR, paper, margin=margin)
     a = Job("a", frame, load("bw"), select(["roads"]), {})
     b = Job("b", fit(TL2, BR2, paper, margin, frame.orientation), load("bw"), [], {})
-    root = ET.fromstring(render([a, b]))
+    root = ET.fromstring(render([a, b], legend))
     size = float(root.find(".//svg:g[@id='legend']/svg:text", NS).get("font-size"))
     for t in root.findall(".//svg:g[@id='legend']/svg:text", NS):
         y = float(t.get("y"))

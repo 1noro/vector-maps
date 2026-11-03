@@ -14,7 +14,7 @@ from vectormaps.paper import PAPERS
 from vectormaps.pdf import svg_to_pdf
 from vectormaps.pipeline import load_features
 from vectormaps.progress import ProgressHandler, Spinner
-from vectormaps.render import Job, render
+from vectormaps.render import LEGENDS, Job, render
 from vectormaps.sources import Bounds, OverpassSource, PbfSource, Source, local_pbf_for
 
 log = logging.getLogger("vectormaps")
@@ -64,6 +64,12 @@ def build_parser() -> argparse.ArgumentParser:
     m.add_argument("--out", type=Path, default=Path("out/map.svg"))
     m.add_argument(
         "--pdf", action="store_true", help="also write a PDF of the paper size next to the SVG"
+    )
+    m.add_argument(
+        "--legend",
+        choices=LEGENDS,
+        default="full",
+        help="minimal: only the corners, the scale, a short OSM credit and the mark",
     )
     m.add_argument("--cache", type=Path, default=Path("data/cache"))
     m.add_argument("--pbf", type=Path, help="read a local .osm.pbf instead of asking Overpass")
@@ -176,7 +182,7 @@ def _map(a: argparse.Namespace) -> int:
         raise OverpassError(f"{err}\n{offline_hint(boxes, a.cache)}") from err
 
     with Spinner("drawing the SVG"):
-        svg = render(jobs)
+        svg = render(jobs, a.legend)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     tmp = a.out.with_name(a.out.name + ".tmp")
     tmp.write_text(svg, encoding="utf-8")
