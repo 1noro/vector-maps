@@ -36,7 +36,17 @@ def build_parser() -> argparse.ArgumentParser:
     m.add_argument("--paper", default="A4", choices=list(PAPERS), type=str.upper)
     m.add_argument("--orientation", default="auto", choices=["auto", "landscape", "portrait"])
     m.add_argument("--margin", type=float, default=10.0, metavar="MM")
-    m.add_argument("--layers", metavar="A,B", help="default: all, see `vectormaps list`")
+    m.add_argument(
+        "--layers", metavar="A,B", help="default: all but relief and names, see `vectormaps list`"
+    )
+    m.add_argument(
+        "--exclude-layers", metavar="A,B", help="layers to leave out of --layers (or the default)"
+    )
+    m.add_argument(
+        "--include-layers",
+        metavar="A,B",
+        help="layers to add to --layers (or the default), e.g. street-names,places",
+    )
     m.add_argument(
         "--lang",
         default=DEFAULT_LANG,
@@ -65,7 +75,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     o.add_argument("--over-tl", metavar="LAT,LON")
     o.add_argument("--over-br", metavar="LAT,LON")
-    o.add_argument("--over-layers", metavar="A,B", help="default: same as --layers")
+    o.add_argument("--over-layers", metavar="A,B", help="default: the ones of the first area")
+    o.add_argument("--over-exclude-layers", metavar="A,B", help="leave these out of the overlay")
+    o.add_argument("--over-include-layers", metavar="A,B", help="add these to the overlay")
     o.add_argument("--over-theme", help="default: same as --theme")
     o.add_argument("--over-tint", metavar="HEX", help="default: same as --tint")
     o.add_argument("--over-opacity", type=float, default=1.0, metavar="0-1")
@@ -111,8 +123,10 @@ def offline_hint(areas: list[Bounds], cache: Path) -> str:
 
 def _list() -> int:
     print("layers:")
-    for layer in layer_defs.select(None):
-        print(f"  {layer.name:<10} classes (bottom to top): {', '.join(layer.classes)}")
+    for name in layer_defs.ORDER:
+        layer = layer_defs.LAYERS[name]
+        extra = "   (not by default)" if name not in layer_defs.DEFAULT else ""
+        print(f"  {name:<12} classes (bottom to top): {', '.join(layer.classes)}{extra}")
     print("papers:  ", ", ".join(PAPERS))
     print("themes:  ", ", ".join(themes.available()))
     return 0
@@ -125,7 +139,7 @@ def _map(a: argparse.Namespace) -> int:
         raise ValueError("--over-opacity must be between 0 and 1")
 
     langs = parse_langs(a.lang)
-    layers = layer_defs.select(_split(a.layers))
+    layers = layer_defs.select(_split(a.layers), _split(a.exclude_layers), _split(a.include_layers))
     base_frame = fit(parse_corner(a.tl), parse_corner(a.br), a.paper, a.margin, a.orientation)
     specs = [("a", base_frame, layers, themes.load(a.theme, a.tint), 1.0)]
     if a.over_tl:
@@ -137,7 +151,11 @@ def _map(a: argparse.Namespace) -> int:
             a.margin,
             base_frame.orientation,
         )
-        over_layers = layer_defs.select(_split(a.over_layers)) if a.over_layers else layers
+        over_layers = layer_defs.select(
+            _split(a.over_layers) or [layer.name for layer in layers],
+            _split(a.over_exclude_layers),
+            _split(a.over_include_layers),
+        )
         over_name = a.over_theme or a.theme
         # The tint follows the theme: only a tinted theme inherits --tint.
         over_tint = a.over_tint or (a.tint if over_name in themes.TINTED else None)
@@ -152,7 +170,7 @@ def _map(a: argparse.Namespace) -> int:
     try:
         for label, frame, lyrs, theme, opacity in specs:
             log.info(_describe(label.upper(), frame))
-            feats = load_features(frame, lyrs, source, langs)
+            feats = load_features(frame, lyrs, source, langs, a.cache)
             jobs.append(Job(label, frame, theme, lyrs, feats, opacity))
     except OverpassError as err:
         raise OverpassError(f"{err}\n{offline_hint(boxes, a.cache)}") from err

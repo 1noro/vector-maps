@@ -152,3 +152,21 @@ stroke-width = 1.0
 stroke-linejoin = "round"
 paint-order = "stroke"
 text-anchor = "middle"
+
+# Relief (only with LAYERS=…,hillshade,contours). The shade is a picture: `shadow`
+# and `highlight` are its colours, not SVG attributes; flat ground stays clear.
+
+[layers.hillshade.shade]
+shadow = "#000000"
+highlight = "#ffffff"
+opacity = 0.35
+
+[layers.contours.minor]
+fill = "none"
+stroke = "#808080"
+stroke-width = 0.08
+
+[layers.contours.major]
+fill = "none"
+stroke = "#505050"
+stroke-width = 0.16

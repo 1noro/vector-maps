@@ -13,7 +13,8 @@ Cómo se relaciona con el resto de la documentación:
 
 Primera versión, 0.1.0 sin publicar: de dos esquinas a un SVG por capas, en
 color y en blanco y negro, con nombres de calles y lugares en el idioma elegido,
-con Overpass o un PBF local, y con la superposición de dos zonas. 88 tests, sin
+con Overpass o un PBF local, con la superposición de dos zonas, relieve opcional
+(curvas y sombreado, ADR 0008) y PDF. 100 tests, sin
 red.
 
 Medido el 03/11, con el extracto de Galicia (112 MB) y Santiago de Compostela:

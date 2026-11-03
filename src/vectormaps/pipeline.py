@@ -1,10 +1,12 @@
 """Glue between a frame, the layers and a data source: gives items per layer."""
 
 import logging
+from pathlib import Path
 from typing import NamedTuple
 
 from shapely.geometry.base import BaseGeometry
 
+from vectormaps import relief
 from vectormaps.area import Frame
 from vectormaps.labels import pick_name
 from vectormaps.layers import Layer
@@ -18,18 +20,45 @@ LARGE_AREA_DEG2 = 0.04  # ~ 20 x 20 km at mid latitudes: too much for the public
 
 class Item(NamedTuple):
     """One thing to draw: its class (what a theme styles), its lon/lat geometry and, for
-    the label layers, the text to write."""
+    the label layers, the text to write; for the hillshade, the raster instead."""
 
     cls: str
-    geom: BaseGeometry
+    geom: BaseGeometry | None
     text: str | None = None
+    raster: Path | None = None
 
 
 Features = dict[str, list[Item]]  # layer name -> items
 
 
+def _osm(layer: Layer, features: list, langs: list[str]) -> list[Item]:
+    items = []
+    for kind, tags, geom in features:
+        cls = layer.classify(kind, tags)
+        if cls is None:
+            continue
+        text = pick_name(tags, langs) if layer.text else None
+        if layer.text and text is None:
+            continue
+        items.append(Item(cls, geom, text))
+    return items
+
+
+def _relief(frame: Frame, layer: Layer, cache: Path) -> list[Item]:
+    dem = relief.frame_dem(frame, cache / "dem")
+    if dem is None:
+        return []  # open sea
+    if layer.name == "hillshade":
+        return [Item("shade", None, raster=relief.hillshade(dem))]
+    return [Item(cls, line) for cls, _elev, line in relief.contours(frame, dem)]
+
+
 def load_features(
-    frame: Frame, layers: list[Layer], source: Source, langs: list[str] | None = None
+    frame: Frame,
+    layers: list[Layer],
+    source: Source,
+    langs: list[str] | None = None,
+    cache: Path = Path("data/cache"),
 ) -> Features:
     langs = langs or ["es"]
     bounds = frame.lonlat_bounds()
@@ -40,15 +69,10 @@ def load_features(
     out: Features = {}
     for layer in layers:
         with Spinner(f"layer {layer.name}"):
-            items = []
-            for kind, tags, geom in source.features(layer, bounds):
-                cls = layer.classify(kind, tags)
-                if cls is None:
-                    continue
-                text = pick_name(tags, langs) if layer.text else None
-                if layer.text and text is None:
-                    continue
-                items.append(Item(cls, geom, text))
+            if layer.dem:
+                items = _relief(frame, layer, cache)
+            else:
+                items = _osm(layer, source.features(layer, bounds), langs)
         log.info("layer %s: %d features", layer.name, len(items))
         out[layer.name] = items
     if not any(out.values()):

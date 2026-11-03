@@ -6,8 +6,9 @@ FROM python:3.12-slim-bookworm
 
 # osmium-tool: ensambla multipolígonos y exporta a GeoJSON (ADR 0002).
 # inkscape: el PDF (PDF=1), con textPath y halos como en el SVG (ADR 0007).
+# gdal-bin: curvas de nivel y sombreado desde el DEM de Copernicus (ADR 0008).
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends osmium-tool inkscape \
+	&& apt-get install -y --no-install-recommends osmium-tool inkscape gdal-bin \
 	&& rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt requirements-dev.txt /tmp/

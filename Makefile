@@ -17,7 +17,9 @@ Uso: make <objetivo> [VARIABLE=valor …]
              PAPER=A4            A0…A5
              ORIENTATION=auto    auto, landscape, portrait
              MARGIN=10           mm (mínimo 6)
-             LAYERS=a,b          capas (todas por defecto; ver make list)
+             LAYERS=a,b          capas (sin relieve ni nombres por defecto; make list)
+             INCLUDE_LAYERS=a,b  capas que añadir a LAYERS (o a las de por defecto)
+             EXCLUDE_LAYERS=a,b  capas que quitar de LAYERS (o de las de por defecto)
              THEME=color         color, bw, monochrome, o un .toml
              TINT=#1f3b5c        color de THEME=monochrome
              LABEL_LANG=es       idioma de los nombres (es, gl, en…; local)
@@ -25,7 +27,11 @@ Uso: make <objetivo> [VARIABLE=valor …]
              PDF=1               también un PDF del tamaño del papel
              PBF=data/pbf/x.osm.pbf   datos de un extracto local, no de Overpass
            superponer otra zona encima (mismo papel, otro zoom):
-             TL2=lat,lon BR2=lat,lon [LAYERS2=…] [THEME2=…] [TINT2=…] [OPACITY2=0.7]
+             TL2=lat,lon BR2=lat,lon [LAYERS2=…] [INCLUDE_LAYERS2=…]
+             [EXCLUDE_LAYERS2=…] [THEME2=…] [TINT2=…] [OPACITY2=0.7]
+           nombres y relieve no salen por defecto; se añaden con INCLUDE_LAYERS:
+             INCLUDE_LAYERS=street-names,places        nombres de calles y lugares
+             INCLUDE_LAYERS=hillshade,contours         relieve (baja ~40 MB/grado² la 1.ª vez)
   pbf      bajar un extracto:  make pbf URL=https://download.geofabrik.de/…-latest.osm.pbf
   list     capas, papeles y temas
 
@@ -104,13 +110,18 @@ list: .image
 	$(DOCKER_RUN) python -m vectormaps list
 
 # make map TL=lat,lon BR=lat,lon [PAPER=A4] [THEME=color|bw] [LAYERS=water,roads]
+#          [INCLUDE_LAYERS=street-names,places]   (añadir capas a LAYERS o a las de por defecto)
+#          [EXCLUDE_LAYERS=railways]   (quitar capas de LAYERS o de las de por defecto)
 #          [ORIENTATION=auto|landscape|portrait] [MARGIN=10] [OUT=out/map.svg]
 #          [LABEL_LANG=es]   (idioma de los nombres: es, gl, en… o varios: gl,es)
 #          [PDF=1]           (además del SVG, un PDF del tamaño del papel al lado)
 #          [THEME=monochrome TINT=#1f3b5c]   (el bw tintado de un color; # opcional)
 # Datos: por defecto Overpass; con PBF=ruta.osm.pbf, desde un extracto local.
 # Y, para superponer una segunda área encima (mismo papel, otro zoom):
-#          [TL2=lat,lon BR2=lat,lon] [LAYERS2=…] [THEME2=…] [TINT2=…] [OPACITY2=0.6]
+#          [TL2=lat,lon BR2=lat,lon] [LAYERS2=…] [INCLUDE_LAYERS2=…] [EXCLUDE_LAYERS2=…]
+#          [THEME2=…] [TINT2=…] [OPACITY2=0.6]
+# El relieve (hillshade, contours) y los nombres (street-names, places) no salen por
+# defecto: se añaden con INCLUDE_LAYERS o se piden en LAYERS (ADR 0006 y 0008).
 # Se pasa con `--tl=` (con el igual) para que una latitud negativa no se lea como flag.
 map: .image data-dir
 	test -n "$(TL)" -a -n "$(BR)" || { echo "faltan TL y BR: make map TL=lat,lon BR=lat,lon" >&2; exit 1; }
@@ -122,6 +133,8 @@ map: .image data-dir
 		$(if $(ORIENTATION),--orientation $(ORIENTATION)) \
 		$(if $(MARGIN),--margin $(MARGIN)) \
 		$(if $(LAYERS),--layers $(LAYERS)) \
+		$(if $(INCLUDE_LAYERS),--include-layers $(INCLUDE_LAYERS)) \
+		$(if $(EXCLUDE_LAYERS),--exclude-layers $(EXCLUDE_LAYERS)) \
 		$(if $(THEME),--theme $(THEME)) \
 		$(if $(TINT),--tint="$(TINT)") \
 		$(if $(LABEL_LANG),--lang $(LABEL_LANG)) \
@@ -130,6 +143,8 @@ map: .image data-dir
 		$(if $(PBF),--pbf $(PBF)) \
 		$(if $(TL2),--over-tl="$(TL2)") $(if $(BR2),--over-br="$(BR2)") \
 		$(if $(LAYERS2),--over-layers $(LAYERS2)) \
+		$(if $(INCLUDE_LAYERS2),--over-include-layers $(INCLUDE_LAYERS2)) \
+		$(if $(EXCLUDE_LAYERS2),--over-exclude-layers $(EXCLUDE_LAYERS2)) \
 		$(if $(THEME2),--over-theme $(THEME2)) \
 		$(if $(TINT2),--over-tint="$(TINT2)") \
 		$(if $(OPACITY2),--over-opacity $(OPACITY2))

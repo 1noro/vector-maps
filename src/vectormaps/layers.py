@@ -49,6 +49,7 @@ class Layer:
     rules: tuple[Rule, ...]  # first match wins; draw order is `classes`
     classes: tuple[str, ...]  # bottom to top
     text: bool = False  # a label layer: its features are drawn as text, not as shapes
+    dem: bool = False  # relief: from the elevation model (relief.py), not from OSM
 
     def classify(self, geometry: str, tags: dict[str, str]) -> str | None:
         for rule in self.rules:
@@ -218,18 +219,52 @@ LAYERS: dict[str, Layer] = {
             ("suburb", "village", "town", "city"),
             text=True,
         ),
+        # Relief (ADR 0008): no OSM rules, the elevation model gives the shapes.
+        Layer("hillshade", (), ("shade",), dem=True),
+        Layer("contours", (), ("minor", "major"), dem=True),
     )
 }
 
-# Bottom to top; the labels go over everything.
-DEFAULT_ORDER = ("water", "green", "buildings", "railways", "roads", "street-names", "places")
+# Drawing order, bottom to top: the shade over the ground cover, the contours under
+# the buildings, the labels over everything.
+ORDER = (
+    "water",
+    "green",
+    "hillshade",
+    "contours",
+    "buildings",
+    "railways",
+    "roads",
+    "street-names",
+    "places",
+)
+# What a map has when no layers are given: the shapes, without relief or names.
+DEFAULT = tuple(n for n in ORDER if not LAYERS[n].dem and not LAYERS[n].text)
 
 
-def select(names: list[str] | None) -> list[Layer]:
-    """Layers by name, always returned in drawing order (bottom to top)."""
-    if not names:
-        names = list(DEFAULT_ORDER)
+def _check(names: list[str]) -> None:
     unknown = [n for n in names if n not in LAYERS]
     if unknown:
-        raise ValueError(f"unknown layer(s) {', '.join(unknown)}; use {', '.join(LAYERS)}")
-    return [LAYERS[n] for n in DEFAULT_ORDER if n in names]
+        raise ValueError(f"unknown layer(s) {', '.join(unknown)}; use {', '.join(ORDER)}")
+
+
+def select(
+    names: list[str] | None,
+    exclude: list[str] | None = None,
+    include: list[str] | None = None,
+) -> list[Layer]:
+    """Layers by name (the default set if none), plus `include`, minus `exclude`.
+
+    Always in drawing order (bottom to top).
+    """
+    names = list(names or DEFAULT)
+    exclude = exclude or []
+    include = include or []
+    _check(names + include + exclude)
+    both = [n for n in include if n in exclude]
+    if both:
+        raise ValueError(f"{', '.join(both)}: both included and excluded; pick one")
+    chosen = [LAYERS[n] for n in ORDER if (n in names or n in include) and n not in exclude]
+    if not chosen:
+        raise ValueError("no layers left to draw; check --layers and --exclude-layers")
+    return chosen

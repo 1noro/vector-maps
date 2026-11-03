@@ -32,6 +32,7 @@ elegancia.** Todo corre en Docker; en el host solo hacen falta `make` y
 | `pipeline.py` | `Frame` + capas + fuente → features por capa |
 | `theme.py`, `themes/*.toml` | los estilos (color, bw, y monochrome: el bw tintado) |
 | `pdf.py` | el PDF del tamaño del papel, con Inkscape |
+| `relief.py` | el relieve: teselas del DEM de Copernicus, curvas y sombreado con GDAL |
 | `progress.py` | el spinner de los pasos lentos, solo con terminal |
 | `render.py` | features → SVG; un `Job` por zona, apiladas |
 | `cli.py` | `map`, `list`, `download` |
@@ -57,11 +58,15 @@ tocar código.
    cada una con su escala, tema, capas y opacidad** (ADR 0005).
 7. **Las etiquetas son dos capas de texto, `street-names` y `places`; el idioma
    es un código de OSM (`es` por defecto) y, si no hay traducción, se muestra el
-   `name` tal cual** (ADR 0006). No se inventan traducciones.
+   `name` tal cual** (ADR 0006). No se inventan traducciones. No están en las
+   capas por defecto (añadido del 03/11).
 8. **La leyenda lleva las esquinas del mapa tal como está en el papel y la marca
    «Generated with vector-maps by 1noro»** (ADR 0004, añadido del 03/11).
 9. **El PDF sale del SVG con Inkscape** (ADR 0007): es el único conversor que
    pinta `textPath` y los halos. Ni librsvg ni CairoSVG.
+10. **El relieve (`hillshade`, `contours`) sale del DEM Copernicus GLO-30 con
+    GDAL, no está en las capas por defecto y, si se dibuja, lleva la atribución
+    de Copernicus** (ADR 0008).
 
 ## Reglas que no se saltan
 
@@ -99,6 +104,7 @@ make docker                   # reconstruye la imagen (Dockerfile o requirements
 make map TL=lat,lon BR=lat,lon [PAPER=A4] [THEME=color|bw] [LAYERS=a,b] [OUT=out/x.svg]
 make map … THEME=monochrome TINT=#7a2e1f                        # el bw tintado de un color
 make map … PDF=1                                                # también el PDF, al lado
+make map … INCLUDE_LAYERS=hillshade,contours | EXCLUDE_LAYERS=railways # añadir | quitar capas
 make map … LABEL_LANG=gl                                         # idioma de los nombres (es por defecto)
 make map … TL2=lat,lon BR2=lat,lon [THEME2=bw] [OPACITY2=0.7]   # superponer otra zona
 make map … PBF=data/pbf/galicia-latest.osm.pbf                  # datos locales

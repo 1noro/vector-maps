@@ -33,11 +33,12 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   `make` a secas (`make help`) enseña la ayuda.
   Todo corre en Docker con el uid:gid del usuario del host (ADR 0001).
 
-- **Etiquetas**: dos capas de texto, `street-names` (el nombre de la calle,
-  escrito a lo largo de ella) y `places` (ciudades, pueblos, barrios), con halo
-  para leerse sobre el mapa. **Idioma elegible** con `LABEL_LANG` / `--lang`
-  (`es` por defecto; `gl,es` para varios; `local` = como está mapeado): sale
-  `name:<código>` y, si no existe, el `name` tal cual (ADR 0006).
+- **Etiquetas** (no salen por defecto; se añaden con `INCLUDE_LAYERS`): dos capas de
+  texto, `street-names` (el nombre de la calle, escrito a lo largo de ella) y
+  `places` (ciudades, pueblos, barrios), con halo para leerse sobre el mapa.
+  **Idioma elegible** con `LABEL_LANG` / `--lang` (`es` por defecto; `gl,es`
+  para varios; `local` = como está mapeado): sale `name:<código>` y, si no
+  existe, el `name` tal cual (ADR 0006).
 - **Leyenda** en el pie, con las **esquinas `TL` y `BR` del mapa tal como está en
   el papel** (las dos zonas, si se superponen) y, arriba a la derecha, la marca
   «Generated with vector-maps by 1noro» (ADR 0004).
@@ -51,6 +52,13 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 - **Ctrl-C** sale con `interrupted` y código 130, sin traza.
 - **`PDF=1`**: además del SVG, un PDF del tamaño del papel al lado, hecho con
   Inkscape (nuevo en la imagen; ADR 0007).
+- **Relieve**: capas `hillshade` (sombreado) y `contours` (curvas de nivel), del
+  DEM Copernicus GLO-30 con GDAL; no salen por defecto (`INCLUDE_LAYERS=…`). Con
+  relieve, la leyenda lleva la atribución de Copernicus (ADR 0008).
+- **`EXCLUDE_LAYERS`** (`EXCLUDE_LAYERS2` en la superposición): quita capas de
+  `LAYERS` o de las de por defecto.
+- **`INCLUDE_LAYERS`** (`INCLUDE_LAYERS2` en la superposición): añade capas a
+  `LAYERS` o a las de por defecto, p. ej. `INCLUDE_LAYERS=street-names,places`.
 - **Tema `monochrome`**: el `bw` tintado del color de `TINT=#rrggbb` (`TINT2`
   para la zona de encima; ADR 0004).
 
@@ -64,7 +72,7 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Documentación
 
-- ADR 0006 (etiquetas e idioma) y 0007 (el PDF con Inkscape); añadidos del 03/11
+- ADR 0006 (etiquetas e idioma), 0007 (el PDF con Inkscape) y 0008 (relieve); añadidos del 03/11
   a los ADR 0002 y 0004.
 - README, `docs/uso.md`, `docs/desarrollo.md`, los ADR 0001 a 0005, `AGENTS.md`
   y los procedimientos de `docs/agentes/` con sus comandos para Claude Code,

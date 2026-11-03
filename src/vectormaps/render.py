@@ -4,6 +4,7 @@ Several areas can be stacked on the same page (the overlay): each one is a
 `Job`, drawn on top of the previous one, with its own scale, theme and opacity.
 """
 
+import base64
 from dataclasses import dataclass
 from xml.sax.saxutils import escape, quoteattr
 
@@ -14,6 +15,7 @@ from shapely.affinity import affine_transform
 from shapely.geometry import LineString
 from shapely.geometry.base import BaseGeometry
 
+from vectormaps import relief
 from vectormaps.area import Frame
 from vectormaps.labels import CHAR_WIDTH, street_pieces
 from vectormaps.layers import Layer
@@ -104,6 +106,26 @@ def _shape_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
     return out
 
 
+def _hillshade_layer(job: Job, layer: Layer) -> list[str]:
+    """The shade as a PNG over the map rectangle; the DEM grid is aligned with it."""
+    style = dict(job.theme.style(layer.name, "shade"))
+    shadow = str(style.pop("shadow", "#000000"))
+    highlight = str(style.pop("highlight", "#ffffff"))
+    f = job.frame
+    out = []
+    for item in job.features.get(layer.name, []):
+        if item.raster is None:
+            continue
+        png = base64.b64encode(relief.shade_png(item.raster, shadow, highlight)).decode()
+        out.append(
+            f'<image id="{job.label}-{layer.name}-shade" class="shade" {_attrs(style)} '
+            f'x="{_num(f.margin)}" y="{_num(f.margin)}" width="{_num(f.map_w)}" '
+            f'height="{_num(f.map_h)}" preserveAspectRatio="none" '
+            f'xlink:href="data:image/png;base64,{png}"/>'
+        )
+    return out
+
+
 def _page_xy(geom: BaseGeometry, tr: Transformer, frame: Frame) -> tuple[float, float] | None:
     """A point in page mm, or None if it falls outside the map frame."""
     x, y = tr.transform(geom.x, geom.y)
@@ -170,7 +192,12 @@ def _job_group(job: Job) -> str:
             f'<g id="{job.label}-{layer.name}" inkscape:groupmode="layer" '
             f'inkscape:label="{layer.name}">'
         )
-        out += _text_layer(job, layer, tr) if layer.text else _shape_layer(job, layer, tr)
+        if layer.text:
+            out += _text_layer(job, layer, tr)
+        elif layer.name == "hillshade":
+            out += _hillshade_layer(job, layer)
+        else:
+            out += _shape_layer(job, layer, tr)
         out.append("</g>")
     out.append("</g>")
     return "\n".join(out)
@@ -192,10 +219,16 @@ def legend_lines(jobs: list[Job]) -> tuple[str, str]:
     return f"{ATTRIBUTION} · {f.paper} {f.orientation} · {scales}", "   |   ".join(zones)
 
 
+def uses_relief(jobs: list[Job]) -> bool:
+    return any(j.features.get(layer.name) for j in jobs for layer in j.layers if layer.dem)
+
+
 def _legend(jobs: list[Job], ink: str) -> list[str]:
     f = jobs[0].frame
     line1, line2 = legend_lines(jobs)
-    widest = max(len(line1), len(line2))
+    # The relief's attribution (its licence asks for it) goes top left, beside the mark.
+    top = relief.ATTRIBUTION if uses_relief(jobs) else ""
+    widest = max(len(line1), len(line2), len(top) + len(MARK) + 4)
     size = min(LEGEND_SIZE, f.margin / 3, f.map_w / (widest * CHAR_WIDTH))
     # Two lines centred in the bottom margin, the mark centred in the top one.
     pad = (f.margin - 2.35 * size) / 2
@@ -208,8 +241,20 @@ def _legend(jobs: list[Job], ink: str) -> list[str]:
         f'<text x="{_num(f.margin)}" y="{_num(y2)}" {common}>{escape(line2)}</text>',
         f'<text x="{_num(f.page_w - f.margin)}" y="{_num(f.margin / 2 + 0.35 * size)}" '
         f'text-anchor="end" {common}>{escape(MARK)}</text>',
+        *(
+            [
+                f'<text x="{_num(f.margin)}" y="{_num(f.margin / 2 + 0.35 * size)}" {common}>'
+                f"{escape(top)}</text>"
+            ]
+            if top
+            else []
+        ),
         "</g>",
     ]
+
+
+def _credits(jobs: list[Job]) -> tuple[str, ...]:
+    return ((relief.ATTRIBUTION,) if uses_relief(jobs) else ()) + (MARK,)
 
 
 def render(jobs: list[Job]) -> str:
@@ -224,7 +269,7 @@ def render(jobs: list[Job]) -> str:
         'xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" '
         f'width="{_num(f.page_w)}mm" height="{_num(f.page_h)}mm" '
         f'viewBox="0 0 {_num(f.page_w)} {_num(f.page_h)}">',
-        f"<title>{escape(' — '.join(legend_lines(jobs) + (MARK,)))}</title>",
+        f"<title>{escape(' — '.join(legend_lines(jobs) + _credits(jobs)))}</title>",
         '<g id="page" inkscape:groupmode="layer" inkscape:label="page">',
         f'<rect width="{_num(f.page_w)}" height="{_num(f.page_h)}" fill="{page["background"]}"/>',
         "</g>",

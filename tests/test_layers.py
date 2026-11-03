@@ -23,6 +23,54 @@ def test_select_returns_drawing_order():
 def test_select_rejects_unknown():
     with pytest.raises(ValueError, match="nope"):
         select(["water", "nope"])
+    with pytest.raises(ValueError, match="nope"):
+        select(None, exclude=["nope"])
+
+
+def test_relief_is_not_drawn_unless_asked():
+    default = [layer.name for layer in select(None)]
+    assert "hillshade" not in default and "contours" not in default
+    asked = [layer.name for layer in select(["roads", "contours", "hillshade", "green"])]
+    assert asked == ["green", "hillshade", "contours", "roads"]  # shade over the ground
+
+
+def test_names_are_not_drawn_unless_asked():
+    assert [layer.name for layer in select(None)] == [
+        "water",
+        "green",
+        "buildings",
+        "railways",
+        "roads",
+    ]
+
+
+def test_exclude_takes_layers_out_of_the_default_or_of_the_given_ones():
+    names = [layer.name for layer in select(None, exclude=["railways", "green"])]
+    assert names == ["water", "buildings", "roads"]
+    names = [layer.name for layer in select(["water", "roads", "contours"], ["water"])]
+    assert names == ["contours", "roads"]
+    assert [layer.name for layer in select(["roads"], ["contours"])] == ["roads"]  # not there
+
+
+def test_include_adds_to_the_default_or_to_the_given_ones():
+    names = [layer.name for layer in select(None, include=["places", "contours"])]
+    assert names == ["water", "green", "contours", "buildings", "railways", "roads", "places"]
+    names = [layer.name for layer in select(["roads"], include=["street-names", "roads"])]
+    assert names == ["roads", "street-names"]
+    names = [layer.name for layer in select(None, ["railways"], ["places"])]
+    assert names == ["water", "green", "buildings", "roads", "places"]
+    with pytest.raises(ValueError, match="nope"):
+        select(None, include=["nope"])
+
+
+def test_a_layer_both_included_and_excluded_is_an_error():
+    with pytest.raises(ValueError, match="places: both included and excluded"):
+        select(None, exclude=["places"], include=["places"])
+
+
+def test_excluding_everything_is_an_error():
+    with pytest.raises(ValueError, match="no layers left"):
+        select(["roads"], exclude=["roads"])
 
 
 def test_overpass_query():
@@ -55,7 +103,8 @@ def test_label_layers_need_a_name_and_come_last():
     assert names.classify("line", {"highway": "footway", "name": "Paseo"}) is None
     assert LAYERS["places"].classify("point", {"place": "village", "name": "X"}) == "village"
     assert LAYERS["places"].classify("point", {"place": "island", "name": "X"}) is None
-    assert [layer.name for layer in select(None)][-2:] == ["street-names", "places"]
+    last = [layer.name for layer in select(["places", "roads", "street-names", "water"])][-2:]
+    assert last == ["street-names", "places"]
 
 
 def test_overpass_queries_for_labels():

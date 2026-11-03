@@ -36,6 +36,10 @@ añadidos fechados: dilo en el informe para que se corrija la lista. Comprueba:
 - **ADR 0007**: ¿el PDF sale del SVG ya escrito, con Inkscape y
   `--export-area-page`, y tiene el tamaño del papel? ¿`PDF` sigue sin admitir
   otra cosa que `1` en el `Makefile`?
+- **ADR 0008**: ¿`hillshade` y `contours` siguen fuera de las capas por
+  defecto? ¿Las teselas se bajan una vez, con `User-Agent` y espera ante
+  429/5xx, y el mar (404) queda marcado? ¿La atribución de Copernicus sale si
+  y solo si el mapa lleva relieve?
 - **Tema `monochrome`** (ADR 0004): ¿sigue saliendo de `bw.toml` al cargar, con
   el negro como el tinte y el blanco blanco? ¿Un `TINT` con otro tema da error?
 - **Leyenda**: ¿lleva las esquinas del mapa en el papel (no las pedidas), la

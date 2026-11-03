@@ -8,7 +8,7 @@ La primera vez, `make` construye la imagen sola; `make docker` la reconstruye.
 
 ```bash
 make map TL=lat,lon BR=lat,lon [PAPER=A4] [ORIENTATION=auto] [MARGIN=10] \
-         [LAYERS=water,roads] [THEME=color] [TINT=#1f3b5c] [LABEL_LANG=es] [PBF=ruta] \
+         [LAYERS=water,roads] [INCLUDE_LAYERS=places] [EXCLUDE_LAYERS=railways] [THEME=color] [TINT=#1f3b5c] [LABEL_LANG=es] [PBF=ruta] \
          [OUT=out/map.svg] [PDF=1]
 ```
 
@@ -18,7 +18,9 @@ make map TL=lat,lon BR=lat,lon [PAPER=A4] [ORIENTATION=auto] [MARGIN=10] \
 | `PAPER` | `A4` | `A0`, `A1`, `A2`, `A3`, `A4` o `A5` |
 | `ORIENTATION` | `auto` | `landscape`, `portrait`, o la que más se parezca al área |
 | `MARGIN` | `10` | Mm de margen. Mínimo 6: ahí va la atribución |
-| `LAYERS` | todas | `water,green,buildings,railways,roads,street-names,places`, separadas por comas |
+| `LAYERS` | todas menos el relieve y los nombres | `water,green,buildings,railways,roads,street-names,places`, y `hillshade,contours` (relieve), separadas por comas |
+| `INCLUDE_LAYERS` | — | Capas que añadir a `LAYERS` (o a las de por defecto): `INCLUDE_LAYERS=street-names,places` |
+| `EXCLUDE_LAYERS` | — | Capas que quitar de `LAYERS` (o de las de por defecto): `EXCLUDE_LAYERS=railways` |
 | `LABEL_LANG` | `es` | Idioma de los nombres de calles y lugares, por código de OSM: `es`, `gl`, `en`, `ja`… Varios, `gl,es`: gana el primero que tenga traducción; `local` = como está mapeado |
 | `THEME` | `color` | `color`, `bw`, `monochrome`, o la ruta de un `.toml` propio |
 | `TINT` | `#1f3b5c` | Color del tema `monochrome`, en hexadecimal (`#` opcional) |
@@ -38,16 +40,49 @@ abajo arriba, y dentro de cada una, de la clase menos a la más importante:
 |---|---|
 | `water` | `water`, `stream`, `canal`, `river` |
 | `green` | `green` |
+| `hillshade` | `shade` (imagen; no sale por defecto) |
+| `contours` | `minor`, `major` (no sale por defecto) |
 | `buildings` | `building` |
 | `railways` | `tram`, `rail` |
 | `roads` | `path`, `service`, `minor`, `secondary`, `major` |
-| `street-names` | `minor`, `secondary`, `major` (texto) |
-| `places` | `suburb`, `village`, `town`, `city` (texto) |
+| `street-names` | `minor`, `secondary`, `major` (texto; no sale por defecto) |
+| `places` | `suburb`, `village`, `town`, `city` (texto; no sale por defecto) |
 
 Las dos últimas son **etiquetas**: se dibujan encima de todo y salen en el idioma
-de `LABEL_LANG`. Para un mapa sin nombres, `LAYERS=water,green,buildings,railways,roads`;
-para un cartel minimalista, `LAYERS=roads`; para un plano de situación,
-`LAYERS=water,green,roads`.
+de `LABEL_LANG`. **No salen por defecto**; para un mapa con nombres,
+`INCLUDE_LAYERS=street-names,places`. Para un mapa sin el tren,
+`EXCLUDE_LAYERS=railways`; para un cartel minimalista, `LAYERS=roads`; para un
+plano de situación, `LAYERS=water,green,roads`.
+
+Las tres se combinan: las de `LAYERS` (o las de por defecto), más las de
+`INCLUDE_LAYERS`, menos las de `EXCLUDE_LAYERS`, y siempre en el orden de dibujo.
+Añadir una que ya está o quitar una que no está no hace nada; un nombre que no
+existe, la misma capa en `INCLUDE_LAYERS` y en `EXCLUDE_LAYERS`, o no dejar
+ninguna, es un error.
+
+### Relieve
+
+`hillshade` (sombreado) y `contours` (curvas de nivel) **no salen por defecto**:
+se añaden con `INCLUDE_LAYERS` (o se piden en `LAYERS`), por ejemplo
+
+```bash
+make map TL=… BR=… INCLUDE_LAYERS=hillshade,contours
+```
+
+- Salen del **DEM Copernicus GLO-30** (30 m), no de OSM. La primera vez se baja la
+  tesela de 1°×1° que cubre la zona (~40 MB cada una) a `data/cache/dem/`; luego
+  vale para cualquier mapa dentro, sin red. No pide cuenta ni clave.
+- **Las curvas** van cada 5 m en un plano de ciudad, 10 m a 1:25.000, y más
+  separadas cuanto menor sea la escala; una de cada cinco, más gruesa.
+- **El sombreado** es una imagen dentro del SVG: el suelo llano queda
+  transparente y solo se oscurecen las laderas en sombra (y se aclaran un poco
+  las que miran al sol), así que se ve sobre cualquier capa. Sus colores son
+  `shadow` y `highlight` del tema.
+- Con relieve, el margen de arriba lleva a la izquierda la **atribución de
+  Copernicus**, que exige su licencia.
+- El DEM mide la superficie (con edificios y árboles): en un plano urbano las
+  curvas tienen pequeños bultos. Por qué y qué alternativas se miraron, en el
+  ADR 0008.
 
 ### Temas
 
@@ -97,9 +132,11 @@ Añade `TL2` y `BR2` (van juntas): una segunda zona sobre la primera, en la
 | Variable | Defecto | Qué hace |
 |---|---|---|
 | `TL2`, `BR2` | — | Esquinas de la zona de encima |
-| `LAYERS2` | las de `LAYERS` | Capas de la zona de encima |
+| `LAYERS2` | las de la zona de abajo | Capas de la zona de encima |
 | `THEME2` | el de `THEME` | Tema de la zona de encima |
 | `TINT2` | el de `TINT` | Color, si la zona de encima es `monochrome` |
+| `INCLUDE_LAYERS2` | — | Capas que añadir a la zona de encima |
+| `EXCLUDE_LAYERS2` | — | Capas que quitar de la zona de encima |
 | `OPACITY2` | `1` | Opacidad, de 0 a 1 |
 
 Consejos: con edificios muy ampliados la zona de encima tapa mucho. Prueba

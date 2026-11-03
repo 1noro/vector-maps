@@ -25,7 +25,9 @@ make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 THEME=bw OUT=out/santiago.svg PDF
 `TL` es la esquina de arriba a la izquierda y `BR` la de abajo a la derecha,
 ambas `LAT,LON`. Quedan en `./out/` el SVG y, por `PDF=1`, un PDF del tamaño
 del papel (`santiago.pdf`), los dos con tu usuario (no de root). Sin `PDF=1`,
-solo el SVG. `THEME=monochrome TINT=#7a2e1f` lo deja en tonos de un solo color.
+solo el SVG. `THEME=monochrome TINT=#7a2e1f` lo deja en tonos de un solo color,
+`INCLUDE_LAYERS=street-names,places` le añade los nombres e
+`INCLUDE_LAYERS=hillshade,contours` el relieve (ninguno de los dos sale por defecto).
 
 El servidor público de Overpass se cae con frecuencia. Para no depender de él,
 baja un extracto una vez y úsalo siempre:
@@ -57,8 +59,8 @@ flowchart LR
 2. **Los datos.** De Overpass (con caché) o de un PBF local; `osmium`
    ensambla las geometrías. ADR 0002.
 3. **El SVG.** Unidades en mm, un grupo de Inkscape por capa, y el estilo de un
-   tema TOML. Con los nombres de calles y lugares (en castellano por defecto,
-   `LABEL_LANG=gl` para otro idioma; ADR 0006) y una leyenda con las esquinas del
+   tema TOML. Con los nombres de calles y lugares si se añaden con `INCLUDE_LAYERS` (en
+   castellano por defecto, `LABEL_LANG=gl` para otro idioma; ADR 0006) y una leyenda con las esquinas del
    mapa y la atribución de OSM. ADR 0004.
 
 ## Superponer dos zonas

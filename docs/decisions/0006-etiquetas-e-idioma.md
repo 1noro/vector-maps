@@ -60,3 +60,11 @@ y de los lugares, pudiendo elegir el idioma, y el castellano por defecto.
 - Cada zona añade dos consultas de Overpass; con el PBF, nada (salen del mismo
   corte).
 - Un tema nuevo tiene que estilar `street-names` y `places` (hay un test).
+
+## Añadido del 03/11/2026: los nombres no salen por defecto
+
+A petición del usuario, `street-names` y `places` **dejan el conjunto de capas
+por defecto**, como el relieve (ADR 0008): un `make map` sin `LAYERS` dibuja
+agua, verde, edificios, ferrocarril y calles, sin texto. Los nombres se añaden
+con `INCLUDE_LAYERS=street-names,places` (o se piden en `LAYERS`). Lo
+demás de este ADR (qué se etiqueta, el idioma, el halo) no cambia.
