@@ -80,3 +80,75 @@ stroke = "#000000"
 stroke-width = 0.9
 stroke-linecap = "round"
 stroke-linejoin = "round"
+
+# Labels. font-size is in mm on paper; the white stroke behind the letters is a halo.
+
+[layers.street-names.minor]
+font-family = "sans-serif"
+font-size = 1.5
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.45
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.secondary]
+font-family = "sans-serif"
+font-size = 1.8
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.5
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.major]
+font-family = "sans-serif"
+font-size = 2.1
+font-weight = "bold"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.55
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.places.suburb]
+font-family = "sans-serif"
+font-size = 2.4
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.6
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.village]
+font-family = "sans-serif"
+font-size = 3.0
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.7
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.town]
+font-family = "sans-serif"
+font-size = 3.8
+font-weight = "bold"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.8
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.city]
+font-family = "sans-serif"
+font-size = 5.0
+font-weight = "bold"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 1.0
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"

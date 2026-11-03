@@ -1,11 +1,13 @@
 import xml.etree.ElementTree as ET
 
 import pytest
-from shapely.geometry import LineString, Polygon
+from shapely.geometry import LineString, Point, Polygon
 
 from vectormaps.area import fit
+from vectormaps.labels import CHAR_WIDTH
 from vectormaps.layers import select
-from vectormaps.render import Job, path_data, render
+from vectormaps.pipeline import Item
+from vectormaps.render import Job, legend_lines, path_data, render
 from vectormaps.theme import load
 
 NS = {"svg": "http://www.w3.org/2000/svg", "ink": "http://www.inkscape.org/namespaces/inkscape"}
@@ -22,9 +24,9 @@ def make_job(label, tl, br, theme, opacity=1.0):
     cx = (tl[1] + br[1]) / 2
     cy = (tl[0] + br[0]) / 2
     feats = {
-        "buildings": [("building", square(cx - 0.0005, cy - 0.0005, 0.001))],
+        "buildings": [Item("building", square(cx - 0.0005, cy - 0.0005, 0.001))],
         # Longer than the page, so it has to be clipped.
-        "roads": [("minor", LineString([(tl[1] - 0.01, cy), (br[1] + 0.01, cy)]))],
+        "roads": [Item("minor", LineString([(tl[1] - 0.01, cy), (br[1] + 0.01, cy)]))],
     }
     return Job(label, frame, load(theme), select(["buildings", "roads"]), feats, opacity)
 
@@ -63,7 +65,7 @@ def test_overlay_stacks_two_scales_in_one_page():
     b = make_job("b", TL2, BR2, "bw", opacity=0.6)
     root = ET.fromstring(render([a, b]))
     ids = [g.get("id") for g in root.findall("svg:g", NS)]
-    assert ids == ["page", "area-a", "area-b", "frame"]  # b is drawn over a
+    assert ids == ["page", "area-a", "area-b", "frame", "legend"]  # b is drawn over a
     assert root.find("svg:g[@id='area-b']", NS).get("opacity") == "0.6"
     assert root.find("svg:g[@id='area-a']", NS).get("opacity") is None
     assert a.frame.scale > b.frame.scale
@@ -81,3 +83,63 @@ def test_empty_layers_still_exist():
     root = ET.fromstring(render([job]))
     assert root.find(".//svg:g[@id='a-roads']", NS) is not None
     assert root.find(".//svg:path", NS) is None
+
+
+def test_labels_are_text_on_the_street_and_at_the_place():
+    frame = fit(TL, BR, "A4", orientation="landscape")
+    cy = (TL[0] + BR[0]) / 2
+    cx = (TL[1] + BR[1]) / 2
+    feats = {
+        "street-names": [
+            Item("major", LineString([(TL[1], cy), (BR[1], cy)]), "Rúa do Vilar & Co"),
+        ],
+        "places": [
+            Item("village", Point(cx, cy + 0.001), "A Almáciga"),
+            Item("city", Point(cx + 5, cy), "Fuera del marco"),  # outside the map: dropped
+        ],
+    }
+    job = Job("a", frame, load("color"), select(["street-names", "places"]), feats)
+    root = ET.fromstring(render([job]))
+    path_id = root.find(".//svg:textPath", NS).get("{http://www.w3.org/1999/xlink}href")[1:]
+    assert root.find(f".//svg:defs/svg:path[@id='{path_id}']", NS) is not None
+    assert "Rúa do Vilar & Co" in "".join(root.find(".//svg:textPath", NS).itertext())
+    texts = [t.text for t in root.findall(".//svg:g[@id='a-places-village']/svg:text", NS)]
+    assert texts == ["A Almáciga"]
+    assert root.find(".//svg:g[@id='a-places-city']", NS) is None
+    assert root.find(".//svg:g[@id='a-places-village']", NS).get("text-anchor") == "middle"
+
+
+def test_legend_has_the_corners_the_attribution_and_the_mark():
+    job = make_job("a", TL, BR, "color")
+    root = ET.fromstring(render([job]))
+    texts = [t.text for t in root.findall(".//svg:g[@id='legend']/svg:text", NS)]
+    assert texts[0].startswith("© OpenStreetMap contributors (ODbL)")
+    assert f"1:{job.frame.scale}" in texts[0]
+    tl, br = job.frame.corners()
+    assert texts[1] == f"TL {tl[0]:.5f}, {tl[1]:.5f} · BR {br[0]:.5f}, {br[1]:.5f}"
+    assert texts[2] == "Generated with vector-maps by 1noro"
+    # The corners are the ones of the map on paper (it grew to the shape of the page).
+    assert tl[0] >= TL[0] and br[0] <= BR[0] and tl[1] <= TL[1] and br[1] >= BR[1]
+
+
+def test_overlay_legend_lists_both_zones():
+    a = make_job("a", TL, BR, "color")
+    b = make_job("b", TL2, BR2, "bw")
+    corners = legend_lines([a, b])[1]
+    assert corners.startswith("A: TL ") and "   |   B: TL " in corners
+
+
+@pytest.mark.parametrize("paper,margin", [("A5", 6), ("A5", 10), ("A0", 6)])
+def test_legend_text_stays_inside_the_page(paper, margin):
+    frame = fit(TL, BR, paper, margin=margin)
+    a = Job("a", frame, load("bw"), select(["roads"]), {})
+    b = Job("b", fit(TL2, BR2, paper, margin, frame.orientation), load("bw"), [], {})
+    root = ET.fromstring(render([a, b]))
+    size = float(root.find(".//svg:g[@id='legend']/svg:text", NS).get("font-size"))
+    for t in root.findall(".//svg:g[@id='legend']/svg:text", NS):
+        y = float(t.get("y"))
+        assert 0 < y < frame.page_h
+        if t.get("text-anchor") != "end":
+            assert len(t.text) * size * CHAR_WIDTH <= frame.map_w + 0.01  # fits the width
+    last = max(float(t.get("y")) for t in root.findall(".//svg:g[@id='legend']/svg:text", NS))
+    assert last + size * 0.3 <= frame.page_h  # the bottom line does not run off the paper

@@ -11,14 +11,19 @@ import numpy as np
 import shapely
 from pyproj import Transformer
 from shapely.affinity import affine_transform
+from shapely.geometry import LineString
 from shapely.geometry.base import BaseGeometry
 
 from vectormaps.area import Frame
+from vectormaps.labels import CHAR_WIDTH, street_pieces
 from vectormaps.layers import Layer
 from vectormaps.pipeline import Features
 from vectormaps.theme import Theme
 
 MIN_POLYGON_MM2 = 0.005  # below this a polygon is a speck on paper
+MARK = "Generated with vector-maps by 1noro"
+ATTRIBUTION = "© OpenStreetMap contributors (ODbL)"
+LEGEND_SIZE = 2.4  # mm; smaller on small margins or long lines, so everything fits
 
 
 @dataclass
@@ -80,6 +85,78 @@ def _attrs(style: dict[str, str | float]) -> str:
     return " ".join(f"{k}={quoteattr(str(v))}" for k, v in style.items())
 
 
+def _shape_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
+    by_class: dict[str, list[BaseGeometry]] = {c: [] for c in layer.classes}
+    for item in job.features.get(layer.name, []):
+        page_geom = _to_page(item.geom, tr, job.frame)
+        if page_geom is not None:
+            by_class[item.cls].append(page_geom)
+    out = []
+    for cls in layer.classes:
+        d = path_data(by_class[cls])
+        if not d:
+            continue
+        style = job.theme.style(layer.name, cls)
+        out.append(
+            f'<path id="{job.label}-{layer.name}-{cls}" class="{cls}" '
+            f'fill-rule="evenodd" {_attrs(style)} d="{d}"/>'
+        )
+    return out
+
+
+def _page_xy(geom: BaseGeometry, tr: Transformer, frame: Frame) -> tuple[float, float] | None:
+    """A point in page mm, or None if it falls outside the map frame."""
+    x, y = tr.transform(geom.x, geom.y)
+    a, _, _, e, xoff, yoff = frame.page_matrix()
+    x, y = a * x + xoff, e * y + yoff
+    m = frame.margin
+    inside = m <= x <= frame.page_w - m and m <= y <= frame.page_h - m
+    return (x, y) if inside else None
+
+
+def _text_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
+    """Labels: names of places at their point, names of streets written along the street."""
+    defs: list[str] = []
+    groups: list[str] = []
+    for cls in layer.classes:
+        style = job.theme.style(layer.name, cls)
+        size = float(style["font-size"])
+        lines: dict[str, list[LineString]] = {}
+        texts: list[str] = []
+        for item in job.features.get(layer.name, []):
+            if item.cls != cls or not item.text:
+                continue
+            if item.geom.geom_type == "Point":
+                xy = _page_xy(item.geom, tr, job.frame)
+                if xy is not None:
+                    texts.append(
+                        f'<text x="{_num(xy[0])}" y="{_num(xy[1])}">{escape(item.text)}</text>'
+                    )
+                continue
+            page_geom = _to_page(item.geom, tr, job.frame)
+            if page_geom is not None:
+                lines.setdefault(item.text, []).extend(
+                    p for p in _parts(page_geom) if p.geom_type == "LineString"
+                )
+        n = 0
+        for text, parts in sorted(lines.items()):
+            for piece in street_pieces(parts, text, size) if parts else []:
+                n += 1
+                pid = f"{job.label}-{layer.name}-{cls}-{n}"
+                defs.append(f'<path id="{pid}" d="M{_coords(piece.coords)}"/>')
+                texts.append(
+                    f'<text dy="0.35em"><textPath xlink:href="#{pid}" startOffset="50%" '
+                    f'text-anchor="middle">{escape(text)}</textPath></text>'
+                )
+        if texts:
+            groups.append(
+                f'<g id="{job.label}-{layer.name}-{cls}" class="{cls}" {_attrs(style)}>'
+                + "".join(texts)
+                + "</g>"
+            )
+    return (["<defs>" + "".join(defs) + "</defs>"] if defs else []) + groups
+
+
 def _job_group(job: Job) -> str:
     tr = Transformer.from_crs(4326, job.frame.crs, always_xy=True)
     label = f"{job.label.upper()} 1:{job.frame.scale} {job.theme.name}"
@@ -93,23 +170,46 @@ def _job_group(job: Job) -> str:
             f'<g id="{job.label}-{layer.name}" inkscape:groupmode="layer" '
             f'inkscape:label="{layer.name}">'
         )
-        by_class: dict[str, list[BaseGeometry]] = {c: [] for c in layer.classes}
-        for cls, geom in job.features.get(layer.name, []):
-            page_geom = _to_page(geom, tr, job.frame)
-            if page_geom is not None:
-                by_class[cls].append(page_geom)
-        for cls in layer.classes:
-            d = path_data(by_class[cls])
-            if not d:
-                continue
-            style = job.theme.style(layer.name, cls)
-            out.append(
-                f'<path id="{job.label}-{layer.name}-{cls}" class="{cls}" '
-                f'fill-rule="evenodd" {_attrs(style)} d="{d}"/>'
-            )
+        out += _text_layer(job, layer, tr) if layer.text else _shape_layer(job, layer, tr)
         out.append("</g>")
     out.append("</g>")
     return "\n".join(out)
+
+
+def _corner(c: tuple[float, float]) -> str:
+    return f"{c[0]:.5f}, {c[1]:.5f}"
+
+
+def legend_lines(jobs: list[Job]) -> tuple[str, str]:
+    """The two lines of the legend: attribution, paper and scales; then the corners."""
+    f = jobs[0].frame
+    scales = " + ".join(f"{j.label.upper()} 1:{j.frame.scale}" for j in jobs)
+    zones = []
+    for j in jobs:
+        tl, br = j.frame.corners()
+        prefix = f"{j.label.upper()}: " if len(jobs) > 1 else ""
+        zones.append(f"{prefix}TL {_corner(tl)} · BR {_corner(br)}")
+    return f"{ATTRIBUTION} · {f.paper} {f.orientation} · {scales}", "   |   ".join(zones)
+
+
+def _legend(jobs: list[Job], ink: str) -> list[str]:
+    f = jobs[0].frame
+    line1, line2 = legend_lines(jobs)
+    widest = max(len(line1), len(line2))
+    size = min(LEGEND_SIZE, f.margin / 3, f.map_w / (widest * CHAR_WIDTH))
+    # Two lines centred in the bottom margin, the mark centred in the top one.
+    pad = (f.margin - 2.35 * size) / 2
+    y1 = f.page_h - f.margin + pad + 0.85 * size
+    y2 = y1 + 1.35 * size
+    common = f'font-family="sans-serif" font-size="{_num(size)}" fill="{ink}"'
+    return [
+        '<g id="legend" inkscape:groupmode="layer" inkscape:label="legend">',
+        f'<text x="{_num(f.margin)}" y="{_num(y1)}" {common}>{escape(line1)}</text>',
+        f'<text x="{_num(f.margin)}" y="{_num(y2)}" {common}>{escape(line2)}</text>',
+        f'<text x="{_num(f.page_w - f.margin)}" y="{_num(f.margin / 2 + 0.35 * size)}" '
+        f'text-anchor="end" {common}>{escape(MARK)}</text>',
+        "</g>",
+    ]
 
 
 def render(jobs: list[Job]) -> str:
@@ -117,16 +217,14 @@ def render(jobs: list[Job]) -> str:
     f = first.frame
     page = first.theme.page
     ink = page["ink"]
-    attribution = "© OpenStreetMap contributors (ODbL)"
-    scales = " + ".join(f"{j.label.upper()} 1:{j.frame.scale}" for j in jobs)
-    footer = f"{attribution} · {f.paper} {f.orientation} · {scales}"
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<svg xmlns="http://www.w3.org/2000/svg" '
-        'xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" '
+        'xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" '
+        'xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" '
         f'width="{_num(f.page_w)}mm" height="{_num(f.page_h)}mm" '
         f'viewBox="0 0 {_num(f.page_w)} {_num(f.page_h)}">',
-        f"<title>{escape(footer)}</title>",
+        f"<title>{escape(' — '.join(legend_lines(jobs) + (MARK,)))}</title>",
         '<g id="page" inkscape:groupmode="layer" inkscape:label="page">',
         f'<rect width="{_num(f.page_w)}" height="{_num(f.page_h)}" fill="{page["background"]}"/>',
         "</g>",
@@ -137,9 +235,8 @@ def render(jobs: list[Job]) -> str:
         f'<rect x="{_num(f.margin)}" y="{_num(f.margin)}" width="{_num(f.map_w)}" '
         f'height="{_num(f.map_h)}" fill="none" stroke="{ink}" '
         f'stroke-width="{page["frame-width"]}"/>',
-        f'<text x="{_num(f.margin)}" y="{_num(f.page_h - f.margin / 2 + 0.9)}" '
-        f'font-family="sans-serif" font-size="2.5" fill="{ink}">{escape(footer)}</text>',
         "</g>",
+        *_legend(jobs, ink),
         "</svg>",
     ]
     return "\n".join(parts) + "\n"

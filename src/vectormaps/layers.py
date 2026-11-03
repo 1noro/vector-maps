@@ -32,8 +32,15 @@ class Tag:
 @dataclass(frozen=True)
 class Rule:
     cls: str
-    geometry: str  # "polygon" or "line"
+    geometry: str  # "polygon", "line" or "point"
     tag: Tag
+    also: tuple[Tag, ...] = ()  # more tags that must be there (e.g. a name, for labels)
+
+    def matches(self, tags: dict[str, str]) -> bool:
+        return self.tag.matches(tags) and all(t.matches(tags) for t in self.also)
+
+    def overpass(self) -> str:
+        return self.tag.overpass() + "".join(t.overpass() for t in self.also)
 
 
 @dataclass(frozen=True)
@@ -41,10 +48,11 @@ class Layer:
     name: str
     rules: tuple[Rule, ...]  # first match wins; draw order is `classes`
     classes: tuple[str, ...]  # bottom to top
+    text: bool = False  # a label layer: its features are drawn as text, not as shapes
 
     def classify(self, geometry: str, tags: dict[str, str]) -> str | None:
         for rule in self.rules:
-            if rule.geometry == geometry and rule.tag.matches(tags):
+            if rule.geometry == geometry and rule.matches(tags):
                 return rule.cls
         return None
 
@@ -54,7 +62,10 @@ class Layer:
         box = f"({s},{w},{n},{e})"
         lines: list[str] = []
         for rule in self.rules:
-            sel = rule.tag.overpass()
+            sel = rule.overpass()
+            if rule.geometry == "point":
+                lines.append(f"  node{sel}{box};")
+                continue
             lines.append(f"  way{sel}{box};")
             if rule.geometry == "polygon":
                 lines.append(f'  relation["type"="multipolygon"]{sel}{box};')
@@ -62,8 +73,18 @@ class Layer:
         return f"[out:xml][timeout:{timeout}];\n(\n{body}\n);\n(._;>;);\nout meta;\n"
 
 
-def _rules(cls: str, geometry: str, key: str, *values: str, exclude: tuple[str, ...] = ()):
-    return Rule(cls, geometry, Tag(key, values or None, exclude))
+NAMED = (Tag("name"),)
+
+
+def _rules(
+    cls: str,
+    geometry: str,
+    key: str,
+    *values: str,
+    exclude: tuple[str, ...] = (),
+    also: tuple[Tag, ...] = (),
+):
+    return Rule(cls, geometry, Tag(key, values or None, exclude), also)
 
 
 LAYERS: dict[str, Layer] = {
@@ -159,10 +180,49 @@ LAYERS: dict[str, Layer] = {
             ),
             ("tram", "rail"),
         ),
+        Layer(
+            "street-names",
+            (
+                _rules("major", "line", "highway", "motorway", "trunk", "primary", also=NAMED),
+                _rules("secondary", "line", "highway", "secondary", "tertiary", also=NAMED),
+                _rules(
+                    "minor",
+                    "line",
+                    "highway",
+                    "residential",
+                    "unclassified",
+                    "living_street",
+                    also=NAMED,
+                ),
+            ),
+            ("minor", "secondary", "major"),
+            text=True,
+        ),
+        Layer(
+            "places",
+            (
+                _rules("city", "point", "place", "city", also=NAMED),
+                _rules("town", "point", "place", "town", also=NAMED),
+                _rules("village", "point", "place", "village", also=NAMED),
+                _rules(
+                    "suburb",
+                    "point",
+                    "place",
+                    "suburb",
+                    "quarter",
+                    "neighbourhood",
+                    "hamlet",
+                    also=NAMED,
+                ),
+            ),
+            ("suburb", "village", "town", "city"),
+            text=True,
+        ),
     )
 }
 
-DEFAULT_ORDER = ("water", "green", "buildings", "railways", "roads")  # bottom to top
+# Bottom to top; the labels go over everything.
+DEFAULT_ORDER = ("water", "green", "buildings", "railways", "roads", "street-names", "places")
 
 
 def select(names: list[str] | None) -> list[Layer]:

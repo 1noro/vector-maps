@@ -12,7 +12,7 @@ sus propias reglas de idioma ("Convenciones de código").
 ## Qué es esto
 
 Scripts en Python que sacan mapas de OpenStreetMap como **SVG por capas**
-(agua, verde, edificios, ferrocarril, calles), en color o en blanco y negro,
+(agua, verde, edificios, ferrocarril, calles, con sus nombres), en color o en blanco y negro,
 listos para imprimir en papel A0–A5, y que pueden **superponer dos zonas con
 distinto zoom** en la misma hoja. Cómo se usa, en el [README](README.md).
 
@@ -25,10 +25,14 @@ elegancia.** Todo corre en Docker; en el host solo hacen falta `make` y
 | `paper.py` | los tamaños ISO A0–A5 |
 | `area.py` | dos esquinas + papel → `Frame` (UTM, escala, forma del papel) |
 | `layers.py` | las capas: qué etiquetas de OSM entran en cada una y la consulta Overpass |
+| `labels.py` | el idioma de los nombres y dónde se escribe el de cada calle |
 | `sources.py` | de dónde salen los datos: `OverpassSource` o `PbfSource` |
 | `overpass.py`, `osmexport.py`, `download.py` | cliente con caché, `osmium export`, descarga de PBF |
+| `geofabrik.py` | qué extracto cubre un área, para la pista cuando Overpass falla |
 | `pipeline.py` | `Frame` + capas + fuente → features por capa |
-| `theme.py`, `themes/*.toml` | los estilos (color, bw) |
+| `theme.py`, `themes/*.toml` | los estilos (color, bw, y monochrome: el bw tintado) |
+| `pdf.py` | el PDF del tamaño del papel, con Inkscape |
+| `progress.py` | el spinner de los pasos lentos, solo con terminal |
 | `render.py` | features → SVG; un `Job` por zona, apiladas |
 | `cli.py` | `map`, `list`, `download` |
 
@@ -51,6 +55,13 @@ tocar código.
    tiene opción para quitarla (ODbL). Por eso el margen mínimo es de 6 mm.
 6. **La superposición apila zonas con el mismo papel, orientación y margen, y
    cada una con su escala, tema, capas y opacidad** (ADR 0005).
+7. **Las etiquetas son dos capas de texto, `street-names` y `places`; el idioma
+   es un código de OSM (`es` por defecto) y, si no hay traducción, se muestra el
+   `name` tal cual** (ADR 0006). No se inventan traducciones.
+8. **La leyenda lleva las esquinas del mapa tal como está en el papel y la marca
+   «Generated with vector-maps by 1noro»** (ADR 0004, añadido del 03/11).
+9. **El PDF sale del SVG con Inkscape** (ADR 0007): es el único conversor que
+   pinta `textPath` y los halos. Ni librsvg ni CairoSVG.
 
 ## Reglas que no se saltan
 
@@ -80,15 +91,20 @@ sobre un `.osm` diminuto escrito a mano.
 No hay Python ni osmium en el host: el `Makefile` lo ejecuta en un contenedor.
 
 ```bash
+make                          # la ayuda (make help): objetivos y variables
 make check                    # lint + tests. Lo que hay que pasar.
 make test | lint | fmt        # por separado
 make docker                   # reconstruye la imagen (Dockerfile o requirements)
 
 make map TL=lat,lon BR=lat,lon [PAPER=A4] [THEME=color|bw] [LAYERS=a,b] [OUT=out/x.svg]
+make map … THEME=monochrome TINT=#7a2e1f                        # el bw tintado de un color
+make map … PDF=1                                                # también el PDF, al lado
+make map … LABEL_LANG=gl                                         # idioma de los nombres (es por defecto)
 make map … TL2=lat,lon BR2=lat,lon [THEME2=bw] [OPACITY2=0.7]   # superponer otra zona
 make map … PBF=data/pbf/galicia-latest.osm.pbf                  # datos locales
 make pbf URL=https://download.geofabrik.de/…-latest.osm.pbf     # bajar un extracto
 make list                     # capas, papeles y temas
+                              # las recetas no se muestran (.SILENT); lo lento lleva un spinner
 make shell | clean-cache | clean-out
 ```
 
@@ -141,7 +157,7 @@ herramienta**, y **que siga siendo corto**.
 
 El orden y el porqué, en `docs/desarrollo.md`. Abiertos:
 
-- **1** — etiquetas: nombres de calles y de lugares en el SVG.
+- **1** — etiquetas sin pisarse (antichoque) y los nombres de parques y ríos.
 - **2** — contorno (*casing*) de las calles en el tema de color.
 - **3** — puentes y túneles (trazo distinto) y más clases de calle.
 - **4** — recorte de la hoja a un polígono (GeoJSON).

@@ -45,3 +45,22 @@ def test_every_theme_styles_every_class(name):
 def test_unknown_theme():
     with pytest.raises(ValueError):
         load("nope")
+
+
+def test_label_layers_need_a_name_and_come_last():
+    names = LAYERS["street-names"]
+    assert names.text and LAYERS["places"].text and not LAYERS["roads"].text
+    assert names.classify("line", {"highway": "primary", "name": "N-550"}) == "major"
+    assert names.classify("line", {"highway": "primary"}) is None  # no name, no label
+    assert names.classify("line", {"highway": "footway", "name": "Paseo"}) is None
+    assert LAYERS["places"].classify("point", {"place": "village", "name": "X"}) == "village"
+    assert LAYERS["places"].classify("point", {"place": "island", "name": "X"}) is None
+    assert [layer.name for layer in select(None)][-2:] == ["street-names", "places"]
+
+
+def test_overpass_queries_for_labels():
+    places = LAYERS["places"].overpass_query((1, 2, 3, 4))
+    assert 'node["place"~"^(city)$"]["name"](1.00000,2.00000,3.00000,4.00000);' in places
+    assert "way[" not in places and "relation" not in places
+    streets = LAYERS["street-names"].overpass_query((1, 2, 3, 4))
+    assert '["highway"~"^(motorway|trunk|primary)$"]["name"]' in streets

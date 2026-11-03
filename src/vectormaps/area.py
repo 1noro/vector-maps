@@ -60,6 +60,13 @@ class Frame:
         dlat = (max(lats) - min(lats)) * pad
         return min(lats) - dlat, min(lons) - dlon, max(lats) + dlat, max(lons) + dlon
 
+    def corners(self) -> tuple[tuple[float, float], tuple[float, float]]:
+        """((lat, lon) top-left, (lat, lon) bottom-right) of the map as it is on the paper."""
+        back = Transformer.from_crs(self.crs, 4326, always_xy=True)
+        (lon1, lat1) = back.transform(self.xmin, self.ymax)
+        (lon2, lat2) = back.transform(self.xmax, self.ymin)
+        return (lat1, lon1), (lat2, lon2)
+
     def page_matrix(self) -> list[float]:
         """Affine matrix [a, b, d, e, xoff, yoff] taking projected metres to page mm."""
         s = 1.0 / self.metres_per_mm

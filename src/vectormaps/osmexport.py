@@ -12,7 +12,20 @@ from pathlib import Path
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 
-KIND = {"Polygon": "polygon", "MultiPolygon": "polygon", "LineString": "line"}
+# Bump when `export` changes what it writes: the cached files are named after it.
+VERSION = "v2"  # v2: also points (place names)
+
+KIND = {
+    "Point": "point",
+    "Polygon": "polygon",
+    "MultiPolygon": "polygon",
+    "LineString": "line",
+}
+
+
+def exported_name(osm_path: Path) -> Path:
+    """Where the GeoJSON of `osm_path` is cached (next to it, tagged with the export version)."""
+    return osm_path.parent / f"{osm_path.name.split('.')[0]}.{VERSION}.geojsonseq"
 
 
 def export(osm_path: Path, out_path: Path) -> Path:
@@ -24,7 +37,7 @@ def export(osm_path: Path, out_path: Path) -> Path:
         "osmium",
         "export",
         "--overwrite",
-        "--geometry-types=linestring,polygon",
+        "--geometry-types=point,linestring,polygon",
         "-f",
         "geojsonseq",
         "-o",
@@ -39,7 +52,7 @@ def export(osm_path: Path, out_path: Path) -> Path:
 
 
 def read_features(path: Path) -> Iterator[tuple[str, dict[str, str], BaseGeometry]]:
-    """Yield (kind, tags, geometry) with kind 'polygon' or 'line'. Coordinates in lon/lat."""
+    """Yield (kind, tags, geometry), kind being 'point', 'line' or 'polygon'; lon/lat."""
     with path.open(encoding="utf-8") as fh:
         for line in fh:
             line = line.strip("\x1e\n ")  # GeoJSON-seq may start records with RS

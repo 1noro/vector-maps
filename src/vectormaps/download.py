@@ -9,6 +9,7 @@ log = logging.getLogger(__name__)
 
 USER_AGENT = "vector-maps/0.1 (+https://github.com/1noro/vector-maps)"
 CHUNK = 1 << 20
+PBF_DIR = Path("data/pbf")  # where `make pbf` leaves the extracts
 
 
 def download(url: str, out_dir: Path) -> Path:

@@ -1,8 +1,8 @@
 <h1 align="center">vector-maps</h1>
 
 <p align="center">
-  Mapas de OpenStreetMap en SVG, por capas, en color o en blanco y negro y
-  listos para imprimir en A0–A5. Con la opción de superponer dos zonas con
+  Mapas de OpenStreetMap en SVG, por capas y con nombres, en color o en blanco y
+  negro y listos para imprimir en A0–A5. Con la opción de superponer dos zonas con
   distinto zoom en la misma hoja.
 </p>
 
@@ -19,18 +19,20 @@ En Linux, con Docker y `make` (nada más: ni Python ni librerías en el host):
 
 ```bash
 # Un mapa A4 en blanco y negro del casco histórico de Santiago de Compostela
-make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 THEME=bw OUT=out/santiago.svg
+make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 THEME=bw OUT=out/santiago.svg PDF=1
 ```
 
 `TL` es la esquina de arriba a la izquierda y `BR` la de abajo a la derecha,
-ambas `LAT,LON`. El SVG queda en `./out/`, con tu usuario (no de root).
+ambas `LAT,LON`. Quedan en `./out/` el SVG y, por `PDF=1`, un PDF del tamaño
+del papel (`santiago.pdf`), los dos con tu usuario (no de root). Sin `PDF=1`,
+solo el SVG. `THEME=monochrome TINT=#7a2e1f` lo deja en tonos de un solo color.
 
 El servidor público de Overpass se cae con frecuencia. Para no depender de él,
 baja un extracto una vez y úsalo siempre:
 
 ```bash
 make pbf URL=https://download.geofabrik.de/europe/spain/galicia-latest.osm.pbf
-make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 PBF=data/pbf/galicia-latest.osm.pbf
+make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 PBF=data/pbf/galicia-latest.osm.pbf PDF=1
 ```
 
 No hace falta ninguna cuenta ni clave.
@@ -45,7 +47,7 @@ flowchart LR
     E["osmium export<br/>GeoJSON-seq"] --> L["capas<br/>agua · verde · edificios<br/>ferrocarril · calles"]
     F --> R
     L --> R["render<br/>SVG en mm,<br/>un grupo por capa"]
-    T["tema TOML<br/>color · bw"] --> R
+    T["tema TOML<br/>color · bw · monochrome"] --> R
     R --> S[("out/*.svg")]
 ```
 
@@ -55,7 +57,9 @@ flowchart LR
 2. **Los datos.** De Overpass (con caché) o de un PBF local; `osmium`
    ensambla las geometrías. ADR 0002.
 3. **El SVG.** Unidades en mm, un grupo de Inkscape por capa, y el estilo de un
-   tema TOML. Siempre con la atribución de OSM. ADR 0004.
+   tema TOML. Con los nombres de calles y lugares (en castellano por defecto,
+   `LABEL_LANG=gl` para otro idioma; ADR 0006) y una leyenda con las esquinas del
+   mapa y la atribución de OSM. ADR 0004.
 
 ## Superponer dos zonas
 

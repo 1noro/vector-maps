@@ -52,3 +52,38 @@ pago, como Tracestrack u Overspan), se consulta antes de usarlo.
 
 - Una capa nueva se define una vez (`layers.py`) y vale para las dos fuentes.
 - Cambiar el PBF (otra fecha) cambia la clave de la caché: no se sirve nada viejo.
+
+## Añadido del 03/11/2026: el área tiene que estar en el PBF
+
+Con solo Galicia, pedir Tokio **no daba error**: osmium cortaba un área vacía y
+salía un SVG de 1 KiB con el marco y nada más. Ahora `PbfSource.check` compara
+el área con la caja de la cabecera del PBF (`osmium fileinfo -g header.boxes`;
+la llevan los de Geofabrik) y, **antes de cortar nada**, falla con el rango que
+cubre el fichero y cómo bajar otro (`make pbf URL=…`). Si el área cabe solo en
+parte, avisa del porcentaje. Si el fichero no trae caja, no puede comprobarse, y
+el pipeline avisa cuando ninguna capa da un solo rasgo ("no data found").
+Con una superposición se comprueban las dos zonas antes de empezar.
+
+## Añadido del 03/11/2026: si Overpass falla, qué extracto bajar
+
+Cuando Overpass da un error (los 502/504 de ese día, un timeout, una respuesta
+cortada), el error lleva una **pista** con el comando que hay que usar para
+seguir en local:
+
+1. Si algún `.osm.pbf` de `data/pbf/` ya cubre el área (por la caja de su
+   cabecera), que se repita el mismo `make map` con `PBF=` ese fichero.
+2. Si no, **el extracto más pequeño de Geofabrik que contiene el área**, con su
+   `make pbf URL=…` y el `PBF=` de después. Para saberlo se baja **una vez** el
+   índice de Geofabrik (`index-v1.json`, ~4 MB, con el contorno de cada
+   extracto) a `data/cache/geofabrik/`: una sola petición, con nuestro
+   `User-Agent`, sin cuenta ni clave, y solo cuando hace falta la pista.
+   `make clean-cache` lo renueva.
+3. Si no hay red o ningún extracto la contiene, el enlace a la lista.
+
+Con dos zonas, el extracto tiene que contener **cada una**, no la caja que
+abarca las dos: Madrid y Santiago caben en España, pero su caja común se mete
+en Portugal y daría Europa entera.
+
+Que la pista use Geofabrik no cambia lo decidido arriba: los datos siguen
+saliendo de Overpass o de un PBF, y si el índice no se puede bajar, el error de
+Overpass sale igual, solo con una pista menos precisa.

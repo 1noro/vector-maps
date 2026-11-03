@@ -47,6 +47,17 @@ def test_frame_never_crops_the_requested_area():
     assert f.growth >= 0
 
 
+def test_printed_corners_given_back_hold_the_whole_map():
+    # In UTM the lat/lon box between the printed corners is slightly turned, so
+    # it grows a little (~2 %) on the way back: never crops, never the same.
+    f = fit(TL, BR, "A4")
+    g = fit(*f.corners(), "A4")
+    assert g.xmin <= f.xmin and g.xmax >= f.xmax
+    assert g.ymin <= f.ymin and g.ymax >= f.ymax
+    assert g.orientation == f.orientation
+    assert g.scale == pytest.approx(f.scale, rel=0.05)
+
+
 def test_orientation_auto_follows_the_area():
     tall = fit((42.90, -8.55), (42.88, -8.545), "A4")
     assert tall.orientation == "portrait"

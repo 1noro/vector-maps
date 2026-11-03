@@ -28,6 +28,21 @@ añadidos fechados: dilo en el informe para que se corrija la lista. Comprueba:
 - **ADR 0005**: ¿la zona superpuesta usa el mismo papel, orientación y margen
   que la base? ¿Cada zona conserva su escala, tema, capas y opacidad? ¿La
   atribución lista la escala de cada zona?
+- **ADR 0006**: ¿`street-names` y `places` siguen siendo capas de texto, las
+  últimas en dibujarse? ¿El nombre sale de `name:<código>` y, si no hay, del
+  `name` tal cual, sin traducciones inventadas? ¿`es` sigue siendo el idioma por
+  defecto? ¿Se cambió `osmexport.VERSION` al cambiar lo que escribe `export`?
+  ¿Algún tema deja sin estilo una clase de texto?
+- **ADR 0007**: ¿el PDF sale del SVG ya escrito, con Inkscape y
+  `--export-area-page`, y tiene el tamaño del papel? ¿`PDF` sigue sin admitir
+  otra cosa que `1` en el `Makefile`?
+- **Tema `monochrome`** (ADR 0004): ¿sigue saliendo de `bw.toml` al cargar, con
+  el negro como el tinte y el blanco blanco? ¿Un `TINT` con otro tema da error?
+- **Leyenda**: ¿lleva las esquinas del mapa en el papel (no las pedidas), la
+  atribución, las escalas y la marca «Generated with vector-maps by 1noro»?
+  ¿Cabe en la hoja con el margen mínimo y en A5?
+- **Fuentes**: ¿`PbfSource.check` falla antes de cortar si el área está fuera
+  del PBF?
 - **Tests**: ¿alguno toca la red?
 
 Informa de lo que encuentres. No arregles nada sin preguntar antes.

@@ -1,5 +1,49 @@
-.PHONY: docker pbf check test lint fmt map list shell data-dir clean-cache clean-out
-.SILENT: data-dir
+.PHONY: help docker .image pbf check test lint fmt map list shell data-dir clean-cache clean-out
+
+# Las recetas no se muestran: el log solo lleva lo que dicen los programas. Lo
+# que tarda (construir la imagen) va con un spinner (scripts/with-spinner.sh).
+.SILENT:
+
+# `make` a secas enseña la ayuda (y no construye nada).
+.DEFAULT_GOAL := help
+
+# Al añadir un objetivo o una variable de `make map`, añadirlo aquí también.
+define HELP
+vector-maps: mapas de OpenStreetMap en SVG por capas, para imprimir.
+
+Uso: make <objetivo> [VARIABLE=valor …]
+
+  map      un mapa:  make map TL=lat,lon BR=lat,lon [opciones]
+             PAPER=A4            A0…A5
+             ORIENTATION=auto    auto, landscape, portrait
+             MARGIN=10           mm (mínimo 6)
+             LAYERS=a,b          capas (todas por defecto; ver make list)
+             THEME=color         color, bw, monochrome, o un .toml
+             TINT=#1f3b5c        color de THEME=monochrome
+             LABEL_LANG=es       idioma de los nombres (es, gl, en…; local)
+             OUT=out/map.svg     fichero de salida
+             PDF=1               también un PDF del tamaño del papel
+             PBF=data/pbf/x.osm.pbf   datos de un extracto local, no de Overpass
+           superponer otra zona encima (mismo papel, otro zoom):
+             TL2=lat,lon BR2=lat,lon [LAYERS2=…] [THEME2=…] [TINT2=…] [OPACITY2=0.7]
+  pbf      bajar un extracto:  make pbf URL=https://download.geofabrik.de/…-latest.osm.pbf
+  list     capas, papeles y temas
+
+  check    lint + tests (lo que hay que pasar)
+  test, lint, fmt
+  docker   reconstruir la imagen (al cambiar el Dockerfile o los requirements)
+  shell    una shell dentro de la imagen
+  clean-cache, clean-out   borrar data/cache/ u out/
+
+Ejemplo:
+  make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 THEME=bw PDF=1 OUT=out/santiago.svg
+
+Más: docs/uso.md
+endef
+export HELP
+
+help:
+	echo "$$HELP"
 
 # Todo corre dentro de Docker: en el host solo hacen falta make y docker. Ver
 # ADR 0001. El repo se monta en /src y el contenedor corre con el uid:gid de
@@ -10,7 +54,10 @@ IMAGE := vector-maps:dev
 export HOST_UID := $(shell id -u)
 export HOST_GID := $(shell id -g)
 
-DOCKER_RUN = docker run --rm \
+# Con terminal, el contenedor también la tiene: así el spinner de Python se dibuja.
+TTY := $(shell [ -t 2 ] && echo -t)
+
+DOCKER_RUN = docker run --rm $(TTY) \
 	-u $(HOST_UID):$(HOST_GID) \
 	-e HOME=/tmp \
 	-e OVERPASS_URL \
@@ -21,10 +68,11 @@ DOCKER_RUN = docker run --rm \
 # La imagen se construye sola la primera vez; `make docker` la reconstruye
 # (al cambiar el Dockerfile o los requirements).
 docker:
-	docker build -t $(IMAGE) .
+	scripts/with-spinner.sh "Construyendo la imagen $(IMAGE)" docker build -t $(IMAGE) .
 
 .image:
-	docker image inspect $(IMAGE) >/dev/null 2>&1 || docker build -t $(IMAGE) .
+	docker image inspect $(IMAGE) >/dev/null 2>&1 || \
+		scripts/with-spinner.sh "Construyendo la imagen $(IMAGE) (solo la primera vez, tarda unos minutos)" docker build -t $(IMAGE) .
 
 # Crea ./data y ./out como el usuario del host: si no los crearía Docker al
 # montar, como root, y el contenedor no podría escribir.
@@ -57,12 +105,17 @@ list: .image
 
 # make map TL=lat,lon BR=lat,lon [PAPER=A4] [THEME=color|bw] [LAYERS=water,roads]
 #          [ORIENTATION=auto|landscape|portrait] [MARGIN=10] [OUT=out/map.svg]
+#          [LABEL_LANG=es]   (idioma de los nombres: es, gl, en… o varios: gl,es)
+#          [PDF=1]           (además del SVG, un PDF del tamaño del papel al lado)
+#          [THEME=monochrome TINT=#1f3b5c]   (el bw tintado de un color; # opcional)
 # Datos: por defecto Overpass; con PBF=ruta.osm.pbf, desde un extracto local.
 # Y, para superponer una segunda área encima (mismo papel, otro zoom):
-#          [TL2=lat,lon BR2=lat,lon] [LAYERS2=…] [THEME2=…] [OPACITY2=0.6]
+#          [TL2=lat,lon BR2=lat,lon] [LAYERS2=…] [THEME2=…] [TINT2=…] [OPACITY2=0.6]
 # Se pasa con `--tl=` (con el igual) para que una latitud negativa no se lea como flag.
 map: .image data-dir
 	test -n "$(TL)" -a -n "$(BR)" || { echo "faltan TL y BR: make map TL=lat,lon BR=lat,lon" >&2; exit 1; }
+	# PDF y PBF se confunden al teclear: PDF solo admite 1.
+	test -z "$(PDF)" -o "$(PDF)" = 1 || { echo "PDF=1 añade el PDF; para un extracto local es PBF=$(PDF)" >&2; exit 1; }
 	$(DOCKER_RUN) python -m vectormaps map \
 		--tl="$(TL)" --br="$(BR)" \
 		$(if $(PAPER),--paper $(PAPER)) \
@@ -70,11 +123,15 @@ map: .image data-dir
 		$(if $(MARGIN),--margin $(MARGIN)) \
 		$(if $(LAYERS),--layers $(LAYERS)) \
 		$(if $(THEME),--theme $(THEME)) \
+		$(if $(TINT),--tint="$(TINT)") \
+		$(if $(LABEL_LANG),--lang $(LABEL_LANG)) \
 		$(if $(OUT),--out $(OUT)) \
+		$(if $(PDF),--pdf) \
 		$(if $(PBF),--pbf $(PBF)) \
 		$(if $(TL2),--over-tl="$(TL2)") $(if $(BR2),--over-br="$(BR2)") \
 		$(if $(LAYERS2),--over-layers $(LAYERS2)) \
 		$(if $(THEME2),--over-theme $(THEME2)) \
+		$(if $(TINT2),--over-tint="$(TINT2)") \
 		$(if $(OPACITY2),--over-opacity $(OPACITY2))
 
 # make pbf URL=https://download.geofabrik.de/europe/spain/galicia-latest.osm.pbf

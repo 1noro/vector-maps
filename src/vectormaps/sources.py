@@ -6,6 +6,7 @@ rest of the program does not care which one was used.
 
 import hashlib
 import logging
+import re
 import subprocess
 from pathlib import Path
 from typing import Protocol
@@ -21,7 +22,40 @@ Bounds = tuple[float, float, float, float]  # south, west, north, east
 Feature = tuple[str, dict[str, str], BaseGeometry]
 
 
+def header_box(pbf: Path) -> tuple[float, float, float, float] | None:
+    """(west, south, east, north) from the PBF header (Geofabrik and osmium write one)."""
+    done = subprocess.run(
+        ["osmium", "fileinfo", "-g", "header.boxes", str(pbf)],
+        capture_output=True,
+        text=True,
+    )
+    nums = re.findall(r"-?\d+(?:\.\d+)?", done.stdout) if done.returncode == 0 else []
+    if len(nums) < 4:
+        return None
+    w, s, e, n = (float(v) for v in nums[:4])
+    return w, s, e, n
+
+
+def local_pbf_for(areas: list[Bounds], pbf_dir: Path) -> Path | None:
+    """The smallest .osm.pbf in `pbf_dir` whose header box holds every one of the areas."""
+    best: tuple[float, Path] | None = None
+    for pbf in sorted(pbf_dir.glob("*.osm.pbf")):
+        cover = header_box(pbf)
+        if cover is None:
+            continue
+        cw, cs, ce, cn = cover
+        if all(cw <= w and cs <= s and ce >= e and cn >= n for s, w, n, e in areas):
+            size = (ce - cw) * (cn - cs)
+            if best is None or size < best[0]:
+                best = size, pbf
+    return best[1] if best else None
+
+
 class Source(Protocol):
+    def check(self, bounds: Bounds) -> None:
+        """Raise ValueError if this source cannot have data for the area."""
+        ...
+
     def features(self, layer: Layer, bounds: Bounds) -> list[Feature]: ...
 
 
@@ -32,9 +66,12 @@ class OverpassSource:
         self.cache_dir = cache_dir / "overpass"
         self.url = url
 
+    def check(self, bounds: Bounds) -> None:
+        pass  # Overpass covers the planet
+
     def features(self, layer: Layer, bounds: Bounds) -> list[Feature]:
         osm = overpass.fetch(layer.overpass_query(bounds), self.cache_dir, self.url)
-        geojson = osmexport.export(osm, osm.with_suffix(".geojsonseq"))
+        geojson = osmexport.export(osm, osmexport.exported_name(osm))
         return list(osmexport.read_features(geojson))
 
 
@@ -51,10 +88,31 @@ class PbfSource:
         self.pbf = pbf
         self.cache_dir = cache_dir / "pbf"
         self._memo: dict[Bounds, list[Feature]] = {}
+        self.coverage = header_box(pbf)  # (west, south, east, north), if the file says
+
+    def check(self, bounds: Bounds) -> None:
+        if self.coverage is None:
+            return  # no box in the header: the pipeline warns if nothing comes out
+        s, w, n, e = bounds
+        cw, cs, ce, cn = self.coverage
+        inside = max(0.0, min(e, ce) - max(w, cw)) * max(0.0, min(n, cn) - max(s, cs))
+        share = inside / ((e - w) * (n - s))
+        if share == 0:
+            raise ValueError(
+                f"the area is outside {self.pbf.name}, which covers latitudes {cs:.2f} to "
+                f"{cn:.2f} and longitudes {cw:.2f} to {ce:.2f}. Download an extract that "
+                "includes it: make pbf URL=<…-latest.osm.pbf> (list: https://download.geofabrik.de/)"
+            )
+        if share < 0.98:
+            log.warning(
+                "only %.0f%% of the area is inside %s; the rest will be empty",
+                share * 100,
+                self.pbf.name,
+            )
 
     def _key(self, bounds: Bounds) -> str:
         stat = self.pbf.stat()
-        raw = f"{self.pbf.resolve()}|{stat.st_mtime_ns}|{stat.st_size}|{bounds}"
+        raw = f"{self.pbf.resolve()}|{stat.st_mtime_ns}|{stat.st_size}|{bounds}|{osmexport.VERSION}"
         return hashlib.sha1(raw.encode()).hexdigest()[:16]
 
     def _all(self, bounds: Bounds) -> list[Feature]:
