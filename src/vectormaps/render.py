@@ -225,7 +225,10 @@ def legend_lines(jobs: list[Job], legend: str = "full") -> tuple[str, ...]:
     if legend not in LEGENDS:
         raise ValueError(f"unknown legend {legend!r}; use {', '.join(LEGENDS)}")
     f = jobs[0].frame
-    scales = " + ".join(f"{j.label.upper()} 1:{j.frame.scale}" for j in jobs)
+    # The zone letter only tells them apart when there are several.
+    scales = " + ".join(
+        f"{j.label.upper() + ' ' if len(jobs) > 1 else ''}1:{j.frame.scale}" for j in jobs
+    )
     zones = []
     for j in jobs:
         tl, br = j.frame.corners()

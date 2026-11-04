@@ -128,7 +128,7 @@ def test_minimal_legend_keeps_the_corners_the_scale_the_credit_and_the_mark():
     texts = [t.text for t in root.findall(".//svg:g[@id='legend']/svg:text", NS)]
     tl, br = job.frame.corners()
     corners = f"↖ {tl[0]:.5f}, {tl[1]:.5f} · ↘ {br[0]:.5f}, {br[1]:.5f}"
-    assert texts == [f"{corners} · A 1:{job.frame.scale} · © OpenStreetMap", MARK]
+    assert texts == [f"{corners} · 1:{job.frame.scale} · © OpenStreetMap", MARK]
     with pytest.raises(ValueError, match="unknown legend"):
         render([job], "none")
 

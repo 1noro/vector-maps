@@ -87,3 +87,18 @@ en Portugal y daría Europa entera.
 Que la pista use Geofabrik no cambia lo decidido arriba: los datos siguen
 saliendo de Overpass o de un PBF, y si el índice no se puede bajar, el error de
 Overpass sale igual, solo con una pista menos precisa.
+
+## Añadido del 04/11/2026: si Overpass falla y ya hay un extracto, se usa
+
+Cuando Overpass falla (tras las esperas y los 3 intentos de siempre, nunca al
+primer 5xx) y **algún `.osm.pbf` de `data/pbf/` cubre todas las zonas** (por la
+caja de su cabecera, el más pequeño), `make map` sigue solo con él y lo avisa en
+el log (`Overpass failed (…); using the local extract …`). Antes solo lo
+sugería. Los datos que Overpass ya había dejado en la caché no se pierden.
+
+- **No se baja nada por iniciativa propia**: un extracto pesa cientos de MB. Si
+  no hay ninguno que sirva, sale el error de Overpass con la pista de Geofabrik,
+  como antes.
+- Si se pasó `PBF=`, no hay fallback: ya es la fuente elegida.
+- Los datos del extracto pueden tener otra fecha que los de Overpass; por eso el
+  aviso es un `WARNING`, no un `INFO`.

@@ -23,14 +23,17 @@ make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 THEME=bw OUT=out/santiago.svg PDF
 ```
 
 `TL` es la esquina de arriba a la izquierda y `BR` la de abajo a la derecha,
-ambas `LAT,LON`. Quedan en `./out/` el SVG y, por `PDF=1`, un PDF del tamaño
+ambas `LAT,LON`. El área también se da por centro y radio en km
+(`CENTER=42.88,-8.54 RADIUS=2`), y `SHAPE=circle` (o `square`) imprime el mapa
+como un círculo (o cuadrado) centrado en la hoja, en vez de llenarla. Quedan en `./out/` el SVG y, por `PDF=1`, un PDF del tamaño
 del papel (`santiago.pdf`), los dos con tu usuario (no de root). Sin `PDF=1`,
 solo el SVG. `THEME=monochrome TINT=#7a2e1f` lo deja en tonos de un solo color,
 `INCLUDE_LAYERS=street-names,places` le añade los nombres e
 `INCLUDE_LAYERS=hillshade,contours` el relieve (ninguno de los dos sale por defecto).
 
 El servidor público de Overpass se cae con frecuencia. Para no depender de él,
-baja un extracto una vez y úsalo siempre:
+baja un extracto una vez y úsalo siempre (si Overpass falla y ya tienes uno que
+cubre la zona en `data/pbf/`, se usa solo, con un aviso):
 
 ```bash
 make pbf URL=https://download.geofabrik.de/europe/spain/galicia-latest.osm.pbf
@@ -43,7 +46,7 @@ No hace falta ninguna cuenta ni clave.
 
 ```mermaid
 flowchart LR
-    A["dos esquinas<br/>+ papel A0–A5"] --> F["Frame<br/>UTM, escala real,<br/>forma del papel"]
+    A["dos esquinas o centro+radio<br/>+ papel A0–A5"] --> F["Frame<br/>UTM, escala real,<br/>forma del papel"]
     O["Overpass<br/>(caché)"] --> E
     P["PBF local<br/>osmium extract"] --> E
     E["osmium export<br/>GeoJSON-seq"] --> L["capas<br/>agua · verde · edificios<br/>ferrocarril · calles"]
@@ -53,8 +56,9 @@ flowchart LR
     R --> S[("out/*.svg")]
 ```
 
-1. **El área.** Dos esquinas y un papel. La zona se amplía (nunca se recorta)
-   hasta tener la forma exacta del papel, y la escala sale en metros reales
+1. **El área.** Dos esquinas (o un centro y un radio) y un papel. La zona se
+   amplía (nunca se recorta) hasta tener la forma exacta del papel, o de un
+   cuadrado o círculo centrado (`SHAPE`), y la escala sale en metros reales
    (1:N). ADR 0003.
 2. **Los datos.** De Overpass (con caché) o de un PBF local; `osmium`
    ensambla las geometrías. ADR 0002.

@@ -23,6 +23,9 @@ zoom, pero sí la misma forma (cuadrado, rectángulo, A4…).
   prefijo `a-`/`b-`), dibujadas en ese orden; la página y el marco, una sola vez
   (con el fondo y la tinta del tema de la base).
 - La atribución lista la escala de cada zona (`A 1:4120 + B 1:888`).
+- Desde el 04/11/2026 la zona de encima también puede darse por centro y radio
+  (`--over-center`/`--over-radius`) y comparte la forma de la hoja (`--shape`,
+  ADR 0003): las dos zonas son cuadrados o círculos del mismo tamaño en el papel.
 
 ## Razones
 

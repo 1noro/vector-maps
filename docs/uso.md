@@ -7,9 +7,12 @@ La primera vez, `make` construye la imagen sola; `make docker` la reconstruye.
 ## `make map`
 
 ```bash
-make map TL=lat,lon BR=lat,lon [PAPER=A4]   # o: CENTER=lat,lon RADIUS=km [ORIENTATION=auto] [SHAPE=rect] [MARGIN=10] \
+make map TL=lat,lon BR=lat,lon [PAPER=A4] [SHAPE=rect] [ORIENTATION=auto] [MARGIN=10] \
          [LAYERS=water,roads] [INCLUDE_LAYERS=places] [EXCLUDE_LAYERS=railways] [THEME=color] [TINT=#1f3b5c] [LABEL_LANG=es] [PBF=ruta] \
          [OUT=out/map.svg] [PDF=1] [LEGEND=minimal]
+
+# o el área por centro y radio (km), en vez de TL y BR:
+make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
 ```
 
 | Variable | Defecto | Qué hace |
@@ -131,7 +134,7 @@ Con `LEGEND=minimal` el pie se queda en una sola línea, sin el papel ni la
 orientación:
 
 ```
-↖ 43.29888, -8.32043 · ↘ 43.27792, -8.27935 · A 1:12102 · © OpenStreetMap
+↖ 43.29888, -8.32043 · ↘ 43.27792, -8.27935 · 1:12102 · © OpenStreetMap
 ```
 
 y la marca arriba. `© OpenStreetMap` no se puede quitar: la licencia de los
@@ -139,12 +142,13 @@ datos (ODbL) pide que el mapa lo diga (ADR 0004).
 
 ## Superponer dos zonas
 
-Añade `TL2` y `BR2` (van juntas): una segunda zona sobre la primera, en la
-**misma hoja** (mismo papel, orientación y margen) y **con su propia escala**.
+Añade `TL2` y `BR2` (van juntas; o `CENTER2` y `RADIUS2`): una segunda zona sobre la primera, en la
+**misma hoja** (mismo papel, orientación, margen y `SHAPE`) y **con su propia escala**.
 
 | Variable | Defecto | Qué hace |
 |---|---|---|
 | `TL2`, `BR2` | — | Esquinas de la zona de encima |
+| `CENTER2`, `RADIUS2` | — | O su centro y su radio (km), en vez de las esquinas |
 | `LAYERS2` | las de la zona de abajo | Capas de la zona de encima |
 | `THEME2` | el de `THEME` | Tema de la zona de encima |
 | `TINT2` | el de `TINT` | Color, si la zona de encima es `monochrome` |
@@ -165,9 +169,11 @@ En el SVG hay un grupo `area-a` y otro `area-b`; abre el fichero en Inkscape
 - **Overpass** (por defecto): una consulta por capa y zona, cacheada en
   `data/cache/overpass/`. El servidor público limita y **se cae a veces**; el
   programa espera y reintenta hasta 3 veces, y lo ya descargado no se repite.
-  Otro servidor: `OVERPASS_URL=https://… make map …`. **Si acaba fallando, el
-  error dice cómo seguir en local**: si ya tienes un PBF que cubre el área, que
-  repitas el mismo `make map` con `PBF=` ese fichero; si no, qué extracto de
+  Otro servidor: `OVERPASS_URL=https://… make map …`. **Si acaba fallando**:
+  si ya tienes en `data/pbf/` un PBF que cubre el área (todas las zonas), `make
+  map` **sigue solo con él** y lo avisa (`Overpass failed (…); using the local
+  extract …`); ojo, sus datos pueden ser de otra fecha. Nunca baja un extracto
+  por su cuenta. Si no hay ninguno que sirva, el error dice qué extracto de
   Geofabrik bajar, con el comando:
 
   ```

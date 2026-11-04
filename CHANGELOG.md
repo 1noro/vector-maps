@@ -18,6 +18,9 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Añadido
 
+- **Fallback a un PBF local**: si Overpass falla y un extracto de `data/pbf/` ya
+  cubre el área, `make map` sigue con él y lo avisa (ADR 0002). No descarga
+  nada solo.
 - **Forma del mapa en la hoja**: `SHAPE=rect|square|circle` (`--shape`), aparte del
   papel. `square` y `circle` son una caja cuadrada centrada del lado corto de la
   hoja; el círculo se recorta con un `clipPath` por zona y lleva un borde fino
@@ -74,6 +77,10 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Cambiado
 
+- La leyenda escribe las esquinas con `↖` y `↘` (antes `TL` y `BR`) y, con una
+  sola zona, la escala va sin la letra (`1:4120`, no `A 1:4120`; ADR 0004).
+- `ORIENTATION=auto` elige apaisado cuando el área es casi cuadrada (±5 %).
+- `make help` recoge `CENTER`/`RADIUS`, `SHAPE` y `CENTER2`/`RADIUS2`.
 - `make` ya no muestra los comandos que ejecuta (`.SILENT`): el log lleva solo lo
   que dicen los programas.
 - `osmium export` saca también puntos; los ficheros exportados en caché llevan la

@@ -23,7 +23,7 @@ elegancia.** Todo corre en Docker; en el host solo hacen falta `make` y
 | Módulo (`src/vectormaps/`) | Qué hace |
 |---|---|
 | `paper.py` | los tamaños ISO A0–A5 |
-| `area.py` | dos esquinas + papel → `Frame` (UTM, escala, forma del papel) |
+| `area.py` | dos esquinas (o centro + radio) + papel + forma → `Frame` (UTM, escala) |
 | `layers.py` | las capas: qué etiquetas de OSM entran en cada una y la consulta Overpass |
 | `labels.py` | el idioma de los nombres y dónde se escribe el de cada calle |
 | `sources.py` | de dónde salen los datos: `OverpassSource` o `PbfSource` |
@@ -45,10 +45,13 @@ tocar código.
 1. **Python, y todo dentro de Docker** (ADR 0001). Nada que dependa de una
    librería del host; nada de `pip install` fuera de la imagen.
 2. **Los datos, de Overpass con caché o de un PBF local con osmium** (ADR 0002).
-   Ambas fuentes entregan lo mismo y el resto del programa no distingue.
+   Ambas fuentes entregan lo mismo y el resto del programa no distingue. Si
+   Overpass falla y un PBF de `data/pbf/` cubre el área, se usa solo, con aviso;
+   **nunca se descarga un extracto sin que el usuario lo pida**.
    **Sin cuentas ni claves**; si algún servicio las exigiera, se consulta antes.
-3. **El área son dos esquinas y un papel ISO A; la zona crece, nunca se
-   recorta** (ADR 0003). Escala real en una proyección UTM local.
+3. **El área son dos esquinas (o un centro y un radio) y un papel ISO A; la
+   zona crece, nunca se recorta** (ADR 0003), también con `SHAPE=square|circle`
+   (el círculo es el circunscrito). Escala real en una proyección UTM local.
 4. **El SVG va en mm, con un grupo de Inkscape por zona y por capa, y el estilo
    como atributos de presentación sacados de un tema TOML** (ADR 0004). No CSS
    externo: se pierde al abrirlo en otros programas.
@@ -107,6 +110,8 @@ make map … PDF=1                                                # también el 
 make map … LEGEND=minimal                                       # leyenda corta (con © OSM)
 make map … INCLUDE_LAYERS=hillshade,contours | EXCLUDE_LAYERS=railways # añadir | quitar capas
 make map … LABEL_LANG=gl                                         # idioma de los nombres (es por defecto)
+make map CENTER=lat,lon RADIUS=km                               # el área por centro y radio
+make map … SHAPE=circle                                         # rect (defecto), square o circle
 make map … TL2=lat,lon BR2=lat,lon [THEME2=bw] [OPACITY2=0.7]   # superponer otra zona
 make map … PBF=data/pbf/galicia-latest.osm.pbf                  # datos locales
 make pbf URL=https://download.geofabrik.de/…-latest.osm.pbf     # bajar un extracto

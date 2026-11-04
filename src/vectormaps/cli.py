@@ -121,11 +121,8 @@ def _describe(label: str, frame: Frame) -> str:
 
 
 def offline_hint(areas: list[Bounds], cache: Path) -> str:
-    """What to do when Overpass fails: the same map from a local extract."""
+    """What to do when Overpass fails and no local extract covers the area."""
     again = "repeat the same `make map` adding"
-    local = local_pbf_for(areas, PBF_DIR)
-    if local is not None:
-        return f"hint: {local} already covers this area; {again} PBF={local}"
     with Spinner("looking for an extract of this area on Geofabrik"):
         region = geofabrik.region_for(areas, cache)
     if region is not None:
@@ -171,6 +168,15 @@ def _corners(
     return parse_corner(tl), parse_corner(br), None
 
 
+def _load_jobs(specs: list, source: Source, langs: list[str], cache: Path) -> list[Job]:
+    jobs = []
+    for label, frame, lyrs, theme, opacity in specs:
+        log.info(_describe(label.upper(), frame))
+        feats = load_features(frame, lyrs, source, langs, cache)
+        jobs.append(Job(label, frame, theme, lyrs, feats, opacity))
+    return jobs
+
+
 def _map(a: argparse.Namespace) -> int:
     over = bool(a.over_tl or a.over_br or a.over_center or a.over_radius is not None)
     if not 0 <= a.over_opacity <= 1:
@@ -202,14 +208,19 @@ def _map(a: argparse.Namespace) -> int:
     boxes = [frame.lonlat_bounds() for _, frame, *_rest in specs]
     for bounds in boxes:  # fail before downloading anything
         source.check(bounds)
-    jobs = []
     try:
-        for label, frame, lyrs, theme, opacity in specs:
-            log.info(_describe(label.upper(), frame))
-            feats = load_features(frame, lyrs, source, langs, a.cache)
-            jobs.append(Job(label, frame, theme, lyrs, feats, opacity))
+        jobs = _load_jobs(specs, source, langs, a.cache)
     except OverpassError as err:
-        raise OverpassError(f"{err}\n{offline_hint(boxes, a.cache)}") from err
+        # Overpass has already waited and retried (ADR 0002). If an extract we already have
+        # covers every area, carry on with it and say so; never download one unasked.
+        local = None if a.pbf else local_pbf_for(boxes, PBF_DIR)
+        if local is None:
+            raise OverpassError(f"{err}\n{offline_hint(boxes, a.cache)}") from err
+        log.warning("Overpass failed (%s); using the local extract %s instead", err, local)
+        source = PbfSource(local, a.cache)
+        for bounds in boxes:
+            source.check(bounds)
+        jobs = _load_jobs(specs, source, langs, a.cache)
 
     with Spinner("drawing the SVG"):
         svg = render(jobs, a.legend)

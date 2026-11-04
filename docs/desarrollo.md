@@ -9,13 +9,14 @@ Cómo se relaciona con el resto de la documentación:
 - **Cómo se usa**, en [`uso.md`](uso.md).
 - **Lo que cambia entre versiones**, en [`../CHANGELOG.md`](../CHANGELOG.md).
 
-## Estado (03/11/2026)
+## Estado (04/11/2026)
 
-Primera versión, 0.1.0 sin publicar: de dos esquinas a un SVG por capas, en
+Primera versión, 0.1.0 sin publicar: de dos esquinas (o un centro y un radio) a un SVG por capas, en
 color y en blanco y negro, con nombres de calles y lugares en el idioma elegido,
 con Overpass o un PBF local, con la superposición de dos zonas, relieve opcional
-(curvas y sombreado, ADR 0008) y PDF. 100 tests, sin
-red.
+(curvas y sombreado, ADR 0008), PDF, mapa en rectángulo, cuadrado o círculo
+(ADR 0003) y fallback automático a un PBF local si Overpass falla (ADR 0002).
+130 tests, sin red.
 
 Medido el 03/11, con el extracto de Galicia (112 MB) y Santiago de Compostela:
 

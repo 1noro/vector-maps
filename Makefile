@@ -14,7 +14,10 @@ vector-maps: mapas de OpenStreetMap en SVG por capas, para imprimir.
 Uso: make <objetivo> [VARIABLE=valor …]
 
   map      un mapa:  make map TL=lat,lon BR=lat,lon [opciones]
+           o por centro y radio:  make map CENTER=lat,lon RADIUS=km [opciones]
+             (el círculo de ese radio se ve siempre entero; no se mezcla con TL/BR)
              PAPER=A4            A0…A5
+             SHAPE=rect          cómo se imprime en el papel: rect, square, circle
              ORIENTATION=auto    auto, landscape, portrait
              MARGIN=10           mm (mínimo 6)
              LAYERS=a,b          capas (sin relieve ni nombres por defecto; make list)
@@ -27,8 +30,11 @@ Uso: make <objetivo> [VARIABLE=valor …]
              PDF=1               también un PDF del tamaño del papel
              LEGEND=minimal      leyenda corta: esquinas, escala, © OpenStreetMap y marca
              PBF=data/pbf/x.osm.pbf   datos de un extracto local, no de Overpass
+                                 (sin PBF, si Overpass falla y un extracto de data/pbf/
+                                 cubre el área, se usa solo, con aviso)
            superponer otra zona encima (mismo papel, otro zoom):
-             TL2=lat,lon BR2=lat,lon [LAYERS2=…] [INCLUDE_LAYERS2=…]
+             TL2=lat,lon BR2=lat,lon (o CENTER2=lat,lon RADIUS2=km)
+             [LAYERS2=…] [INCLUDE_LAYERS2=…]
              [EXCLUDE_LAYERS2=…] [THEME2=…] [TINT2=…] [OPACITY2=0.7]
            nombres y relieve no salen por defecto; se añaden con INCLUDE_LAYERS:
              INCLUDE_LAYERS=street-names,places        nombres de calles y lugares

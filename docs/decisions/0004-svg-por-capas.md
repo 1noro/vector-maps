@@ -40,6 +40,13 @@ editores para retocarlo.
   (puentes, túneles), son clases nuevas en la capa (TODO 3).
 - Los polígonos usan `fill-rule="evenodd"` para los agujeros (islas, patios).
 
+## Añadido del 04/11/2026: la leyenda, sin letra con una sola zona
+
+Las esquinas se escriben `↖` (arriba-izquierda) y `↘` (abajo-derecha), no `TL`
+y `BR`. La letra de la zona (`A`) solo aparece en la leyenda cuando hay más de
+una (`A 1:4120 + B 1:888`); con una sola zona, `1:4120`. Con un mapa circular
+(ADR 0003) las esquinas son las de la caja cuadrada del mapa.
+
 ## Añadido del 03/11/2026: la leyenda
 
 El pie del mapa pasa a ser una **leyenda** (capa `legend` en el SVG), en dos
