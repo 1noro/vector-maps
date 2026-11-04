@@ -1,0 +1,196 @@
+# Vintage theme, an old printed map: aged paper, sepia ink, muted sea-green
+# water, olive parks and serif lettering. Goes well with the relief
+# (INCLUDE_LAYERS=hillshade,contours). Lengths in mm; `casing-width` (mm on each
+# side) and `casing-color` draw an outline under a line.
+
+[page]
+background = "#efe3c8"
+ink = "#4a3524"
+frame-width = 0.4
+
+[layers.water.water]
+fill = "#b4c7bb"
+stroke = "none"
+
+[layers.water.stream]
+fill = "none"
+stroke = "#8fae9f"
+stroke-width = 0.25
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.water.canal]
+fill = "none"
+stroke = "#8fae9f"
+stroke-width = 0.5
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.water.river]
+fill = "none"
+stroke = "#8fae9f"
+stroke-width = 0.9
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.green.green]
+fill = "#d8d3a4"
+stroke = "none"
+
+[layers.buildings.building]
+fill = "#dcc7a0"
+stroke = "#a8865a"
+stroke-width = 0.08
+
+[layers.railways.rail]
+fill = "none"
+stroke = "#4a3524"
+stroke-width = 0.3
+stroke-linecap = "butt"
+stroke-linejoin = "round"
+stroke-dasharray = "1.2 0.8"
+
+[layers.railways.tram]
+fill = "none"
+stroke = "#6b5238"
+stroke-width = 0.18
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.path]
+fill = "none"
+stroke = "#8a6a45"
+stroke-width = 0.14
+stroke-linecap = "round"
+stroke-linejoin = "round"
+stroke-dasharray = "0.6 0.4"
+
+[layers.roads.service]
+fill = "none"
+stroke = "#f7eedb"
+stroke-width = 0.3
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.06
+casing-color = "#a08060"
+
+[layers.roads.minor]
+fill = "none"
+stroke = "#f7eedb"
+stroke-width = 0.5
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.07
+casing-color = "#8a6a45"
+
+[layers.roads.secondary]
+fill = "none"
+stroke = "#f3e2bd"
+stroke-width = 0.75
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.09
+casing-color = "#7a5a38"
+
+[layers.roads.major]
+fill = "none"
+stroke = "#e2b97c"
+stroke-width = 1
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.11
+casing-color = "#6b4728"
+
+# Labels. font-size is in mm on paper; the stroke behind the letters is a halo.
+
+[layers.street-names.minor]
+font-family = "DejaVu Serif, Georgia, serif"
+font-size = 1.5
+font-style = "italic"
+fill = "#5a4330"
+stroke = "#efe3c8"
+stroke-width = 0.45
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.secondary]
+font-family = "DejaVu Serif, Georgia, serif"
+font-size = 1.8
+font-style = "italic"
+fill = "#4a3524"
+stroke = "#efe3c8"
+stroke-width = 0.5
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.major]
+font-family = "DejaVu Serif, Georgia, serif"
+font-size = 2.1
+fill = "#3a2818"
+stroke = "#efe3c8"
+stroke-width = 0.55
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.places.suburb]
+font-family = "DejaVu Serif, Georgia, serif"
+font-size = 2.4
+font-style = "italic"
+fill = "#5a4330"
+stroke = "#efe3c8"
+stroke-width = 0.6
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.village]
+font-family = "DejaVu Serif, Georgia, serif"
+font-size = 3
+fill = "#4a3524"
+stroke = "#efe3c8"
+stroke-width = 0.7
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.town]
+font-family = "DejaVu Serif, Georgia, serif"
+font-size = 3.8
+font-weight = "bold"
+fill = "#3a2818"
+stroke = "#efe3c8"
+stroke-width = 0.8
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.city]
+font-family = "DejaVu Serif, Georgia, serif"
+font-size = 5
+font-weight = "bold"
+letter-spacing = 0.4
+fill = "#2e1f12"
+stroke = "#efe3c8"
+stroke-width = 1
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+# Relief (only with INCLUDE_LAYERS=hillshade,contours). The shade is a picture:
+# `shadow` and `highlight` are its colours, not SVG attributes; flat ground stays clear.
+
+[layers.hillshade.shade]
+shadow = "#4a3524"
+highlight = "#fff6e0"
+opacity = 0.45
+
+[layers.contours.minor]
+fill = "none"
+stroke = "#b08a5a"
+stroke-width = 0.08
+stroke-opacity = 0.8
+
+[layers.contours.major]
+fill = "none"
+stroke = "#8a6a45"
+stroke-width = 0.16

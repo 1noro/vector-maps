@@ -21,6 +21,10 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 - **Tema `street`** (`THEME=street`), a la manera de los callejeros web: suelo
   gris claro, agua azul cielo, verde suave, calles blancas con contorno gris y las
   principales amarillas con contorno ocre.
+- **Cuatro temas más**: `dark` (mapa de noche, azul marino y ámbar), `blueprint`
+  (plano de arquitecto, líneas blancas sobre azul y calles en doble línea),
+  `vintage` (mapa antiguo, sepia y serifa) y `poster` (la ciudad en líneas negras
+  sobre blanco, para enmarcar). Solo `.toml`: sin cambios de código.
 - **Contorno de las calles** (TODO 2): una clase de línea del tema puede llevar
   `casing-width` (mm a cada lado) y `casing-color`, y se dibuja debajo la misma
   línea más ancha (`a-roads-minor-casing`); los contornos de la capa van debajo

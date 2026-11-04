@@ -1,0 +1,199 @@
+# Blueprint theme, an architect's plan: white lines on blue. Buildings are
+# outlines only and streets are double lines: the ground's colour drawn over a
+# white casing, so crossings merge on their own. Lengths in mm; `casing-width`
+# (mm on each side) and `casing-color` draw an outline under a line.
+# A lot of ink: for screens and print shops.
+
+[page]
+background = "#1d4e89"
+ink = "#ffffff"
+frame-width = 0.3
+
+[layers.water.water]
+fill = "#2b64a6"
+stroke = "none"
+
+[layers.water.stream]
+fill = "none"
+stroke = "#4f86c6"
+stroke-width = 0.25
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.water.canal]
+fill = "none"
+stroke = "#4f86c6"
+stroke-width = 0.5
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.water.river]
+fill = "none"
+stroke = "#4f86c6"
+stroke-width = 0.9
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.green.green]
+fill = "#21579a"
+stroke = "#4f86c6"
+stroke-width = 0.08
+stroke-dasharray = "0.5 0.5"
+
+[layers.buildings.building]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.1
+stroke-opacity = 0.85
+
+[layers.railways.rail]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.25
+stroke-linecap = "round"
+stroke-linejoin = "round"
+stroke-dasharray = "1.4 0.6 0.2 0.6"
+
+[layers.railways.tram]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.15
+stroke-linecap = "round"
+stroke-linejoin = "round"
+stroke-dasharray = "0.6 0.6"
+
+[layers.roads.path]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.12
+stroke-linecap = "round"
+stroke-linejoin = "round"
+stroke-dasharray = "0.5 0.4"
+stroke-opacity = 0.7
+
+[layers.roads.service]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.15
+stroke-linecap = "round"
+stroke-linejoin = "round"
+stroke-opacity = 0.85
+
+[layers.roads.minor]
+fill = "none"
+stroke = "#1d4e89"
+stroke-width = 0.5
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.08
+casing-color = "#ffffff"
+
+[layers.roads.secondary]
+fill = "none"
+stroke = "#1d4e89"
+stroke-width = 0.8
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.1
+casing-color = "#ffffff"
+
+[layers.roads.major]
+fill = "none"
+stroke = "#1d4e89"
+stroke-width = 1.1
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.13
+casing-color = "#ffffff"
+
+# Labels. font-size is in mm on paper; the stroke behind the letters is a halo.
+
+[layers.street-names.minor]
+font-family = "DejaVu Sans Mono, monospace"
+font-size = 1.4
+fill = "#ffffff"
+stroke = "#1d4e89"
+stroke-width = 0.4
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.secondary]
+font-family = "DejaVu Sans Mono, monospace"
+font-size = 1.7
+fill = "#ffffff"
+stroke = "#1d4e89"
+stroke-width = 0.45
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.major]
+font-family = "DejaVu Sans Mono, monospace"
+font-size = 2
+font-weight = "bold"
+fill = "#ffffff"
+stroke = "#1d4e89"
+stroke-width = 0.5
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.places.suburb]
+font-family = "DejaVu Sans Mono, monospace"
+font-size = 2.3
+fill = "#ffffff"
+stroke = "#1d4e89"
+stroke-width = 0.6
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.village]
+font-family = "DejaVu Sans Mono, monospace"
+font-size = 2.9
+fill = "#ffffff"
+stroke = "#1d4e89"
+stroke-width = 0.7
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.town]
+font-family = "DejaVu Sans Mono, monospace"
+font-size = 3.6
+font-weight = "bold"
+fill = "#ffffff"
+stroke = "#1d4e89"
+stroke-width = 0.8
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.city]
+font-family = "DejaVu Sans Mono, monospace"
+font-size = 4.8
+font-weight = "bold"
+fill = "#ffffff"
+stroke = "#1d4e89"
+stroke-width = 1
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+# Relief (only with INCLUDE_LAYERS=hillshade,contours). The shade is a picture:
+# `shadow` and `highlight` are its colours, not SVG attributes; flat ground stays clear.
+
+[layers.hillshade.shade]
+shadow = "#0b2547"
+highlight = "#6fa0dc"
+opacity = 0.4
+
+[layers.contours.minor]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.06
+stroke-opacity = 0.35
+
+[layers.contours.major]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.12
+stroke-opacity = 0.6

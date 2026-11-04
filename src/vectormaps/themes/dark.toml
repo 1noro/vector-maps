@@ -1,0 +1,194 @@
+# Dark theme, a night map: deep navy ground, near-black water, dim green, slate
+# buildings, grey streets with a dark outline and amber main roads. Made for
+# screens and posters from a print shop: on a home printer it is a lot of ink.
+# Lengths in mm; `casing-width` (mm on each side) and `casing-color` draw an
+# outline under a line.
+
+[page]
+background = "#141b26"
+ink = "#c3cbd6"
+frame-width = 0.3
+
+[layers.water.water]
+fill = "#0b1119"
+stroke = "none"
+
+[layers.water.stream]
+fill = "none"
+stroke = "#2a4a6e"
+stroke-width = 0.25
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.water.canal]
+fill = "none"
+stroke = "#2a4a6e"
+stroke-width = 0.5
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.water.river]
+fill = "none"
+stroke = "#2a4a6e"
+stroke-width = 0.9
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.green.green]
+fill = "#1d2b26"
+stroke = "none"
+
+[layers.buildings.building]
+fill = "#232c39"
+stroke = "#2c3747"
+stroke-width = 0.08
+
+[layers.railways.rail]
+fill = "none"
+stroke = "#55606e"
+stroke-width = 0.3
+stroke-linecap = "round"
+stroke-linejoin = "round"
+stroke-dasharray = "1.2 0.8"
+
+[layers.railways.tram]
+fill = "none"
+stroke = "#475260"
+stroke-width = 0.2
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.path]
+fill = "none"
+stroke = "#3a4554"
+stroke-width = 0.15
+stroke-linecap = "round"
+stroke-linejoin = "round"
+stroke-dasharray = "0.6 0.4"
+
+[layers.roads.service]
+fill = "none"
+stroke = "#2f3a49"
+stroke-width = 0.3
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.06
+casing-color = "#0e141d"
+
+[layers.roads.minor]
+fill = "none"
+stroke = "#3b4757"
+stroke-width = 0.6
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.08
+casing-color = "#0e141d"
+
+[layers.roads.secondary]
+fill = "none"
+stroke = "#566377"
+stroke-width = 0.9
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.1
+casing-color = "#0e141d"
+
+[layers.roads.major]
+fill = "none"
+stroke = "#c98f3c"
+stroke-width = 1.2
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.12
+casing-color = "#5a3b14"
+
+# Labels. font-size is in mm on paper; the stroke behind the letters is a halo.
+
+[layers.street-names.minor]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 1.5
+fill = "#9aa5b4"
+stroke = "#141b26"
+stroke-width = 0.45
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.secondary]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 1.8
+fill = "#aeb8c6"
+stroke = "#141b26"
+stroke-width = 0.5
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.major]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 2
+font-weight = "bold"
+fill = "#d4dbe4"
+stroke = "#141b26"
+stroke-width = 0.55
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.places.suburb]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 2.4
+fill = "#8692a3"
+stroke = "#141b26"
+stroke-width = 0.6
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.village]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 3
+fill = "#aeb8c6"
+stroke = "#141b26"
+stroke-width = 0.7
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.town]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 3.8
+font-weight = "bold"
+fill = "#d4dbe4"
+stroke = "#141b26"
+stroke-width = 0.8
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.city]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 5
+font-weight = "bold"
+fill = "#eef2f6"
+stroke = "#141b26"
+stroke-width = 1
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+# Relief (only with INCLUDE_LAYERS=hillshade,contours). The shade is a picture:
+# `shadow` and `highlight` are its colours, not SVG attributes; flat ground stays clear.
+
+[layers.hillshade.shade]
+shadow = "#000000"
+highlight = "#7d93b5"
+opacity = 0.45
+
+[layers.contours.minor]
+fill = "none"
+stroke = "#3a4a5e"
+stroke-width = 0.08
+stroke-opacity = 0.8
+
+[layers.contours.major]
+fill = "none"
+stroke = "#4f6178"
+stroke-width = 0.16

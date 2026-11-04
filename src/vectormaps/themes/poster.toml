@@ -1,0 +1,186 @@
+# Poster theme, the city as lines, to frame: black streets on white, each class
+# its own weight, and quiet water. Parks and buildings are drawn with nothing
+# (their groups stay, empty-looking, in Inkscape). Pretty with SHAPE=circle.
+# Lengths in mm.
+
+[page]
+background = "#ffffff"
+ink = "#111111"
+frame-width = 0.5
+
+[layers.water.water]
+fill = "#cfd9e1"
+stroke = "none"
+
+[layers.water.stream]
+fill = "none"
+stroke = "#b9c8d4"
+stroke-width = 0.25
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.water.canal]
+fill = "none"
+stroke = "#b9c8d4"
+stroke-width = 0.5
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.water.river]
+fill = "none"
+stroke = "#b9c8d4"
+stroke-width = 0.9
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.green.green]
+fill = "none"
+stroke = "none"
+
+[layers.buildings.building]
+fill = "none"
+stroke = "none"
+
+[layers.railways.rail]
+fill = "none"
+stroke = "#111111"
+stroke-width = 0.25
+stroke-linecap = "round"
+stroke-linejoin = "round"
+stroke-dasharray = "1 0.6"
+
+[layers.railways.tram]
+fill = "none"
+stroke = "#111111"
+stroke-width = 0.15
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.path]
+fill = "none"
+stroke = "#9a9a9a"
+stroke-width = 0.1
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.service]
+fill = "none"
+stroke = "#111111"
+stroke-width = 0.18
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.minor]
+fill = "none"
+stroke = "#111111"
+stroke-width = 0.35
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.secondary]
+fill = "none"
+stroke = "#111111"
+stroke-width = 0.6
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+[layers.roads.major]
+fill = "none"
+stroke = "#111111"
+stroke-width = 0.9
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+# Labels. font-size is in mm on paper; the stroke behind the letters is a halo.
+
+[layers.street-names.minor]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 1.4
+fill = "#111111"
+stroke = "#ffffff"
+stroke-width = 0.45
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.secondary]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 1.7
+fill = "#111111"
+stroke = "#ffffff"
+stroke-width = 0.5
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.major]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 2
+font-weight = "bold"
+fill = "#111111"
+stroke = "#ffffff"
+stroke-width = 0.55
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.places.suburb]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 2.4
+letter-spacing = 0.3
+fill = "#444444"
+stroke = "#ffffff"
+stroke-width = 0.6
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.village]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 3
+letter-spacing = 0.3
+fill = "#111111"
+stroke = "#ffffff"
+stroke-width = 0.7
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.town]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 3.8
+font-weight = "bold"
+letter-spacing = 0.4
+fill = "#111111"
+stroke = "#ffffff"
+stroke-width = 0.8
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.city]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 5
+font-weight = "bold"
+letter-spacing = 0.6
+fill = "#111111"
+stroke = "#ffffff"
+stroke-width = 1
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+# Relief (only with INCLUDE_LAYERS=hillshade,contours). The shade is a picture:
+# `shadow` and `highlight` are its colours, not SVG attributes; flat ground stays clear.
+
+[layers.hillshade.shade]
+shadow = "#000000"
+highlight = "#ffffff"
+opacity = 0.3
+
+[layers.contours.minor]
+fill = "none"
+stroke = "#bbbbbb"
+stroke-width = 0.06
+
+[layers.contours.major]
+fill = "none"
+stroke = "#888888"
+stroke-width = 0.12

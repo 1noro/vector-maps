@@ -50,7 +50,7 @@ make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
 | `INCLUDE_LAYERS` | — | Capas que añadir a `LAYERS` (o a las de por defecto): `INCLUDE_LAYERS=street-names,places` |
 | `EXCLUDE_LAYERS` | — | Capas que quitar de `LAYERS` (o de las de por defecto): `EXCLUDE_LAYERS=railways` |
 | `LABEL_LANG` | `es` | Idioma de los nombres de calles y lugares, por código de OSM: `es`, `gl`, `en`, `ja`… Varios, `gl,es`: gana el primero que tenga traducción; `local` = como está mapeado |
-| `THEME` | `bw` | `bw`, `color`, `street`, `monochrome`, o la ruta de un `.toml` propio |
+| `THEME` | `bw` | `bw`, `color`, `street`, `dark`, `blueprint`, `vintage`, `poster`, `monochrome`, o la ruta de un `.toml` propio |
 | `TINT` | `#1f3b5c` | Color del tema `monochrome`, en hexadecimal (`#` opcional) |
 | `PBF` | (Overpass) | Extracto local `.osm.pbf` en vez de Overpass |
 | `OUT` | `out/map.svg` | Fichero de salida |
@@ -128,6 +128,18 @@ cámbialo: un test exige que estile todas las clases de todas las capas.
 - **`street`**: a la manera de los callejeros web: suelo gris claro, agua azul
   cielo, verde suave, edificios grises, calles blancas con contorno gris y las
   principales amarillas con contorno ocre.
+- **`dark`**: un mapa de noche: suelo azul marino, agua casi negra, verde
+  apagado, edificios pizarra, calles grises y principales ámbar. Para pantalla o
+  imprenta: en una impresora de casa gasta mucha tinta.
+- **`blueprint`**: un plano de arquitecto, líneas blancas sobre azul. Los
+  edificios son solo contorno y las calles, doble línea (el color del fondo sobre
+  un contorno blanco). También gasta mucha tinta.
+- **`vintage`**: un mapa antiguo: papel envejecido, tinta sepia, agua verdosa y
+  letra con serifa. Queda muy bien con el relieve
+  (`INCLUDE_LAYERS=hillshade,contours`).
+- **`poster`**: la ciudad en líneas, para enmarcar: calles negras sobre blanco,
+  cada clase con su grosor, y agua suave; parques y edificios no se pintan (sus
+  grupos siguen en el SVG). Muy bonito con `SHAPE=circle`.
 - **`bw`** (el de por defecto): solo grises y negro, sin grandes superficies
   negras (tinta) y con anchos legibles en papel. El agua es un solo gris sin
   borde, superficies y líneas, para que un río se funda con sus tramos anchos;

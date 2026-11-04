@@ -30,7 +30,7 @@ elegancia.** Todo corre en Docker; en el host solo hacen falta `make` y
 | `overpass.py`, `osmexport.py`, `download.py` | cliente con caché, `osmium export`, descarga de PBF |
 | `geofabrik.py` | qué extracto cubre un área, para la pista cuando Overpass falla |
 | `pipeline.py` | `Frame` + capas + fuente → features por capa |
-| `theme.py`, `themes/*.toml` | los estilos (color, street, bw, y monochrome: el bw tintado) |
+| `theme.py`, `themes/*.toml` | los estilos (bw, color, street, dark, blueprint, vintage, poster, y monochrome: el bw tintado) |
 | `pdf.py` | el PDF del tamaño del papel, con Inkscape |
 | `relief.py` | el relieve: teselas del DEM de Copernicus, curvas y sombreado con GDAL |
 | `progress.py` | el spinner de los pasos lentos, solo con terminal |
