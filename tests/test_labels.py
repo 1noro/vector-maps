@@ -46,3 +46,12 @@ def test_ways_of_one_street_are_joined_and_labelled_once_per_stretch():
 def test_a_curly_street_is_not_labelled():
     curly = LineString([(0, 0), (5, 5), (0, 10), (5, 15), (0, 20), (5, 25), (0, 30)])
     assert street_pieces([curly], "Calle", 2.0) == []
+
+
+@pytest.mark.parametrize("ratio", [1.25, 1.3, 1.39, 1.4, 2.0])
+def test_a_street_just_long_enough_gets_the_whole_name_not_a_sliver(ratio):
+    width = text_width("Autopista del Atlántico", 2.0)
+    street = LineString([(0, 0), (width * ratio, 0)])
+    pieces = street_pieces([street], "Autopista del Atlántico", 2.0)
+    assert len(pieces) == 1
+    assert pieces[0].length >= width

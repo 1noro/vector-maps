@@ -54,8 +54,11 @@ def street_pieces(lines: list[LineString], text: str, size: float) -> list[LineS
         count = max(1, int(part.length // (width * LABEL_EVERY)))
         for i in range(count):
             centre = part.length * (i + 0.5) / count
-            piece = substring(part, centre - width * 0.7, centre + width * 0.7)
-            if not isinstance(piece, LineString) or piece.is_empty:
+            # Kept on the line: shapely reads a negative distance as counted from the end,
+            # which gave a sliver at the far end, where only a letter or two showed.
+            start = max(0.0, centre - width * 0.7)
+            piece = substring(part, start, min(part.length, centre + width * 0.7))
+            if not isinstance(piece, LineString) or piece.length < width:
                 continue
             (x0, y0), (x1, y1) = piece.coords[0], piece.coords[-1]
             chord = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5

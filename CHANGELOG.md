@@ -140,6 +140,12 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   borde, su contorno o una línea pegada al marco asomaban medio grosor por fuera.
   Ahora cada zona lleva un `clipPath` del área del mapa, también en el rectángulo
   y el cuadrado (antes solo el círculo; ADR 0003).
+- **Nombres de calle rotos en una letra suelta.** En una calle de entre 1,25 y 1,4
+  veces el ancho del nombre, el tramo empezaba antes de la línea; shapely lee esa
+  distancia negativa desde el final y salía un trozo de 0–1,4 mm donde solo se veía
+  la letra del centro (la «d» de «Autopista del Atlántico»). Dependía del tamaño
+  de letra del tema. Ahora el tramo se queda dentro de la línea y mide al menos
+  el ancho del nombre (ADR 0006).
 
 ### Documentación
 
