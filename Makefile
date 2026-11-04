@@ -18,18 +18,19 @@ Uso: make <objetivo> [VARIABLE=valor …]
              (el círculo de ese radio se ve siempre entero; no se mezcla con TL/BR)
              PAPER=A4            A0…A5
              SHAPE=rect          cómo se imprime en el papel: rect, square, circle
-             ORIENTATION=auto    auto, landscape, portrait
-             MARGIN=10           mm (mínimo 6)
+             ORIENTATION=landscape  landscape, portrait, auto (la que más se parezca al área)
+             MARGIN=6            mm (mínimo 6)
              LAYERS=a,b          capas (sin relieve ni nombres por defecto; make list)
              INCLUDE_LAYERS=a,b  capas que añadir a LAYERS (o a las de por defecto)
              EXCLUDE_LAYERS=a,b  capas que quitar de LAYERS (o de las de por defecto)
-             THEME=color         color, bw, monochrome, o un .toml
+             THEME=bw            bw, color, monochrome, o un .toml
              TINT=#1f3b5c        color de THEME=monochrome
              LABEL_LANG=es       idioma de los nombres (es, gl, en…; local)
              OUT=out/map.svg     fichero de salida
-             PDF=1               también un PDF del tamaño del papel
+             PDF=1               también un PDF del tamaño del papel (por defecto; PDF=0, solo el SVG)
              LEGEND=minimal      leyenda corta: esquinas, escala, © OpenStreetMap y marca
-             COORDS=dd           coordenadas de la leyenda: dd (42.88000, -8.54000),
+                                 (por defecto; LEGEND=full añade el papel y la atribución larga)
+             COORDS=dms          coordenadas de la leyenda: dd (42.88000, -8.54000),
                                  dm (42°52.800'N 8°32.400'W), dms (42°52'48.0"N 8°32'24.0"W)
              PBF=data/pbf/x.osm.pbf   datos de un extracto local, no de Overpass
                                  (sin PBF, si Overpass falla y un extracto de data/pbf/
@@ -53,7 +54,7 @@ Uso: make <objetivo> [VARIABLE=valor …]
   clean-cache, clean-out   borrar data/cache/ u out/
 
 Ejemplo:
-  make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 THEME=bw PDF=1 OUT=out/santiago.svg
+  make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 OUT=out/santiago.svg
 
 Más: docs/uso.md
 endef
@@ -120,15 +121,15 @@ check: lint test
 list: .image
 	$(DOCKER_RUN) python -m vectormaps list
 
-# make map TL=lat,lon BR=lat,lon [PAPER=A4]   (o el área por centro y radio: CENTER=lat,lon RADIUS=km) [THEME=color|bw] [LAYERS=water,roads]
+# make map TL=lat,lon BR=lat,lon [PAPER=A4]   (o el área por centro y radio: CENTER=lat,lon RADIUS=km) [THEME=bw|color] [LAYERS=water,roads]
 #          [INCLUDE_LAYERS=street-names,places]   (añadir capas a LAYERS o a las de por defecto)
 #          [EXCLUDE_LAYERS=railways]   (quitar capas de LAYERS o de las de por defecto)
 #          [SHAPE=rect|square|circle]   (cómo se imprime el mapa en el papel; por defecto rect)
-#          [ORIENTATION=auto|landscape|portrait] [MARGIN=10] [OUT=out/map.svg]
+#          [ORIENTATION=landscape|portrait|auto] [MARGIN=6] [OUT=out/map.svg]
 #          [LABEL_LANG=es]   (idioma de los nombres: es, gl, en… o varios: gl,es)
-#          [PDF=1]           (además del SVG, un PDF del tamaño del papel al lado)
-#          [COORDS=dd|dm|dms]  (formato de las coordenadas de la leyenda; por defecto dd)
-#          [LEGEND=minimal]  (solo esquinas, escala, © OpenStreetMap y la marca; ADR 0004)
+#          [PDF=0]           (sin el PDF del tamaño del papel que sale, por defecto, al lado)
+#          [COORDS=dd|dm|dms]  (formato de las coordenadas de la leyenda; por defecto dms)
+#          [LEGEND=full]     (con el papel y la atribución larga; por defecto, la mínima; ADR 0004)
 #          [THEME=monochrome TINT=#1f3b5c]   (el bw tintado de un color; # opcional)
 # Datos: por defecto Overpass; con PBF=ruta.osm.pbf, desde un extracto local.
 # Y, para superponer una segunda área encima (mismo papel, otro zoom):
@@ -139,8 +140,8 @@ list: .image
 # Se pasa con `--tl=` (con el igual) para que una latitud negativa no se lea como flag.
 map: .image data-dir
 	test \( -n "$(TL)" -a -n "$(BR)" \) -o \( -n "$(CENTER)" -a -n "$(RADIUS)" \) || { echo "falta el área: TL=lat,lon BR=lat,lon, o CENTER=lat,lon RADIUS=km" >&2; exit 1; }
-	# PDF y PBF se confunden al teclear: PDF solo admite 1.
-	test -z "$(PDF)" -o "$(PDF)" = 1 || { echo "PDF=1 añade el PDF; para un extracto local es PBF=$(PDF)" >&2; exit 1; }
+	# PDF y PBF se confunden al teclear: PDF solo admite 1 o 0.
+	test -z "$(PDF)" -o "$(PDF)" = 1 -o "$(PDF)" = 0 || { echo "PDF=0 quita el PDF (sale por defecto); para un extracto local es PBF=$(PDF)" >&2; exit 1; }
 	$(DOCKER_RUN) python -m vectormaps map \
 		$(if $(TL),--tl="$(TL)") $(if $(BR),--br="$(BR)") \
 		$(if $(CENTER),--center="$(CENTER)") $(if $(RADIUS),--radius $(RADIUS)) \
@@ -155,7 +156,7 @@ map: .image data-dir
 		$(if $(TINT),--tint="$(TINT)") \
 		$(if $(LABEL_LANG),--lang $(LABEL_LANG)) \
 		$(if $(OUT),--out $(OUT)) \
-		$(if $(PDF),--pdf) \
+		$(if $(filter 0,$(PDF)),--no-pdf,$(if $(PDF),--pdf)) \
 		$(if $(LEGEND),--legend $(LEGEND)) \
 		$(if $(COORDS),--coords $(COORDS)) \
 		$(if $(PBF),--pbf $(PBF)) \

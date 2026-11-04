@@ -41,18 +41,18 @@ class Area:
 class Answers:
     area: Area = field(default_factory=Area)
     paper: str = "A4"
-    orientation: str = "auto"
+    orientation: str = "landscape"
     shape: str = "rect"
-    margin: str = "10"
+    margin: str = "6"
     layers: list[str] = field(default_factory=lambda: list(layer_defs.DEFAULT))
-    theme: str = "color"
+    theme: str = "bw"
     tint: str = ""  # empty: the default tint; only used by a tinted theme
     lang: str = DEFAULT_LANG
-    legend: str = "full"
-    coords: str = "dd"
+    legend: str = "minimal"
+    coords: str = "dms"
     pbf: str = ""  # empty: Overpass
     out: str = "out/map.svg"
-    pdf: bool = False
+    pdf: bool = True
     overlay: bool = False
     over_area: Area = field(default_factory=Area)
     over_layers: list[str] | None = None  # None: the same as the first area
@@ -85,12 +85,15 @@ def _area_options(area: Area, prefix: str) -> list[tuple[str, str, str]]:
     return [(f"TL{prefix}", "tl", area.tl), (f"BR{prefix}", "br", area.br)]
 
 
-def options(a: Answers) -> list[tuple[str, str, str | None]]:
+FLAGS = {"pdf", "no-pdf"}
+
+
+def options(a: Answers) -> list[tuple[str, str, str]]:
     """(make variable, CLI option, value) for every answer that is not the default.
 
-    A value of None is a flag with no value (PDF=1, --pdf).
+    The options in FLAGS take no value on the command line (--no-pdf, but PDF=0).
     """
-    opts: list[tuple[str, str, str | None]] = list(_area_options(a.area, ""))
+    opts: list[tuple[str, str, str]] = list(_area_options(a.area, ""))
     defaults = Answers()
     for var, name in [
         ("PAPER", "paper"),
@@ -118,8 +121,8 @@ def options(a: Answers) -> list[tuple[str, str, str | None]]:
         opts.append(("PBF", "pbf", a.pbf))
     if a.out != defaults.out:
         opts.append(("OUT", "out", a.out))
-    if a.pdf:
-        opts.append(("PDF", "pdf", None))
+    if a.pdf != defaults.pdf:
+        opts.append(("PDF", "pdf", "1") if a.pdf else ("PDF", "no-pdf", "0"))
     if a.overlay:
         for var, name, value in _area_options(a.over_area, "2"):
             opts.append((var, f"over-{name}", value))
@@ -137,12 +140,12 @@ def options(a: Answers) -> list[tuple[str, str, str | None]]:
 
 def to_argv(a: Answers) -> list[str]:
     """The arguments of `vectormaps map`, always as --option=value (negative latitudes too)."""
-    return ["map"] + [f"--{opt}" if v is None else f"--{opt}={v}" for _, opt, v in options(a)]
+    return ["map"] + [f"--{opt}" if opt in FLAGS else f"--{opt}={v}" for _, opt, v in options(a)]
 
 
 def to_make(a: Answers) -> str:
     """The `make map …` that draws the same map."""
-    parts = [f"{var}=1" if v is None else f"{var}={v}" for var, _, v in options(a)]
+    parts = [f"{var}={v}" for var, _, v in options(a)]
     return " ".join(["make", "map", *(shlex.quote(p) for p in parts)])
 
 
@@ -334,7 +337,10 @@ def ask_style(a: Answers) -> Answers:
         ).strip()
     legend = _select(
         "Legend",
-        [Choice("full", "full"), Choice("minimal: corners, scale, © OSM and the mark", "minimal")],
+        [
+            Choice("minimal: corners, scale, © OSM and the mark", "minimal"),
+            Choice("full: also the paper and the full credit", "full"),
+        ],
         a.legend,
     )
     coords = _select(

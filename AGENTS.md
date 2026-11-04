@@ -108,10 +108,11 @@ make check                    # lint + tests. Lo que hay que pasar.
 make test | lint | fmt        # por separado
 make docker                   # reconstruye la imagen (Dockerfile o requirements)
 
-make map TL=lat,lon BR=lat,lon [PAPER=A4] [THEME=color|bw] [LAYERS=a,b] [OUT=out/x.svg]
+make map TL=lat,lon BR=lat,lon [PAPER=A4] [THEME=bw|color] [LAYERS=a,b] [OUT=out/x.svg]
+                              # por defecto: apaisado, margen 6, bw, leyenda mínima, dms y PDF
 make map … THEME=monochrome TINT=#7a2e1f                        # el bw tintado de un color
-make map … PDF=1                                                # también el PDF, al lado
-make map … LEGEND=minimal                                       # leyenda corta (con © OSM)
+make map … PDF=0                                                # sin el PDF (sale por defecto)
+make map … LEGEND=full                                          # leyenda larga (papel, © completa)
 make map … INCLUDE_LAYERS=hillshade,contours | EXCLUDE_LAYERS=railways # añadir | quitar capas
 make map … LABEL_LANG=gl                                         # idioma de los nombres (es por defecto)
 make map CENTER=lat,lon RADIUS=km                               # el área por centro y radio
@@ -179,3 +180,5 @@ El orden y el porqué, en `docs/desarrollo.md`. Abiertos:
 - **3** — puentes y túneles (trazo distinto) y más clases de calle.
 - **4** — recorte de la hoja a un polígono (GeoJSON).
 - **5** — escala redonda opcional (`--scale 1:5000`) en vez de la que salga.
+- **6** — más de dos zonas superpuestas.
+- **7** — buscar el área por nombre en el wizard (Nominatim).

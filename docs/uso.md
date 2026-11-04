@@ -30,9 +30,9 @@ sale bien; para empezar de cero, borra `data/wizard.json`.
 ## `make map`
 
 ```bash
-make map TL=lat,lon BR=lat,lon [PAPER=A4] [SHAPE=rect] [ORIENTATION=auto] [MARGIN=10] \
-         [LAYERS=water,roads] [INCLUDE_LAYERS=places] [EXCLUDE_LAYERS=railways] [THEME=color] [TINT=#1f3b5c] [LABEL_LANG=es] [PBF=ruta] \
-         [OUT=out/map.svg] [PDF=1] [LEGEND=minimal] [COORDS=dd]
+make map TL=lat,lon BR=lat,lon [PAPER=A4] [SHAPE=rect] [ORIENTATION=landscape] [MARGIN=6] \
+         [LAYERS=water,roads] [INCLUDE_LAYERS=places] [EXCLUDE_LAYERS=railways] [THEME=bw] [TINT=#1f3b5c] [LABEL_LANG=es] [PBF=ruta] \
+         [OUT=out/map.svg] [PDF=0] [LEGEND=full] [COORDS=dms]
 
 # o el área por centro y radio (km), en vez de TL y BR:
 make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
@@ -44,19 +44,19 @@ make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
 | `CENTER`, `RADIUS` | (la otra forma) | Centro `LAT,LON` y radio en km, en vez de `TL`/`BR`. El círculo de ese radio se ve siempre entero; el papel añade más mapa por el lado largo. No se mezclan con `TL`/`BR` |
 | `PAPER` | `A4` | `A0`, `A1`, `A2`, `A3`, `A4` o `A5` |
 | `SHAPE` | `rect` | Cómo se imprime el mapa en el papel (aparte del papel): `rect` llena la hoja; `square` es un cuadrado centrado y `circle` un círculo centrado, los dos tan anchos como el lado corto de la hoja. El círculo lleva un borde fino y lo de fuera queda en blanco. Con `circle` y `TL`/`BR` el círculo contiene todo el rectángulo (su diámetro es la diagonal); con `CENTER`/`RADIUS` es exactamente el de radio R |
-| `ORIENTATION` | `auto` | `landscape`, `portrait`, o la que más se parezca al área |
-| `MARGIN` | `10` | Mm de margen. Mínimo 6: ahí va la atribución |
+| `ORIENTATION` | `landscape` | `landscape`, `portrait`, o `auto`: la que más se parezca al área |
+| `MARGIN` | `6` | Mm de margen. Mínimo 6: ahí va la atribución |
 | `LAYERS` | todas menos el relieve y los nombres | `water,green,buildings,railways,roads,street-names,places`, y `hillshade,contours` (relieve), separadas por comas |
 | `INCLUDE_LAYERS` | — | Capas que añadir a `LAYERS` (o a las de por defecto): `INCLUDE_LAYERS=street-names,places` |
 | `EXCLUDE_LAYERS` | — | Capas que quitar de `LAYERS` (o de las de por defecto): `EXCLUDE_LAYERS=railways` |
 | `LABEL_LANG` | `es` | Idioma de los nombres de calles y lugares, por código de OSM: `es`, `gl`, `en`, `ja`… Varios, `gl,es`: gana el primero que tenga traducción; `local` = como está mapeado |
-| `THEME` | `color` | `color`, `bw`, `monochrome`, o la ruta de un `.toml` propio |
+| `THEME` | `bw` | `bw`, `color`, `monochrome`, o la ruta de un `.toml` propio |
 | `TINT` | `#1f3b5c` | Color del tema `monochrome`, en hexadecimal (`#` opcional) |
 | `PBF` | (Overpass) | Extracto local `.osm.pbf` en vez de Overpass |
 | `OUT` | `out/map.svg` | Fichero de salida |
-| `PDF` | — | `PDF=1`: además, un PDF del tamaño del papel al lado (`out/map.pdf`) |
-| `COORDS` | `dd` | Formato de las coordenadas de la leyenda: `dd` grados decimales (`42.88000, -8.54000`), `dm` grados y minutos decimales (`42°52.800'N 8°32.400'W`) o `dms` grados, minutos y segundos (`42°52'48.0"N 8°32'24.0"W`) |
-| `LEGEND` | `full` | `minimal`: solo las esquinas, la escala, `© OpenStreetMap` y la marca |
+| `PDF` | `1` | Además del SVG, un PDF del tamaño del papel al lado (`out/map.pdf`). `PDF=0`: solo el SVG |
+| `COORDS` | `dms` | Formato de las coordenadas de la leyenda: `dd` grados decimales (`42.88000, -8.54000`), `dm` grados y minutos decimales (`42°52.800'N 8°32.400'W`) o `dms` grados, minutos y segundos (`42°52'48.0"N 8°32'24.0"W`) |
+| `LEGEND` | `minimal` | `minimal`: solo las esquinas, la escala, `© OpenStreetMap` y la marca; `full`: también el papel y la atribución larga |
 
 La zona pedida **se amplía, nunca se recorta**, hasta tener la forma del papel;
 el log dice cuánto ("grown 11 % to fit the paper") y la escala (`1:4120`).
@@ -68,8 +68,8 @@ abajo arriba, y dentro de cada una, de la clase menos a la más importante:
 
 | Capa | Clases |
 |---|---|
-| `water` | `water`, `stream`, `canal`, `river` |
 | `green` | `green` |
+| `water` | `water`, `stream`, `canal`, `river` |
 | `hillshade` | `shade` (imagen; no sale por defecto) |
 | `contours` | `minor`, `major` (no sale por defecto) |
 | `buildings` | `building` |
@@ -122,8 +122,10 @@ Un tema es un `.toml` en `src/vectormaps/themes/` (o cualquiera por ruta, con
 cámbialo: un test exige que estile todas las clases de todas las capas.
 
 - **`color`**: fondo crema, agua azul, verde, calles blancas y naranjas.
-- **`bw`**: solo grises y negro, sin grandes superficies negras (tinta) y con
-  anchos legibles en papel.
+- **`bw`** (el de por defecto): solo grises y negro, sin grandes superficies
+  negras (tinta) y con anchos legibles en papel. El agua es un solo gris sin
+  borde, superficies y líneas, para que un río se funda con sus tramos anchos;
+  los arroyos son continuos y las discontinuas, solo caminos.
 - **`monochrome`**: el `bw` tintado del color de `TINT`: el negro pasa a ser ese
   color, los grises sus tonos claros y el blanco sigue blanco. Por ejemplo,
   `THEME=monochrome TINT=#7a2e1f` para un granate. Sin `TINT`, azul oscuro.
@@ -146,7 +148,8 @@ pueden pisarse: no hay antichoque todavía (TODO 1).
 
 ### La leyenda
 
-El margen de abajo lleva dos líneas: la atribución de OSM con el papel y la
+Por defecto, la leyenda es la mínima (`LEGEND=minimal`, más abajo). Con
+`LEGEND=full`, el margen de abajo lleva dos líneas: la atribución de OSM con el papel y la
 escala, y las **esquinas `TL` y `BR` del mapa tal como está en el papel** (no
 las que pediste: la zona crece hasta la forma de la hoja). Pasadas de vuelta a
 `TL`/`BR` dan el mapa entero pero un ~2 % más alejado, por cómo se proyecta el
@@ -155,8 +158,8 @@ margen de arriba, a la derecha, lleva la marca
 «Generated with vector-maps by 1noro». Con dos zonas se listan las dos esquinas. Con `SHAPE=circle` no hay esquinas que dar: la leyenda lleva en su lugar las
 coordenadas del centro del mapa, `⌖ lat, lon`.
 
-Con `LEGEND=minimal` el pie se queda en una sola línea, sin el papel ni la
-orientación:
+Con `LEGEND=minimal`, la de por defecto, el pie se queda en una sola línea, sin
+el papel ni la orientación:
 
 ```
 ↖ 43.29888, -8.32043 · ↘ 43.27792, -8.27935 · 1:12102 · © OpenStreetMap
@@ -228,7 +231,7 @@ En el SVG hay un grupo `area-a` y otro `area-b`; abre el fichero en Inkscape
 ## Imprimir
 
 El SVG está en milímetros: a 100 % se imprime al tamaño del papel elegido.
-**`PDF=1`** deja al lado un PDF del tamaño del papel (con Inkscape, dentro de la
+Por defecto (**`PDF=1`**; `PDF=0` lo quita) queda al lado un PDF del tamaño del papel (con Inkscape, dentro de la
 imagen; ADR 0007), con los nombres de las calles y el texto seleccionable.
 Imprímelo sin escalar ("tamaño real"). Hasta A2 un navegador o un visor de PDF
 basta; A1/A0, en un servicio de impresión de planos, con el PDF. Los grosores

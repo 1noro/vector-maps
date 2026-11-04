@@ -57,3 +57,11 @@ PDF salía en blanco. La imagen instala ahora `fonts-symbola` (Debian, libre,
 ~1 MB, en una capa aparte del `Dockerfile`) y Inkscape la usa como alternativa y
 la incrusta en el PDF. Hay que reconstruir la imagen (`make docker`). En el SVG
 el símbolo es texto: en otro programa lo pinta la fuente que tenga ese equipo.
+
+## Añadido del 04/11/2026: el PDF sale por defecto
+
+A petición del usuario, el PDF **sale siempre** junto al SVG; `PDF=0`
+(`--no-pdf`) deja solo el SVG. `PDF=1` (`--pdf`) se sigue aceptando. Para no
+confundirlo con `PBF`, `PDF` solo admite `1` o `0`, y el `Makefile` avisa de
+cualquier otro valor. El SVG sigue siendo el resultado (ADR 0004): el PDF se
+saca de él.

@@ -16,7 +16,9 @@ color y en blanco y negro, con nombres de calles y lugares en el idioma elegido,
 con Overpass o un PBF local, con la superposición de dos zonas, relieve opcional
 (curvas y sombreado, ADR 0008), PDF, mapa en rectángulo, cuadrado o círculo
 (ADR 0003) y fallback automático a un PBF local si Overpass falla (ADR 0002).
-160 tests, sin red. Desde el 04/11, también `make wizard` (ADR 0009).
+163 tests, sin red. Desde el 04/11, también `make wizard` (ADR 0009), el agua
+encima del verde (ADR 0004) y nuevos valores por defecto: apaisado, margen de
+6 mm, `bw`, leyenda mínima, `dms` y PDF (ADR 0003, 0004, 0007).
 
 Medido el 03/11, con el extracto de Galicia (112 MB) y Santiago de Compostela:
 

@@ -85,7 +85,7 @@ def test_overpass_failing_falls_back_to_a_local_pbf_that_covers_the_area(
     monkeypatch.setattr(cli, "local_pbf_for", lambda b, d: pbf)
     monkeypatch.setattr(cli, "PbfSource", lambda path, cache: FakePbf(path))
     out = tmp_path / "m.svg"
-    assert cli.main([*MAP, f"--cache={tmp_path}", f"--out={out}"]) == 0
+    assert cli.main([*MAP, f"--cache={tmp_path}", f"--out={out}", "--no-pdf"]) == 0
     assert used == ["OverpassSource", "FakePbf"]
     assert out.exists()
     assert "from the local extract" in caplog.text and "HTTP 504" in caplog.text
@@ -106,3 +106,10 @@ def test_a_pbf_given_by_the_user_is_never_replaced(tmp_path, monkeypatch, capsys
     monkeypatch.setattr(cli.geofabrik, "region_for", lambda b, c: None)
     assert cli.main([*MAP, f"--cache={tmp_path}", "--pbf=data/pbf/mine.osm.pbf"]) == 1
     assert "from the local extract" not in capsys.readouterr().err
+
+
+def test_the_defaults_are_a_landscape_bw_map_with_its_pdf():
+    ns = cli.build_parser().parse_args(MAP)
+    assert (ns.orientation, ns.margin, ns.theme) == ("landscape", 6.0, "bw")
+    assert (ns.legend, ns.coords, ns.pdf) == ("minimal", "dms", True)
+    assert cli.build_parser().parse_args([*MAP, "--no-pdf"]).pdf is False

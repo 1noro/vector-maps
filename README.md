@@ -19,15 +19,16 @@ En Linux, con Docker y `make` (nada más: ni Python ni librerías en el host):
 
 ```bash
 # Un mapa A4 en blanco y negro del casco histórico de Santiago de Compostela
-make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 THEME=bw OUT=out/santiago.svg PDF=1
+make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 OUT=out/santiago.svg
 ```
 
 `TL` es la esquina de arriba a la izquierda y `BR` la de abajo a la derecha,
 ambas `LAT,LON`. El área también se da por centro y radio en km
 (`CENTER=42.88,-8.54 RADIUS=2`), y `SHAPE=circle` (o `square`) imprime el mapa
-como un círculo (o cuadrado) centrado en la hoja, en vez de llenarla. Quedan en `./out/` el SVG y, por `PDF=1`, un PDF del tamaño
-del papel (`santiago.pdf`), los dos con tu usuario (no de root). Sin `PDF=1`,
-solo el SVG. `THEME=monochrome TINT=#7a2e1f` lo deja en tonos de un solo color,
+como un círculo (o cuadrado) centrado en la hoja, en vez de llenarla. Quedan en `./out/` el SVG y un PDF del tamaño
+del papel (`santiago.pdf`), los dos con tu usuario (no de root). Con `PDF=0`,
+solo el SVG. Por defecto el mapa sale apaisado, en blanco y negro (`THEME=bw`;
+`THEME=color` para el de color), con margen de 6 mm y la leyenda mínima. `THEME=monochrome TINT=#7a2e1f` lo deja en tonos de un solo color,
 `INCLUDE_LAYERS=street-names,places` le añade los nombres e
 `INCLUDE_LAYERS=hillshade,contours` el relieve (ninguno de los dos sale por defecto).
 
@@ -37,8 +38,12 @@ cubre la zona en `data/pbf/`, se usa solo, con un aviso):
 
 ```bash
 make pbf URL=https://download.geofabrik.de/europe/spain/galicia-latest.osm.pbf
-make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 PBF=data/pbf/galicia-latest.osm.pbf PDF=1
+make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 PBF=data/pbf/galicia-latest.osm.pbf
 ```
+
+Sin acordarte de las opciones: **`make wizard`** las pregunta una a una, enseña
+el `make map` equivalente y recuerda la última vez, para cambiar solo una cosa y
+volver a generar.
 
 No hace falta ninguna cuenta ni clave.
 
@@ -49,7 +54,7 @@ flowchart LR
     A["dos esquinas o centro+radio<br/>+ papel A0–A5"] --> F["Frame<br/>UTM, escala real,<br/>forma del papel"]
     O["Overpass<br/>(caché)"] --> E
     P["PBF local<br/>osmium extract"] --> E
-    E["osmium export<br/>GeoJSON-seq"] --> L["capas<br/>agua · verde · edificios<br/>ferrocarril · calles"]
+    E["osmium export<br/>GeoJSON-seq"] --> L["capas<br/>verde · agua · edificios<br/>ferrocarril · calles"]
     F --> R
     L --> R["render<br/>SVG en mm,<br/>un grupo por capa"]
     T["tema TOML<br/>color · bw · monochrome"] --> R

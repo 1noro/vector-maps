@@ -121,3 +121,12 @@ El orden de dibujo pasa a ser **verde, agua, edificios, ferrocarril, calles**
   polígono de agua, así que se siguen viendo.
 - En el SVG, el grupo `water` va ahora encima de `green`. La superposición de
   zonas (ADR 0005) y el resto del orden no cambian.
+
+## Añadido del 04/11/2026: los valores por defecto
+
+A petición del usuario, un `make map` sin opciones sale con **el tema `bw`**
+(antes `color`), **la leyenda mínima** (antes la completa; `LEGEND=full` la
+devuelve) y las coordenadas en **`dms`** (antes `dd`). Es el mapa que más usa.
+La atribución de OSM sigue en las dos leyendas (decisión 5). Lo que dice
+arriba el apartado de la leyenda mínima («la leyenda completa sigue siendo la
+de por defecto») deja de valer.

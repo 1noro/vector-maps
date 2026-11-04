@@ -38,17 +38,18 @@ def test_centre_and_radius_and_the_rest_of_the_options():
         theme="monochrome",
         tint="#7a2e1f",
         lang="gl,es",
-        legend="minimal",
-        coords="dms",
+        legend="full",
+        coords="dd",
         pbf="data/pbf/galicia-latest.osm.pbf",
         out="out/test.svg",
-        pdf=True,
+        pdf=False,
     )
     ns = parse(a)
     assert (ns.center, ns.radius, ns.tl, ns.br) == ("42.88,-8.54", 1.5, None, None)
     assert (ns.paper, ns.orientation, ns.shape, ns.margin) == ("A3", "portrait", "circle", 12.0)
     assert (ns.theme, ns.tint, ns.lang) == ("monochrome", "#7a2e1f", "gl,es")
-    assert (ns.legend, ns.coords, ns.pdf) == ("minimal", "dms", True)
+    assert (ns.legend, ns.coords, ns.pdf) == ("full", "dd", False)
+    assert "PDF=0" in wizard.to_make(a)
     assert ns.pbf == Path("data/pbf/galicia-latest.osm.pbf")
     assert ns.out == Path("out/test.svg")
 
@@ -117,6 +118,8 @@ def test_the_make_command_quotes_what_the_shell_would_eat():
 def test_every_make_variable_is_passed_by_the_makefile_as_its_option():
     makefile = (Path(__file__).parents[1] / "Makefile").read_text(encoding="utf-8")
     passed = dict(re.findall(r"\$\(if \$\((\w+)\),(--[\w-]+)", makefile))
+    if "$(if $(filter 0,$(PDF)),--no-pdf," in makefile:
+        passed["PDF"] = "--no-pdf"  # PDF=0; the PDF is drawn by default
     a = Answers(
         area=CORNERS,
         paper="A3",
@@ -127,11 +130,11 @@ def test_every_make_variable_is_passed_by_the_makefile_as_its_option():
         theme="monochrome",
         tint="#123",
         lang="gl",
-        legend="minimal",
+        legend="full",
         coords="dm",
         pbf="x.osm.pbf",
         out="out/x.svg",
-        pdf=True,
+        pdf=False,
         overlay=True,
         over_area=Area(mode="center", center="1,1", radius="1"),
         over_layers=["roads", "places", "water", "green", "buildings", "contours"],
@@ -171,7 +174,7 @@ def test_a_memory_from_an_older_version_keeps_what_it_can(tmp_path):
     path = tmp_path / "wizard.json"
     path.write_text(json.dumps({"paper": "A2", "gone": 1, "area": {"tl": "1,1"}}), "utf-8")
     a = wizard.load(path)
-    assert (a.paper, a.area.tl, a.area.mode, a.theme) == ("A2", "1,1", "corners", "color")
+    assert (a.paper, a.area.tl, a.area.mode, a.theme) == ("A2", "1,1", "corners", "bw")
 
 
 def test_no_memory_is_the_defaults(tmp_path):

@@ -39,8 +39,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--radius", type=float, metavar="KM", help="radius in km: the circle is always fully shown"
     )
     m.add_argument("--paper", default="A4", choices=list(PAPERS), type=str.upper)
-    m.add_argument("--orientation", default="auto", choices=["auto", "landscape", "portrait"])
-    m.add_argument("--margin", type=float, default=10.0, metavar="MM")
+    m.add_argument("--orientation", default="landscape", choices=["auto", "landscape", "portrait"])
+    m.add_argument("--margin", type=float, default=6.0, metavar="MM")
     m.add_argument(
         "--shape",
         default="rect",
@@ -66,7 +66,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="language of street and place names, by OSM code (es, gl, en, ja…); the first "
         "with a name wins, else the name as mapped. 'local' = as mapped. default: %(default)s",
     )
-    m.add_argument("--theme", default="color", help="bundled theme name or a .toml path")
+    m.add_argument(
+        "--theme", default="bw", help="bundled theme name or a .toml path. default: %(default)s"
+    )
     m.add_argument(
         "--tint",
         metavar="HEX",
@@ -75,18 +77,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     m.add_argument("--out", type=Path, default=Path("out/map.svg"))
     m.add_argument(
-        "--pdf", action="store_true", help="also write a PDF of the paper size next to the SVG"
+        "--pdf",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="also write a PDF of the paper size next to the SVG (default; --no-pdf: only the SVG)",
     )
     m.add_argument(
         "--legend",
         choices=LEGENDS,
-        default="full",
-        help="minimal: only the corners, the scale, a short OSM credit and the mark",
+        default="minimal",
+        help="minimal: only the corners, the scale, a short OSM credit and the mark; full: also "
+        "the paper and the full credit. default: %(default)s",
     )
     m.add_argument(
         "--coords",
         choices=COORDS,
-        default="dd",
+        default="dms",
         help="format of the coordinates in the legend: dd 42.88000, -8.54000; "
         "dm 42°52.800'N 8°32.400'W; dms 42°52'48.0\"N 8°32'24.0\"W. default: %(default)s",
     )

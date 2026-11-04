@@ -24,7 +24,7 @@ añadidos fechados: dilo en el informe para que se corrija la lista. Comprueba:
   capa? ¿El estilo viene de los temas TOML como atributos de presentación (sin
   `<style>` ni CSS externo)? ¿Todo tema estila todas las clases de todas las
   capas (hay un test)? ¿La atribución de OSM sigue siempre en el SVG, sin
-  opción para quitarla?
+  opción para quitarla? ¿El agua se dibuja encima del verde (añadido del 04/11)?
 - **ADR 0005**: ¿la zona superpuesta usa el mismo papel, orientación y margen
   que la base? ¿Cada zona conserva su escala, tema, capas y opacidad? ¿La
   atribución lista la escala de cada zona?
@@ -34,12 +34,16 @@ añadidos fechados: dilo en el informe para que se corrija la lista. Comprueba:
   defecto? ¿Se cambió `osmexport.VERSION` al cambiar lo que escribe `export`?
   ¿Algún tema deja sin estilo una clase de texto?
 - **ADR 0007**: ¿el PDF sale del SVG ya escrito, con Inkscape y
-  `--export-area-page`, y tiene el tamaño del papel? ¿`PDF` sigue sin admitir
-  otra cosa que `1` en el `Makefile`?
+  `--export-area-page`, y tiene el tamaño del papel? ¿El PDF sale por defecto y `PDF`
+  sigue sin admitir otra cosa que `1` o `0` en el `Makefile`?
 - **ADR 0008**: ¿`hillshade` y `contours` siguen fuera de las capas por
   defecto? ¿Las teselas se bajan una vez, con `User-Agent` y espera ante
   429/5xx, y el mar (404) queda marcado? ¿La atribución de Copernicus sale si
   y solo si el mapa lleva relieve?
+- **ADR 0009**: ¿el wizard solo arma el `argv` y llama a `cli.main`, sin
+  validar ni dibujar por su cuenta? ¿Sus valores por defecto (`Answers`) son los
+  de la CLI? ¿Cada opción de `make map` tiene su pregunta? ¿La memoria va en
+  `data/wizard.json` y solo se guarda si el mapa sale bien?
 - **Tema `monochrome`** (ADR 0004): ¿sigue saliendo de `bw.toml` al cargar, con
   el negro como el tinte y el blanco blanco? ¿Un `TINT` con otro tema da error?
 - **Leyenda**: ¿lleva las esquinas del mapa en el papel (no las pedidas), la

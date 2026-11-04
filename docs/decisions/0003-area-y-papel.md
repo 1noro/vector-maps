@@ -68,3 +68,10 @@ superpuestas.
   fondo del tema. La leyenda y la atribución siguen en el margen de la hoja.
 - `Frame.growth` con un círculo o cuadrado compara su área con la del rectángulo
   pedido (un círculo circunscrito crece al menos un 57 %); con un radio es 0.
+
+## Añadido del 04/11/2026: apaisado y 6 mm por defecto
+
+A petición del usuario, la orientación por defecto pasa a ser **`landscape`**
+(antes `auto`) y el margen, **6 mm** (antes 10, y sigue siendo el mínimo).
+`ORIENTATION=auto` sigue eligiendo la que más se parezca al área. Lo demás de
+este ADR no cambia.

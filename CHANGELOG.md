@@ -81,6 +81,11 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Cambiado
 
+- **Nuevos valores por defecto de `make map`**: apaisado (`ORIENTATION=landscape`;
+  antes `auto`), margen de 6 mm (antes 10), tema `bw` (antes `color`), leyenda
+  mínima (antes la completa; `LEGEND=full`), coordenadas `dms` (antes `dd`) y
+  **PDF siempre** (`PDF=0` / `--no-pdf` para no sacarlo). El wizard parte de los
+  mismos (ADR 0003, 0004, 0007).
 - **El log dice de dónde sale cada capa** (`(Overpass)`, `(local extract …)`,
   `(Copernicus DEM)`), y un fallo de Overpass nombra la capa en la que fue
   (ADR 0002).
@@ -106,8 +111,9 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Documentación
 
-- ADR 0006 (etiquetas e idioma), 0007 (el PDF con Inkscape) y 0008 (relieve); añadidos del 03/11
-  a los ADR 0002 y 0004.
+- ADR 0006 (etiquetas e idioma), 0007 (el PDF con Inkscape), 0008 (relieve) y
+  0009 (el wizard); añadidos del 03/11 a los ADR 0002 y 0004, y del 04/11 a los
+  ADR 0002, 0003, 0004 y 0007.
 - README, `docs/uso.md`, `docs/desarrollo.md`, los ADR 0001 a 0005, `AGENTS.md`
   y los procedimientos de `docs/agentes/` con sus comandos para Claude Code,
   Qwen Code y OpenCode.
