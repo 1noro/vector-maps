@@ -4,6 +4,11 @@ The public servers limit by IP, so: one request at a time, a cache keyed by the
 exact query, and a wait (not a blind retry loop) when the server says no. "One
 at a time" holds between processes too: two `make map` at once take turns
 through a lock file in the cache.
+
+A map asks by area (`fetch_area`), and two things make the cache serve more than
+the exact same map (Nov 4): the box is rounded outwards to a grid, so a map moved a
+little asks the same query; and an answer cached for a box that holds the new one
+(the same layer, zoomed in, a smaller paper) is used instead of asking again.
 """
 
 import contextlib
@@ -11,7 +16,9 @@ import email.utils
 import fcntl
 import hashlib
 import http.client
+import json
 import logging
+import math
 import os
 import time
 import urllib.error
@@ -29,6 +36,10 @@ RETRY_STATUS = {429, 502, 503, 504}
 MAX_ATTEMPTS = 3
 PAUSE_BETWEEN_REQUESTS = 1.0
 TIMEOUT = 240  # seconds; the query itself asks the server for 180
+BOX = "{{bbox}}"  # where a query template takes its (south,west,north,east)
+GRID = 0.01  # degrees (~1 km): boxes are rounded outwards to it
+
+Bounds = tuple[float, float, float, float]  # south, west, north, east
 
 
 class OverpassError(RuntimeError):
@@ -37,6 +48,84 @@ class OverpassError(RuntimeError):
 
 def cache_key(query: str) -> str:
     return hashlib.sha1(query.encode()).hexdigest()[:16]
+
+
+def bbox(bounds: Bounds) -> str:
+    s, w, n, e = (f"{v:.5f}" for v in bounds)
+    return f"({s},{w},{n},{e})"
+
+
+def _to_grid(value: float, rounding) -> float:
+    # round() first: 42.88 / 0.01 is 4287.999…, which floor would take one cell down.
+    return round(rounding(round(value / GRID, 6)) * GRID, 5)
+
+
+def snap(bounds: Bounds) -> Bounds:
+    """The box rounded outwards to the grid: it always holds the one asked for."""
+    s, w, n, e = bounds
+    return (
+        _to_grid(s, math.floor),
+        _to_grid(w, math.floor),
+        _to_grid(n, math.ceil),
+        _to_grid(e, math.ceil),
+    )
+
+
+def _holds(outer: Bounds, inner: Bounds) -> bool:
+    return (
+        outer[0] <= inner[0]
+        and outer[1] <= inner[1]
+        and outer[2] >= inner[2]
+        and (outer[3] >= inner[3])
+    )
+
+
+def _area_note(osm: Path) -> Path:
+    """Beside each answer fetched by area: which template and box it answers."""
+    return osm.with_name(f"{osm.stem}.area.json")
+
+
+def _cached_area(template: str, bounds: Bounds, cache_dir: Path) -> Path | None:
+    """The smallest cached answer to `template` whose box holds `bounds`, if any."""
+    key = cache_key(template)
+    best: tuple[float, Path] | None = None
+    for note in cache_dir.glob("*.area.json"):
+        try:
+            data = json.loads(note.read_text(encoding="utf-8"))
+            box = tuple(float(v) for v in data["bounds"])
+        except (OSError, ValueError, KeyError, TypeError):
+            continue  # a broken note only costs a download
+        osm = note.with_name(note.name.removesuffix(".area.json") + ".osm")
+        if data.get("template") != key or not _holds(box, bounds) or not osm.exists():
+            continue
+        size = (box[2] - box[0]) * (box[3] - box[1])
+        if best is None or size < best[0]:
+            best = (size, osm)
+    return best[1] if best else None
+
+
+def fetch_area(
+    template: str, bounds: Bounds, cache_dir: Path, url: str | None = None, sleep=time.sleep
+) -> Path:
+    """The OSM XML for a query `template` (with BOX where the box goes) over `bounds`.
+
+    It may cover more than `bounds`: the caller keeps what it needs.
+    """
+    cached = _cached_area(template, bounds, cache_dir)
+    if cached is not None:
+        log.info("cached: %s (covers this area)", cached.name)
+        return cached
+    box = snap(bounds)
+    osm = fetch(template.replace(BOX, bbox(box)), cache_dir, url, sleep)
+    note = _area_note(osm)
+    if not note.exists():
+        tmp = tmp_beside(note)
+        try:
+            tmp.write_text(json.dumps({"template": cache_key(template), "bounds": box}))
+            tmp.replace(note)
+        finally:
+            tmp.unlink(missing_ok=True)
+    return osm
 
 
 def retry_after(value: str | None, default: int) -> int:

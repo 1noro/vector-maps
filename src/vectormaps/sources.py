@@ -11,6 +11,7 @@ import subprocess
 from pathlib import Path
 from typing import Protocol
 
+import shapely
 from shapely.geometry.base import BaseGeometry
 
 from vectormaps import osmexport, overpass
@@ -63,7 +64,8 @@ class Source(Protocol):
 
 
 class OverpassSource:
-    """One query per layer and area, cached on disk by the exact query."""
+    """One query per layer and area, cached on disk; an answer for a larger area that
+    holds this one is used too (overpass.fetch_area)."""
 
     name = "Overpass"
 
@@ -75,9 +77,18 @@ class OverpassSource:
         pass  # Overpass covers the planet
 
     def features(self, layer: Layer, bounds: Bounds) -> list[Feature]:
-        osm = overpass.fetch(layer.overpass_query(bounds), self.cache_dir, self.url)
+        osm = overpass.fetch_area(layer.overpass_template(), bounds, self.cache_dir, self.url)
         geojson = osmexport.export(osm, osmexport.exported_name(osm))
-        return list(osmexport.read_features(geojson))
+        return _inside(list(osmexport.read_features(geojson)), bounds)
+
+
+def _inside(features: list[Feature], bounds: Bounds) -> list[Feature]:
+    """Only what touches the area: a cached answer may cover a much larger one."""
+    if not features:
+        return features
+    s, w, n, e = bounds
+    touch = shapely.intersects([g for _k, _t, g in features], shapely.box(w, s, e, n))
+    return [f for f, keep in zip(features, touch, strict=True) if keep]
 
 
 class PbfSource:

@@ -88,7 +88,8 @@ tocar código.
 
 El servidor público limita por IP y **se cae con frecuencia** (502/504 el
 03/11/2026 en los cuatro espejos probados). Por eso: **una petición cada vez**,
-caché en disco por consulta exacta, `User-Agent` propio, y **esperar** ante un
+caché en disco por consulta (con el recuadro redondeado, y una respuesta de un área
+mayor sirve para las de dentro: ADR 0002), `User-Agent` propio, y **esperar** ante un
 429/502/503/504 (nunca reintentos a ciegas; máximo 3 intentos). Un 200 con
 `runtime error` es un fallo y **no se cachea**. Una fuente nueva de datos
 respeta lo mismo.

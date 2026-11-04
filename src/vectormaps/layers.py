@@ -8,6 +8,7 @@ decided by the geometry that `osmium export` builds, not by us.
 from dataclasses import dataclass
 
 from vectormaps.boundaries import LEVELS
+from vectormaps.overpass import BOX, bbox
 
 
 @dataclass(frozen=True)
@@ -63,8 +64,11 @@ class Layer:
 
     def overpass_query(self, bounds: tuple[float, float, float, float], timeout: int = 180) -> str:
         """Overpass QL for this layer inside (south, west, north, east)."""
-        s, w, n, e = (f"{v:.5f}" for v in bounds)
-        box = f"({s},{w},{n},{e})"
+        return self.overpass_template(timeout).replace(BOX, bbox(bounds))
+
+    def overpass_template(self, timeout: int = 180) -> str:
+        """Overpass QL for this layer, with `overpass.BOX` where the box goes."""
+        box = BOX
         if self.admin:
             return _boundary_query(box, timeout)
         lines: list[str] = []

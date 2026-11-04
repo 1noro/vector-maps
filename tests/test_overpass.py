@@ -6,6 +6,7 @@ import logging
 import threading
 import time
 import urllib.error
+import urllib.parse
 
 import pytest
 
@@ -147,3 +148,54 @@ def test_retry_after_takes_seconds_or_an_http_date():
     in_a_minute = email.utils.formatdate(time.time() + 60, usegmt=True)
     assert 55 <= overpass.retry_after(in_a_minute, 30) <= 60
     assert overpass.retry_after(email.utils.formatdate(0, usegmt=True), 30) == 0
+
+
+def test_a_box_is_rounded_outwards_to_the_grid():
+    assert overpass.snap((42.8775, -8.5510, 42.8845, -8.5385)) == (42.87, -8.56, 42.89, -8.53)
+    # On the grid already, it stays (no float slip one cell out).
+    assert overpass.snap((42.88, -8.55, 42.89, -8.54)) == (42.88, -8.55, 42.89, -8.54)
+
+
+@pytest.fixture
+def downloads(monkeypatch):
+    """The queries that reached the (fake) server."""
+    asked = []
+
+    def fake_urlopen(req, timeout):
+        asked.append(urllib.parse.parse_qs(req.data.decode())["data"][0])
+        return FakeResponse(b"<osm version='0.6'></osm>")
+
+    monkeypatch.setattr(overpass.urllib.request, "urlopen", fake_urlopen)
+    return asked
+
+
+def _area(template, bounds, cache):
+    return overpass.fetch_area(template, bounds, cache, url="http://x", sleep=lambda s: None)
+
+
+T = f"[out:xml];way['highway']{overpass.BOX};out;"
+
+
+def test_a_map_moved_a_little_asks_the_same_rounded_query(tmp_path, downloads):
+    first = _area(T, (42.8775, -8.5510, 42.8845, -8.5385), tmp_path)
+    moved = _area(T, (42.8771, -8.5502, 42.8841, -8.5377), tmp_path)
+    assert first == moved
+    assert downloads == ["[out:xml];way['highway'](42.87000,-8.56000,42.89000,-8.53000);out;"]
+
+
+def test_an_answer_for_a_larger_area_serves_any_area_inside_it(tmp_path, downloads):
+    large = _area(T, (42.80, -8.70, 43.00, -8.40), tmp_path)
+    assert _area(T, (42.8775, -8.5510, 42.8845, -8.5385), tmp_path) == large
+    assert len(downloads) == 1
+    # Not another layer's query, nor an area that sticks out.
+    _area(T.replace("highway", "building"), (42.8775, -8.5510, 42.8845, -8.5385), tmp_path)
+    _area(T, (42.95, -8.50, 43.05, -8.45), tmp_path)
+    assert len(downloads) == 3
+
+
+def test_of_the_answers_that_cover_it_the_smallest_is_used(tmp_path, downloads):
+    medium = _area(T, (42.85, -8.60, 42.90, -8.50), tmp_path)
+    large = _area(T, (42.0, -9.0, 43.5, -8.0), tmp_path)  # holds the medium one: asked
+    assert medium != large and len(downloads) == 2
+    assert _area(T, (42.87, -8.56, 42.88, -8.54), tmp_path) == medium  # inside both
+    assert len(downloads) == 2

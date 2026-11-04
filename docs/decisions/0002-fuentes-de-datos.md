@@ -138,3 +138,41 @@ otro. Ahora:
 
 Las descargas del relieve y de Geofabrik no hacen cola: no son Overpass, y cada
 una se hace una sola vez.
+
+## Añadido del 04/11/2026: la caché de Overpass sirve para áreas de dentro
+
+Hasta ahora la caché de Overpass iba **por consulta exacta**, y la consulta lleva
+el recuadro del mapa: mover el centro unos metros, cambiar de papel o acercarse
+volvía a pedir todo a Overpass, aunque los datos ya estuvieran en disco. El
+usuario preguntó si se podía aprovechar, y se cambia la regla (con su visto
+bueno):
+
+- **El recuadro se redondea hacia fuera a una rejilla de 0,01°** (~1 km,
+  `overpass.GRID`) antes de preguntar. Dos mapas casi iguales hacen la misma
+  consulta exacta.
+- **Una respuesta para un área mayor sirve para cualquiera de dentro.** Junto a
+  cada `.osm` pedido por área queda un `.area.json` con la consulta sin el
+  recuadro (su hash) y el recuadro. Antes de preguntar se busca una respuesta de
+  la misma consulta cuyo recuadro contenga el nuevo; si hay varias, la más
+  pequeña. Las capas dan su consulta como plantilla, con `{{bbox}}` donde va el
+  recuadro (`Layer.overpass_template`).
+- **`OverpassSource` se queda solo con lo que toca el área** (`shapely.intersects`
+  con el recuadro), para que un mapa pequeño servido por una respuesta grande no
+  dibuje ni recorra miles de cosas que el marco va a recortar.
+
+Funciona con todas las capas: los multipolígonos y las relaciones de límites que
+tocan el área pequeña también tocan la grande, y vienen igual de completos.
+
+Lo demás no cambia: una petición cada vez, la espera ante 429/5xx, los fallos sin
+cachear. Los `.osm` que ya había no tienen `.area.json`: solo se reusan si se
+repite su consulta exacta, y con el redondeo ya no se repite; `make clean-cache`
+los quita.
+
+**Lo que se descartó**: partir la caché en teselas fijas y bajar solo las que
+faltan. En teoría pide menos datos, pero un mapa costaría varias peticiones (una
+por tesela), habría que juntarlas con `osmium merge` y cuidar los multipolígonos
+que cruzan bordes.
+
+**Consecuencia**: los datos pueden ser más viejos de lo que parece, porque un
+mapa nuevo puede salir de una respuesta bajada para otro hace tiempo. La caché
+sigue sin caducar; para refrescar OSM, se borra `data/cache/overpass/`.

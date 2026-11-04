@@ -274,3 +274,14 @@ def test_a_shared_edge_is_drawn_by_the_highest_layer_on_the_map(boundary_file, t
     (alone,) = load_features(frame, select(["municipalities"]), source)["municipalities"]
     assert alone.geom.geom_type == "LineString"
     assert round(alone.geom.length * 1000, 2) == 2.53
+
+
+def test_overpass_keeps_only_what_touches_the_area(osm_file, tmp_path, monkeypatch):
+    # The cached answer may be for a much larger area: here, the whole mini file.
+    monkeypatch.setattr("vectormaps.overpass.fetch_area", lambda *a, **k: osm_file)
+    source = OverpassSource(tmp_path)
+    around_the_building = (42.8798, -8.5452, 42.8806, -8.5443)
+    kept = source.features(select(["buildings"])[0], around_the_building)
+    assert {t.get("building") or t.get("highway") or t.get("natural") for _k, t, _g in kept} == {
+        "yes"
+    }  # not the street to the south, the lake to the north or the place name

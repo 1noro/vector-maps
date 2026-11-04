@@ -127,6 +127,12 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Cambiado
 
+- **La caché de Overpass sirve para áreas de dentro**: el recuadro se redondea
+  hacia fuera a 0,01° (~1 km), así que un mapa movido un poco repite la misma
+  consulta, y una respuesta bajada para un área mayor sirve para cualquier mapa
+  dentro de ella (acercarse, un papel más pequeño) sin preguntar a Overpass. Se
+  usa solo lo que toca el área. Los `.osm` de antes ya no se reusan (ADR 0002).
+
 - **`vintage` se parece a una hoja topográfica del siglo XIX**: agua turquesa
   rayada, prados en trazos verdes, edificios rayados, calles en doble línea negra
   (las principales rellenas de ocre y amarillo, para leerse sobre el relieve),
