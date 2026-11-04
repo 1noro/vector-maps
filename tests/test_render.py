@@ -7,7 +7,7 @@ from vectormaps.area import fit
 from vectormaps.labels import CHAR_WIDTH
 from vectormaps.layers import select
 from vectormaps.pipeline import Item
-from vectormaps.render import MARK, Job, legend_lines, path_data, render
+from vectormaps.render import MARK, Job, _corner, legend_lines, path_data, render
 from vectormaps.theme import load
 
 NS = {"svg": "http://www.w3.org/2000/svg", "ink": "http://www.inkscape.org/namespaces/inkscape"}
@@ -182,3 +182,49 @@ def test_rect_and_square_have_no_clip_and_a_rect_outline(shape):
     outline = root.find(".//svg:g[@id='frame']/svg:rect", NS)
     w = float(outline.get("width"))
     assert w == pytest.approx(277 if shape == "rect" else 190)
+
+
+def test_circle_legend_gives_the_centre_instead_of_the_corners():
+    job = _shaped_job("circle")
+    lat, lon = job.frame.center()
+    assert lat == pytest.approx((TL[0] + BR[0]) / 2, abs=1e-4)
+    assert lon == pytest.approx((TL[1] + BR[1]) / 2, abs=1e-4)
+    full = legend_lines([job])
+    assert full[1] == f"⌖ {lat:.5f}, {lon:.5f}"
+    assert "↖" not in "".join(full) and "↘" not in "".join(full)
+    assert legend_lines([job], "minimal")[0].startswith(f"⌖ {lat:.5f}, {lon:.5f} · 1:")
+    square = legend_lines([_shaped_job("square")])
+    assert "↖" in square[1]  # only the circle changes
+
+
+@pytest.mark.parametrize(
+    "coords, expected",
+    [
+        ("dd", "42.88000, -8.54000"),
+        ("dm", "42°52.800'N 8°32.400'W"),
+        ("dms", "42°52'48.0\"N 8°32'24.0\"W"),
+    ],
+)
+def test_coordinate_formats(coords, expected):
+    assert _corner((42.88, -8.54), coords) == expected
+
+
+def test_coordinate_formats_carry_and_hemispheres():
+    # 59.99996' rounds up into the next degree instead of writing 60.000'
+    assert _corner((10.99999999, 0.0), "dm") == "11°00.000'N 0°00.000'E"
+    assert _corner((-33.5, 151.25), "dms") == "33°30'00.0\"S 151°15'00.0\"E"
+    assert _corner((0.9999999, 0.0), "dms") == "1°00'00.0\"N 0°00'00.0\"E"
+
+
+def test_legend_uses_the_chosen_coordinate_format():
+    job = make_job("a", TL, BR, "color")
+    for coords in ("dm", "dms"):
+        lines = legend_lines([job], "full", coords)
+        assert "↖" in lines[1] and "°" in lines[1] and "." in lines[1]
+        assert "°" in legend_lines([job], "minimal", coords)[0]
+        assert "°" in render([job], "full", coords)
+    assert "°" not in legend_lines([job])[1]  # decimal degrees by default
+    with pytest.raises(ValueError, match="coordinate format"):
+        legend_lines([job], "full", "utm")
+    circle = legend_lines([_shaped_job("circle")], "full", "dms")
+    assert circle[1].startswith("⌖ 42°") and "N" in circle[1]

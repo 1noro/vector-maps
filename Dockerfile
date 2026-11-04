@@ -11,6 +11,12 @@ RUN apt-get update \
 	&& apt-get install -y --no-install-recommends osmium-tool inkscape gdal-bin \
 	&& rm -rf /var/lib/apt/lists/*
 
+# fonts-symbola: el símbolo ⌖ de la leyenda de los mapas circulares (DejaVu no lo trae).
+# Capa aparte para no repetir la de arriba al tocarla.
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends fonts-symbola \
+	&& rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt requirements-dev.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.txt -r /tmp/requirements-dev.txt
 

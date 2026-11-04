@@ -79,6 +79,9 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 - La leyenda escribe las esquinas con `↖` y `↘` (antes `TL` y `BR`) y, con una
   sola zona, la escala va sin la letra (`1:4120`, no `A 1:4120`; ADR 0004).
+- `COORDS=dd|dm|dms` cambia el formato de las coordenadas de la leyenda (ADR 0004).
+- Con `SHAPE=circle` la leyenda da el centro (`⌖ lat, lon`) en vez de las esquinas. La imagen instala `fonts-symbola` para
+  dibujarlo (`make docker`; ADR 0007).
 - `ORIENTATION=auto` elige apaisado cuando el área es casi cuadrada (±5 %).
 - `make help` recoge `CENTER`/`RADIUS`, `SHAPE` y `CENTER2`/`RADIUS2`.
 - `make` ya no muestra los comandos que ejecuta (`.SILENT`): el log lleva solo lo

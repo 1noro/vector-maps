@@ -29,6 +29,8 @@ Uso: make <objetivo> [VARIABLE=valor …]
              OUT=out/map.svg     fichero de salida
              PDF=1               también un PDF del tamaño del papel
              LEGEND=minimal      leyenda corta: esquinas, escala, © OpenStreetMap y marca
+             COORDS=dd           coordenadas de la leyenda: dd (42.88000, -8.54000),
+                                 dm (42°52.800'N 8°32.400'W), dms (42°52'48.0"N 8°32'24.0"W)
              PBF=data/pbf/x.osm.pbf   datos de un extracto local, no de Overpass
                                  (sin PBF, si Overpass falla y un extracto de data/pbf/
                                  cubre el área, se usa solo, con aviso)
@@ -123,6 +125,7 @@ list: .image
 #          [ORIENTATION=auto|landscape|portrait] [MARGIN=10] [OUT=out/map.svg]
 #          [LABEL_LANG=es]   (idioma de los nombres: es, gl, en… o varios: gl,es)
 #          [PDF=1]           (además del SVG, un PDF del tamaño del papel al lado)
+#          [COORDS=dd|dm|dms]  (formato de las coordenadas de la leyenda; por defecto dd)
 #          [LEGEND=minimal]  (solo esquinas, escala, © OpenStreetMap y la marca; ADR 0004)
 #          [THEME=monochrome TINT=#1f3b5c]   (el bw tintado de un color; # opcional)
 # Datos: por defecto Overpass; con PBF=ruta.osm.pbf, desde un extracto local.
@@ -152,6 +155,7 @@ map: .image data-dir
 		$(if $(OUT),--out $(OUT)) \
 		$(if $(PDF),--pdf) \
 		$(if $(LEGEND),--legend $(LEGEND)) \
+		$(if $(COORDS),--coords $(COORDS)) \
 		$(if $(PBF),--pbf $(PBF)) \
 		$(if $(TL2),--over-tl="$(TL2)") $(if $(BR2),--over-br="$(BR2)") \
 		$(if $(CENTER2),--over-center="$(CENTER2)") $(if $(RADIUS2),--over-radius $(RADIUS2)) \

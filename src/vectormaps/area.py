@@ -88,6 +88,12 @@ class Frame:
         (lon2, lat2) = back.transform(self.xmax, self.ymin)
         return (lat1, lon1), (lat2, lon2)
 
+    def center(self) -> tuple[float, float]:
+        """(lat, lon) of the middle of the map."""
+        back = Transformer.from_crs(self.crs, 4326, always_xy=True)
+        lon, lat = back.transform((self.xmin + self.xmax) / 2, (self.ymin + self.ymax) / 2)
+        return lat, lon
+
     def page_matrix(self) -> list[float]:
         """Affine matrix [a, b, d, e, xoff, yoff] taking projected metres to page mm."""
         s = 1.0 / self.metres_per_mm

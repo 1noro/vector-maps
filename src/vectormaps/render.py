@@ -27,6 +27,7 @@ MARK = "Generated with vector-maps by 1noro"
 ATTRIBUTION = "© OpenStreetMap contributors (ODbL)"
 SHORT_ATTRIBUTION = "© OpenStreetMap"  # the short form OSM accepts; the minimal legend keeps it
 LEGENDS = ("full", "minimal")
+COORDS = ("dd", "dm", "dms")  # decimal degrees, degrees and decimal minutes, d-m-s
 LEGEND_SIZE = 2.4  # mm; smaller on small margins or long lines, so everything fits
 
 
@@ -212,11 +213,25 @@ def _job_group(job: Job) -> str:
     return "\n".join(out)
 
 
-def _corner(c: tuple[float, float]) -> str:
-    return f"{c[0]:.5f}, {c[1]:.5f}"
+def _dms(value: float, axis: str, fmt: str) -> str:
+    """One coordinate as degrees, minutes and seconds (or decimal minutes), with its hemisphere."""
+    hemi = ("N" if value >= 0 else "S") if axis == "lat" else ("E" if value >= 0 else "W")
+    v = abs(value)
+    if fmt == "dm":  # whole thousandths of a minute, so 59.9996' carries into the degree
+        total = round(v * 60000)
+        return f"{total // 60000}°{total % 60000 / 1000:06.3f}'{hemi}"
+    total = round(v * 36000)  # tenths of a second (~3 m)
+    return f"{total // 36000}°{total // 600 % 60:02d}'{total % 600 / 10:04.1f}\"{hemi}"
 
 
-def legend_lines(jobs: list[Job], legend: str = "full") -> tuple[str, ...]:
+def _corner(c: tuple[float, float], coords: str = "dd") -> str:
+    """A (lat, lon) as the legend writes it, in the format `coords` (COORDS)."""
+    if coords == "dd":
+        return f"{c[0]:.5f}, {c[1]:.5f}"
+    return f"{_dms(c[0], 'lat', coords)} {_dms(c[1], 'lon', coords)}"
+
+
+def legend_lines(jobs: list[Job], legend: str = "full", coords: str = "dd") -> tuple[str, ...]:
     """The bottom lines of the legend.
 
     Full: attribution, paper and scales; then the corners. Minimal: one line with the
@@ -224,6 +239,8 @@ def legend_lines(jobs: list[Job], legend: str = "full") -> tuple[str, ...]:
     """
     if legend not in LEGENDS:
         raise ValueError(f"unknown legend {legend!r}; use {', '.join(LEGENDS)}")
+    if coords not in COORDS:
+        raise ValueError(f"unknown coordinate format {coords!r}; use {', '.join(COORDS)}")
     f = jobs[0].frame
     # The zone letter only tells them apart when there are several.
     scales = " + ".join(
@@ -231,9 +248,12 @@ def legend_lines(jobs: list[Job], legend: str = "full") -> tuple[str, ...]:
     )
     zones = []
     for j in jobs:
-        tl, br = j.frame.corners()
         prefix = f"{j.label.upper()}: " if len(jobs) > 1 else ""
-        zones.append(f"{prefix}↖ {_corner(tl)} · ↘ {_corner(br)}")
+        if j.frame.shape == "circle":  # a circle has no corners: say where its middle is
+            zones.append(f"{prefix}⌖ {_corner(j.frame.center(), coords)}")
+        else:
+            tl, br = j.frame.corners()
+            zones.append(f"{prefix}↖ {_corner(tl, coords)} · ↘ {_corner(br, coords)}")
     corners = "   |   ".join(zones)
     if legend == "minimal":
         return (f"{corners} · {scales} · {SHORT_ATTRIBUTION}",)
@@ -244,9 +264,9 @@ def uses_relief(jobs: list[Job]) -> bool:
     return any(j.features.get(layer.name) for j in jobs for layer in j.layers if layer.dem)
 
 
-def _legend(jobs: list[Job], ink: str, legend: str) -> list[str]:
+def _legend(jobs: list[Job], ink: str, legend: str, coords: str) -> list[str]:
     f = jobs[0].frame
-    lines = legend_lines(jobs, legend)
+    lines = legend_lines(jobs, legend, coords)
     # The relief's attribution (its licence asks for it) goes top left, beside the mark.
     top = relief.ATTRIBUTION if uses_relief(jobs) else ""
     widest = max(*(len(line) for line in lines), len(top) + len(MARK) + 4)
@@ -292,7 +312,7 @@ def _outline(f: Frame, ink: str, width: float | str) -> str:
     )
 
 
-def render(jobs: list[Job], legend: str = "full") -> str:
+def render(jobs: list[Job], legend: str = "full", coords: str = "dd") -> str:
     first = jobs[0]
     f = first.frame
     page = first.theme.page
@@ -304,7 +324,7 @@ def render(jobs: list[Job], legend: str = "full") -> str:
         'xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" '
         f'width="{_num(f.page_w)}mm" height="{_num(f.page_h)}mm" '
         f'viewBox="0 0 {_num(f.page_w)} {_num(f.page_h)}">',
-        f"<title>{escape(' — '.join(legend_lines(jobs, legend) + _credits(jobs)))}</title>",
+        f"<title>{escape(' — '.join(legend_lines(jobs, legend, coords) + _credits(jobs)))}</title>",
         '<g id="page" inkscape:groupmode="layer" inkscape:label="page">',
         f'<rect width="{_num(f.page_w)}" height="{_num(f.page_h)}" fill="{page["background"]}"/>',
         "</g>",
@@ -314,7 +334,7 @@ def render(jobs: list[Job], legend: str = "full") -> str:
         '<g id="frame" inkscape:groupmode="layer" inkscape:label="frame">',
         _outline(f, ink, page["frame-width"]),
         "</g>",
-        *_legend(jobs, ink, legend),
+        *_legend(jobs, ink, legend, coords),
         "</svg>",
     ]
     return "\n".join(parts) + "\n"

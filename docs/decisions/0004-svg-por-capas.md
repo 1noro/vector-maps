@@ -40,12 +40,21 @@ editores para retocarlo.
   (puentes, túneles), son clases nuevas en la capa (TODO 3).
 - Los polígonos usan `fill-rule="evenodd"` para los agujeros (islas, patios).
 
+## Añadido del 04/11/2026: formato de las coordenadas
+
+`--coords=dd|dm|dms` (`COORDS` en `make`) elige cómo se escriben las coordenadas
+de la leyenda y del `<title>`: `dd` (el de siempre, 5 decimales, ~1 m), `dm`
+(`42°52.800'N 8°32.400'W`, milésimas de minuto, ~2 m) o `dms`
+(`42°52'48.0"N 8°32'24.0"W`, décimas de segundo, ~3 m). Solo cambia el texto: el
+mapa es el mismo. `--tl`/`--br`/`--center` siguen en grados decimales.
+
 ## Añadido del 04/11/2026: la leyenda, sin letra con una sola zona
 
 Las esquinas se escriben `↖` (arriba-izquierda) y `↘` (abajo-derecha), no `TL`
 y `BR`. La letra de la zona (`A`) solo aparece en la leyenda cuando hay más de
 una (`A 1:4120 + B 1:888`); con una sola zona, `1:4120`. Con un mapa circular
-(ADR 0003) las esquinas son las de la caja cuadrada del mapa.
+(ADR 0003) no hay esquinas: la leyenda da **el centro** del mapa, `⌖ lat, lon`
+(`Frame.center`). Con un cuadrado, las esquinas de siempre.
 
 ## Añadido del 03/11/2026: la leyenda
 

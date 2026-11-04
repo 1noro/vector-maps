@@ -14,7 +14,7 @@ from vectormaps.paper import PAPERS
 from vectormaps.pdf import svg_to_pdf
 from vectormaps.pipeline import load_features
 from vectormaps.progress import ProgressHandler, Spinner
-from vectormaps.render import LEGENDS, Job, render
+from vectormaps.render import COORDS, LEGENDS, Job, render
 from vectormaps.sources import Bounds, OverpassSource, PbfSource, Source, local_pbf_for
 
 log = logging.getLogger("vectormaps")
@@ -82,6 +82,13 @@ def build_parser() -> argparse.ArgumentParser:
         choices=LEGENDS,
         default="full",
         help="minimal: only the corners, the scale, a short OSM credit and the mark",
+    )
+    m.add_argument(
+        "--coords",
+        choices=COORDS,
+        default="dd",
+        help="format of the coordinates in the legend: dd 42.88000, -8.54000; "
+        "dm 42°52.800'N 8°32.400'W; dms 42°52'48.0\"N 8°32'24.0\"W. default: %(default)s",
     )
     m.add_argument("--cache", type=Path, default=Path("data/cache"))
     m.add_argument("--pbf", type=Path, help="read a local .osm.pbf instead of asking Overpass")
@@ -223,7 +230,7 @@ def _map(a: argparse.Namespace) -> int:
         jobs = _load_jobs(specs, source, langs, a.cache)
 
     with Spinner("drawing the SVG"):
-        svg = render(jobs, a.legend)
+        svg = render(jobs, a.legend, a.coords)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     tmp = a.out.with_name(a.out.name + ".tmp")
     tmp.write_text(svg, encoding="utf-8")

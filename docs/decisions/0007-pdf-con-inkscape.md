@@ -49,3 +49,11 @@ Probado el 03/11 con el mismo mapa de Santiago, en A4:
 - Un test convierte un SVG diminuto con Inkscape de verdad (como osmium en los
   de las fuentes) y comprueba el tamaño de página.
 - El PDF no se cachea: se rehace con el SVG, en un segundo o dos para un A4.
+
+## Añadido el 04/11/2026 — la fuente del símbolo ⌖
+
+La leyenda de un mapa circular lleva `⌖` (ADR 0004) y DejaVu no lo trae: en el
+PDF salía en blanco. La imagen instala ahora `fonts-symbola` (Debian, libre,
+~1 MB, en una capa aparte del `Dockerfile`) y Inkscape la usa como alternativa y
+la incrusta en el PDF. Hay que reconstruir la imagen (`make docker`). En el SVG
+el símbolo es texto: en otro programa lo pinta la fuente que tenga ese equipo.

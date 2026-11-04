@@ -9,7 +9,7 @@ La primera vez, `make` construye la imagen sola; `make docker` la reconstruye.
 ```bash
 make map TL=lat,lon BR=lat,lon [PAPER=A4] [SHAPE=rect] [ORIENTATION=auto] [MARGIN=10] \
          [LAYERS=water,roads] [INCLUDE_LAYERS=places] [EXCLUDE_LAYERS=railways] [THEME=color] [TINT=#1f3b5c] [LABEL_LANG=es] [PBF=ruta] \
-         [OUT=out/map.svg] [PDF=1] [LEGEND=minimal]
+         [OUT=out/map.svg] [PDF=1] [LEGEND=minimal] [COORDS=dd]
 
 # o el área por centro y radio (km), en vez de TL y BR:
 make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
@@ -32,6 +32,7 @@ make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
 | `PBF` | (Overpass) | Extracto local `.osm.pbf` en vez de Overpass |
 | `OUT` | `out/map.svg` | Fichero de salida |
 | `PDF` | — | `PDF=1`: además, un PDF del tamaño del papel al lado (`out/map.pdf`) |
+| `COORDS` | `dd` | Formato de las coordenadas de la leyenda: `dd` grados decimales (`42.88000, -8.54000`), `dm` grados y minutos decimales (`42°52.800'N 8°32.400'W`) o `dms` grados, minutos y segundos (`42°52'48.0"N 8°32'24.0"W`) |
 | `LEGEND` | `full` | `minimal`: solo las esquinas, la escala, `© OpenStreetMap` y la marca |
 
 La zona pedida **se amplía, nunca se recorta**, hasta tener la forma del papel;
@@ -128,7 +129,8 @@ las que pediste: la zona crece hasta la forma de la hoja). Pasadas de vuelta a
 `TL`/`BR` dan el mapa entero pero un ~2 % más alejado, por cómo se proyecta el
 rectángulo; para repetir un mapa exacto, repite las esquinas que pediste. El
 margen de arriba, a la derecha, lleva la marca
-«Generated with vector-maps by 1noro». Con dos zonas se listan las dos esquinas.
+«Generated with vector-maps by 1noro». Con dos zonas se listan las dos esquinas. Con `SHAPE=circle` no hay esquinas que dar: la leyenda lleva en su lugar las
+coordenadas del centro del mapa, `⌖ lat, lon`.
 
 Con `LEGEND=minimal` el pie se queda en una sola línea, sin el papel ni la
 orientación:
