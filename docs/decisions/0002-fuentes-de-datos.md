@@ -102,3 +102,17 @@ sugería. Los datos que Overpass ya había dejado en la caché no se pierden.
 - Si se pasó `PBF=`, no hay fallback: ya es la fuente elegida.
 - Los datos del extracto pueden tener otra fecha que los de Overpass; por eso el
   aviso es un `WARNING`, no un `INFO`.
+
+## Añadido del 04/11/2026: el log dice de dónde sale cada capa
+
+El usuario creyó que la caché de Overpass no funcionaba: una capa fallaba en
+cada ejecución, un fallo no se cachea (como manda la regla) y el mapa acababa
+saliendo del extracto sin que se notara. Ahora:
+
+- Cada línea de capa lleva su fuente: `layer water: 58 features (Overpass)`, o
+  `(local extract galicia-latest.osm.pbf)`, o `(Copernicus DEM)` en el relieve.
+- El error de Overpass nombra la capa (`layer water: Overpass answered HTTP
+  504`), y el aviso del fallback dice que todas las capas salen del extracto
+  (`…; drawing every layer from the local extract …`).
+
+Nada cambia en cómo se piden, se esperan o se cachean los datos.

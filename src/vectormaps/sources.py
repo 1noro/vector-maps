@@ -52,6 +52,8 @@ def local_pbf_for(areas: list[Bounds], pbf_dir: Path) -> Path | None:
 
 
 class Source(Protocol):
+    name: str  # what the log says the data comes from
+
     def check(self, bounds: Bounds) -> None:
         """Raise ValueError if this source cannot have data for the area."""
         ...
@@ -61,6 +63,8 @@ class Source(Protocol):
 
 class OverpassSource:
     """One query per layer and area, cached on disk by the exact query."""
+
+    name = "Overpass"
 
     def __init__(self, cache_dir: Path, url: str | None = None):
         self.cache_dir = cache_dir / "overpass"
@@ -86,6 +90,7 @@ class PbfSource:
         if not pbf.is_file():
             raise ValueError(f"PBF file not found: {pbf} (see `make pbf`)")
         self.pbf = pbf
+        self.name = f"local extract {pbf.name}"
         self.cache_dir = cache_dir / "pbf"
         self._memo: dict[Bounds, list[Feature]] = {}
         self.coverage = header_box(pbf)  # (west, south, east, north), if the file says

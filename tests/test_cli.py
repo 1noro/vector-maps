@@ -88,7 +88,7 @@ def test_overpass_failing_falls_back_to_a_local_pbf_that_covers_the_area(
     assert cli.main([*MAP, f"--cache={tmp_path}", f"--out={out}"]) == 0
     assert used == ["OverpassSource", "FakePbf"]
     assert out.exists()
-    assert "using the local extract" in caplog.text and "HTTP 504" in caplog.text
+    assert "from the local extract" in caplog.text and "HTTP 504" in caplog.text
 
 
 class FakePbf:
@@ -105,4 +105,4 @@ def test_a_pbf_given_by_the_user_is_never_replaced(tmp_path, monkeypatch, capsys
     monkeypatch.setattr(cli, "local_pbf_for", lambda b, d: Path("data/pbf/other.osm.pbf"))
     monkeypatch.setattr(cli.geofabrik, "region_for", lambda b, c: None)
     assert cli.main([*MAP, f"--cache={tmp_path}", "--pbf=data/pbf/mine.osm.pbf"]) == 1
-    assert "using the local extract" not in capsys.readouterr().err
+    assert "from the local extract" not in capsys.readouterr().err

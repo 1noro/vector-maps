@@ -196,8 +196,13 @@ En el SVG hay un grupo `area-a` y otro `area-b`; abre el fichero en Inkscape
   programa espera y reintenta hasta 3 veces, y lo ya descargado no se repite.
   Otro servidor: `OVERPASS_URL=https://… make map …`. **Si acaba fallando**:
   si ya tienes en `data/pbf/` un PBF que cubre el área (todas las zonas), `make
-  map` **sigue solo con él** y lo avisa (`Overpass failed (…); using the local
-  extract …`); ojo, sus datos pueden ser de otra fecha. Nunca baja un extracto
+  map` **sigue solo con él** y lo avisa (`Overpass failed (layer water: …);
+  drawing every layer from the local extract …`); ojo, sus datos pueden ser de
+  otra fecha. Un fallo no se cachea: la siguiente vez se vuelve a pedir esa capa
+  a Overpass (y a esperar) antes de pasar al extracto; para ir directo, añade
+  `PBF=`. El log dice de dónde sale cada capa:
+  `layer water: 58 features (local extract galicia-latest.osm.pbf)` u
+  `(Overpass)`. Nunca baja un extracto
   por su cuenta. Si no hay ninguno que sirva, el error dice qué extracto de
   Geofabrik bajar, con el comando:
 

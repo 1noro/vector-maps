@@ -7,8 +7,9 @@ import pytest
 from vectormaps import osmexport
 from vectormaps.area import fit
 from vectormaps.layers import select
+from vectormaps.overpass import OverpassError
 from vectormaps.pipeline import load_features
-from vectormaps.sources import PbfSource, local_pbf_for
+from vectormaps.sources import OverpassSource, PbfSource, local_pbf_for
 
 # A building (closed way) and a lake with an island (multipolygon with a hole),
 # plus a street; around 42.880 N, 8.545 W.
@@ -150,6 +151,8 @@ def test_area_partly_outside_the_pbf_warns(pbf_with_box, tmp_path, caplog):
 
 def test_no_data_in_the_area_warns(caplog):
     class Empty:
+        name = "nothing"
+
         def check(self, bounds):
             pass
 
@@ -169,3 +172,18 @@ def test_labels_come_out_in_the_chosen_language(osm_file, tmp_path):
     gl = load_features(frame, layers, PbfSource(osm_file, tmp_path / "c2"), ["gl", "local"])
     assert [i.text for i in gl["street-names"]] == ["Rúa do Vilar"]  # no name:gl: the mapped one
     assert [i.text for i in gl["places"]] == ["A Almáciga"]
+
+
+def test_the_log_says_where_each_layer_comes_from(osm_file, tmp_path, caplog):
+    caplog.set_level("INFO")
+    load_features(fit(TL, BR, "A4"), select(["roads"]), PbfSource(osm_file, tmp_path))
+    assert f"layer roads: 1 features (local extract {osm_file.name})" in caplog.text
+
+
+def test_an_overpass_failure_names_the_layer(tmp_path, monkeypatch):
+    def fail(*args, **kwargs):
+        raise OverpassError("Overpass answered HTTP 504")
+
+    monkeypatch.setattr("vectormaps.overpass.fetch", fail)
+    with pytest.raises(OverpassError, match="layer water: Overpass answered HTTP 504"):
+        load_features(fit(TL, BR, "A4"), select(["water"]), OverpassSource(tmp_path))

@@ -81,6 +81,9 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Cambiado
 
+- **El log dice de dónde sale cada capa** (`(Overpass)`, `(local extract …)`,
+  `(Copernicus DEM)`), y un fallo de Overpass nombra la capa en la que fue
+  (ADR 0002).
 - **El agua se dibuja encima del verde** (antes, debajo): un bosque mapeado
   sobre un río ya no lo tapa. En el SVG, el grupo `water` va encima de `green`
   (ADR 0004).

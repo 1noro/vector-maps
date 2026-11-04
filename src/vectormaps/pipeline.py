@@ -10,6 +10,7 @@ from vectormaps import relief
 from vectormaps.area import Frame
 from vectormaps.labels import pick_name
 from vectormaps.layers import Layer
+from vectormaps.overpass import OverpassError
 from vectormaps.progress import Spinner
 from vectormaps.sources import Source
 
@@ -72,8 +73,12 @@ def load_features(
             if layer.dem:
                 items = _relief(frame, layer, cache)
             else:
-                items = _osm(layer, source.features(layer, bounds), langs)
-        log.info("layer %s: %d features", layer.name, len(items))
+                try:
+                    items = _osm(layer, source.features(layer, bounds), langs)
+                except OverpassError as err:
+                    raise OverpassError(f"layer {layer.name}: {err}") from err
+        origin = "Copernicus DEM" if layer.dem else source.name
+        log.info("layer %s: %d features (%s)", layer.name, len(items), origin)
         out[layer.name] = items
     if not any(out.values()):
         log.warning("no data found in this area; is it covered by the data source?")

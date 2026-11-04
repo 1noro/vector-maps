@@ -224,7 +224,11 @@ def _map(a: argparse.Namespace) -> int:
         local = None if a.pbf else local_pbf_for(boxes, PBF_DIR)
         if local is None:
             raise OverpassError(f"{err}\n{offline_hint(boxes, a.cache)}") from err
-        log.warning("Overpass failed (%s); using the local extract %s instead", err, local)
+        log.warning(
+            "Overpass failed (%s); drawing every layer from the local extract %s instead",
+            err,
+            local,
+        )
         source = PbfSource(local, a.cache)
         for bounds in boxes:
             source.check(bounds)
