@@ -89,8 +89,11 @@ def load_features(
 
     drawn = {level for layer in layers for level, _cls in layer.admin}
     out: Features = {}
-    for layer in layers:
-        with Spinner(f"layer {layer.name}"):
+    for n, layer in enumerate(layers, 1):
+        origin = "Copernicus DEM" if layer.dem else source.name
+        # Step n of the total: Overpass gives no size or progress, so no percentage.
+        # "loading", not "downloading": the cache or a local extract download nothing.
+        with Spinner(f"loading layer {n}/{len(layers)}: {layer.name}, from {origin}"):
             if layer.dem:
                 items = _relief(frame, layer, cache)
             else:
@@ -102,7 +105,6 @@ def load_features(
                         items = _osm(layer, feats, langs)
                 except OverpassError as err:
                     raise OverpassError(f"layer {layer.name}: {err}") from err
-        origin = "Copernicus DEM" if layer.dem else source.name
         log.info("layer %s: %d features (%s)", layer.name, len(items), origin)
         out[layer.name] = items
     if not any(out.values()):

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from vectormaps import boundaries, osmexport
+from vectormaps import boundaries, osmexport, pipeline
 from vectormaps.area import fit
 from vectormaps.layers import select
 from vectormaps.overpass import OverpassError
@@ -149,18 +149,40 @@ def test_area_partly_outside_the_pbf_warns(pbf_with_box, tmp_path, caplog):
     assert caplog.text == ""
 
 
+class Empty:
+    name = "nothing"
+
+    def check(self, bounds):
+        pass
+
+    def features(self, layer, bounds):
+        return []
+
+
 def test_no_data_in_the_area_warns(caplog):
-    class Empty:
-        name = "nothing"
-
-        def check(self, bounds):
-            pass
-
-        def features(self, layer, bounds):
-            return []
-
     load_features(fit(TL, BR, "A4"), select(["roads"]), Empty())
     assert "no data found" in caplog.text
+
+
+def test_the_spinner_tells_the_step_out_of_the_total(monkeypatch):
+    seen = []
+
+    class Recorder:
+        def __init__(self, message):
+            seen.append(message)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(pipeline, "Spinner", Recorder)
+    load_features(fit(TL, BR, "A4"), select(["water", "roads"]), Empty())
+    assert seen == [
+        "loading layer 1/2: water, from nothing",
+        "loading layer 2/2: roads, from nothing",
+    ]
 
 
 def test_labels_come_out_in_the_chosen_language(osm_file, tmp_path):
