@@ -20,6 +20,9 @@ from vectormaps.tmpfile import tmp_beside
 
 log = logging.getLogger("vectormaps")
 
+DEFAULT_PAPER = "A4"
+DEFAULT_THEME = "bw"
+
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
@@ -39,7 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
     m.add_argument(
         "--radius", type=float, metavar="KM", help="radius in km: the circle is always fully shown"
     )
-    m.add_argument("--paper", default="A4", choices=list(PAPERS), type=str.upper)
+    m.add_argument("--paper", default=DEFAULT_PAPER, choices=list(PAPERS), type=str.upper)
     m.add_argument("--orientation", default="landscape", choices=["auto", "landscape", "portrait"])
     m.add_argument("--margin", type=float, default=6.0, metavar="MM")
     m.add_argument(
@@ -68,7 +71,9 @@ def build_parser() -> argparse.ArgumentParser:
         "with a name wins, else the name as mapped. 'local' = as mapped. default: %(default)s",
     )
     m.add_argument(
-        "--theme", default="bw", help="bundled theme name or a .toml path. default: %(default)s"
+        "--theme",
+        default=DEFAULT_THEME,
+        help="bundled theme name or a .toml path. default: %(default)s",
     )
     m.add_argument(
         "--tint",
@@ -155,14 +160,25 @@ def offline_hint(areas: list[Bounds], cache: Path) -> str:
 
 
 def _list() -> int:
-    print("layers:")
     width = max(map(len, layer_defs.ORDER))
-    for name in layer_defs.ORDER:
-        layer = layer_defs.LAYERS[name]
-        extra = "   (not by default)" if name not in layer_defs.DEFAULT else ""
-        print(f"  {name:<{width}} classes (bottom to top): {', '.join(layer.classes)}{extra}")
-    print("papers:  ", ", ".join(PAPERS))
-    print("themes:  ", ", ".join(themes.available()))
+
+    def layers(on: bool) -> None:
+        for name in layer_defs.ORDER:
+            if (name in layer_defs.DEFAULT) == on:
+                classes = ", ".join(layer_defs.LAYERS[name].classes)
+                print(f"  {name:<{width}}  {classes}")
+
+    print("layers drawn by default (bottom to top, with their classes):")
+    layers(True)
+    print()
+    print("layers off by default (add them with --include-layers):")
+    layers(False)
+    print()
+    print("papers:", ", ".join(f"{p} (default)" if p == DEFAULT_PAPER else p for p in PAPERS))
+    print(
+        "themes:",
+        ", ".join(f"{t} (default)" if t == DEFAULT_THEME else t for t in themes.available()),
+    )
     return 0
 
 

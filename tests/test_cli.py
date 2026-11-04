@@ -113,3 +113,13 @@ def test_the_defaults_are_a_landscape_bw_map_with_its_pdf():
     assert (ns.orientation, ns.margin, ns.theme) == ("landscape", 6.0, "bw")
     assert (ns.legend, ns.coords, ns.pdf) == ("minimal", "dms", True)
     assert cli.build_parser().parse_args([*MAP, "--no-pdf"]).pdf is False
+
+
+def test_list_tells_the_default_layers_paper_and_theme(capsys):
+    assert cli.main(["list"]) == 0
+    out = capsys.readouterr().out
+    on, off = out.split("layers off by default")
+    assert "  roads " in on and "  hillshade " not in on
+    assert "  hillshade " in off and "  places " in off and "  roads " not in off
+    assert "A4 (default)" in out and "bw (default)" in out
+    assert out.count("(default)") == 2
