@@ -225,11 +225,12 @@ LAYERS: dict[str, Layer] = {
     )
 }
 
-# Drawing order, bottom to top: the shade over the ground cover, the contours under
-# the buildings, the labels over everything.
+# Drawing order, bottom to top: water over the ground cover (in OSM woods often overlap
+# rivers, Nov 4), the shade over both, the contours under the buildings, the labels over
+# everything.
 ORDER = (
-    "water",
     "green",
+    "water",
     "hillshade",
     "contours",
     "buildings",

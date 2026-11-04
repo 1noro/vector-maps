@@ -106,3 +106,18 @@ Sin el papel, la orientación ni el «contributors (ODbL)».
   OSM aceptan. Sigue sin haber opción para quitarla del todo.
 - Con relieve, el crédito de Copernicus (ADR 0008) sigue saliendo igual.
 - La leyenda completa sigue siendo la de por defecto.
+
+## Añadido del 04/11/2026: el agua, encima del verde
+
+El orden de dibujo pasa a ser **verde, agua, edificios, ferrocarril, calles**
+(con el relieve, verde, agua, sombreado, curvas…). Antes el agua iba debajo.
+
+- **Motivo:** en OSM es frecuente que un bosque (`landuse=forest`,
+  `natural=wood`) se superponga a un río o a un arroyo. Con el agua debajo, el
+  verde, que es opaco, la tapaba entera. Se vio en Cecebre (43.2889, -8.3135),
+  donde desaparecían el río Mero (la línea y su superficie) y un arroyo.
+- Es el orden de los mapas de OpenStreetMap (osm-carto): el agua sobre la
+  cubierta del suelo. Las islas de un río suelen estar mapeadas como huecos del
+  polígono de agua, así que se siguen viendo.
+- En el SVG, el grupo `water` va ahora encima de `green`. La superposición de
+  zonas (ADR 0005) y el resto del orden no cambian.

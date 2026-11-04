@@ -6,26 +6,32 @@ background = "#ffffff"
 ink = "#000000"
 frame-width = 0.3
 
+# Water is one grey with no outline, areas and lines alike, so a river melts into the
+# wider stretches mapped as areas (Nov 4). Solid lines: dashes are paths.
 [layers.water.water]
-fill = "#e0e0e0"
-stroke = "#000000"
-stroke-width = 0.1
+fill = "#c0c0c0"
+stroke = "none"
 
 [layers.water.stream]
 fill = "none"
-stroke = "#000000"
-stroke-width = 0.15
-stroke-dasharray = "1.2 0.6"
+stroke = "#c0c0c0"
+stroke-width = 0.3
+stroke-linecap = "round"
+stroke-linejoin = "round"
 
 [layers.water.canal]
 fill = "none"
-stroke = "#000000"
-stroke-width = 0.3
+stroke = "#c0c0c0"
+stroke-width = 0.6
+stroke-linecap = "round"
+stroke-linejoin = "round"
 
 [layers.water.river]
 fill = "none"
-stroke = "#000000"
-stroke-width = 0.5
+stroke = "#c0c0c0"
+stroke-width = 1.2
+stroke-linecap = "round"
+stroke-linejoin = "round"
 
 [layers.green.green]
 fill = "#f0f0f0"

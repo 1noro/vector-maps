@@ -81,6 +81,13 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Cambiado
 
+- **El agua se dibuja encima del verde** (antes, debajo): un bosque mapeado
+  sobre un río ya no lo tapa. En el SVG, el grupo `water` va encima de `green`
+  (ADR 0004).
+- **El agua en `bw` (y en `monochrome`) es un solo gris, sin borde**: el río
+  se funde con sus tramos mapeados como superficie, es más ancho (1,2 mm) y ya no
+  parece una carretera; los arroyos son una línea continua (antes, discontinua
+  como los caminos).
 - La leyenda escribe las esquinas con `↖` y `↘` (antes `TL` y `BR`) y, con una
   sola zona, la escala va sin la letra (`1:4120`, no `A 1:4120`; ADR 0004).
 - `COORDS=dd|dm|dms` cambia el formato de las coordenadas de la leyenda (ADR 0004).

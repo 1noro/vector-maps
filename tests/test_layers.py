@@ -17,7 +17,7 @@ def test_classify_by_geometry_and_tags():
 
 def test_select_returns_drawing_order():
     assert [layer.name for layer in select(["roads", "water"])] == ["water", "roads"]
-    assert [layer.name for layer in select(None)][0] == "water"
+    assert [layer.name for layer in select(None)][:2] == ["green", "water"]  # water on top
 
 
 def test_select_rejects_unknown():
@@ -36,8 +36,8 @@ def test_relief_is_not_drawn_unless_asked():
 
 def test_names_are_not_drawn_unless_asked():
     assert [layer.name for layer in select(None)] == [
-        "water",
         "green",
+        "water",
         "buildings",
         "railways",
         "roads",
@@ -54,11 +54,11 @@ def test_exclude_takes_layers_out_of_the_default_or_of_the_given_ones():
 
 def test_include_adds_to_the_default_or_to_the_given_ones():
     names = [layer.name for layer in select(None, include=["places", "contours"])]
-    assert names == ["water", "green", "contours", "buildings", "railways", "roads", "places"]
+    assert names == ["green", "water", "contours", "buildings", "railways", "roads", "places"]
     names = [layer.name for layer in select(["roads"], include=["street-names", "roads"])]
     assert names == ["roads", "street-names"]
     names = [layer.name for layer in select(None, ["railways"], ["places"])]
-    assert names == ["water", "green", "buildings", "roads", "places"]
+    assert names == ["green", "water", "buildings", "roads", "places"]
     with pytest.raises(ValueError, match="nope"):
         select(None, include=["nope"])
 
