@@ -176,3 +176,21 @@ iluminado a mano de las hojas antiguas (ADR 0010). La banda va sobre las calles,
 así que opaca las taparía. Pasa al SVG como `stroke-opacity` del contorno. Como
 cada clase es un solo `<path>`, la banda se pinta igual donde se juntan dos
 tramos y no se oscurece.
+
+## Añadido del 04/11/2026: la flecha del norte
+
+El usuario pidió que **todo mapa** lleve una marca que diga dónde está el norte.
+No tiene opción, como la atribución.
+
+- Una flecha clásica, media en tinta y media en papel, con una «N» encima, en la
+  esquina de arriba a la derecha **dentro del mapa** (el margen de 6 mm no da para
+  ella), con un halo del color del papel. En `SHAPE=circle` esa esquina queda
+  fuera del círculo, en blanco.
+- Apunta al **norte geográfico** en el centro del mapa (`render.true_north`). El
+  mapa está en el UTM del huso, y su norte de cuadrícula se separa de los
+  meridianos hasta ~2,5° lejos del meridiano central; la flecha gira esa
+  diferencia. Con dos zonas, la de la primera.
+- Mide el 4,5 % del lado corto del mapa, hasta 24 mm (en un A0 sería enorme). La
+  «N» va en la letra de los nombres de ciudad del tema (cursiva EB Garamond en
+  `vintage`), o sans-serif si el tema no la tiene.
+- Va en su capa de Inkscape, `north`, entre las zonas y el marco.

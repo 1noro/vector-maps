@@ -5,6 +5,7 @@ Several areas can be stacked on the same page (the overlay): each one is a
 """
 
 import base64
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from xml.sax.saxutils import escape, quoteattr
@@ -475,6 +476,61 @@ def _credits(jobs: list[Job]) -> tuple[str, ...]:
     return ((relief.ATTRIBUTION,) if uses_relief(jobs) else ()) + (MARK,)
 
 
+NORTH_SHARE = 0.045  # the north arrow's height, as a share of the map's short side
+NORTH_MAX = 24.0  # mm: on an A0 it would be too big otherwise
+
+
+def true_north(f: Frame) -> float:
+    """Degrees clockwise from the page's up to true north, at the centre of the map.
+
+    The map is drawn on a UTM grid, whose north leans off the meridians the further
+    the map is from the zone's central one: half a degree at Cecebre, up to ~2.5.
+    """
+    back = Transformer.from_crs(f.crs, 4326, always_xy=True)
+    ahead = Transformer.from_crs(4326, f.crs, always_xy=True)
+    x, y = (f.xmin + f.xmax) / 2, (f.ymin + f.ymax) / 2
+    lon, lat = back.transform(x, y)
+    nx, ny = ahead.transform(lon, lat + 0.01)
+    return math.degrees(math.atan2(nx - x, ny - y))
+
+
+def _north(f: Frame, theme: Theme) -> str:
+    """The north arrow, in the top right corner of the map: half ink, half paper, an N
+    over it, all with a halo of paper so it reads over anything. Always drawn. The N
+    in the theme's lettering (that of its city names), sans-serif if it has none."""
+    ink, paper = theme.page["ink"], theme.page["background"]
+    font = theme.layers.get("places", {}).get("city", {})  # a partial theme may lack it
+    family = font.get("font-family", "sans-serif")
+    slant = f' font-style="{font["font-style"]}"' if "font-style" in font else ""
+    h = min(NORTH_MAX, NORTH_SHARE * min(f.map_w, f.map_h))
+    half, notch = h * 0.25, h * 0.2  # half the width; how far the base's notch goes in
+    tip, base = -h / 2, h / 2
+    left = f"M0 {_num(tip)}L{_num(-half)} {_num(base)}L0 {_num(base - notch)}Z"
+    right = f"M0 {_num(tip)}L{_num(half)} {_num(base)}L0 {_num(base - notch)}Z"
+    size = h * 0.4
+    letter_y = tip - h * 0.12  # the N's baseline, just over the tip
+    inset = h * 0.5
+    x = f.map_x + f.map_w - inset - half
+    y = f.map_y + inset - letter_y + size * 0.75  # the top of the N, `inset` under the edge
+    outline = f'fill="none" stroke-linejoin="round" d="{left}{right}"'
+    halo = _num(h * 0.1)
+    return "\n".join(
+        [
+            '<g id="north" inkscape:groupmode="layer" inkscape:label="north">',
+            f'<g transform="translate({_num(x)} {_num(y)}) rotate({_num(true_north(f))})">',
+            f'<path stroke="{paper}" stroke-width="{halo}" {outline}/>',
+            f'<path fill="{ink}" d="{left}"/>',
+            f'<path fill="{paper}" d="{right}"/>',
+            f'<path stroke="{ink}" stroke-width="{_num(h * 0.025)}" {outline}/>',
+            f'<text x="0" y="{_num(letter_y)}" text-anchor="middle" font-family={quoteattr(family)}'
+            f'{slant} font-weight="bold" font-size="{_num(size)}" fill="{ink}" stroke="{paper}" '
+            f'stroke-width="{halo}" stroke-linejoin="round" paint-order="stroke">N</text>',
+            "</g>",
+            "</g>",
+        ]
+    )
+
+
 def _outline(f: Frame, ink: str, width: float | str) -> str:
     if f.shape == "circle":
         return (
@@ -506,6 +562,7 @@ def render(jobs: list[Job], legend: str = "full", coords: str = "dd") -> str:
     ]
     parts += [_job_group(j) for j in jobs]
     parts += [
+        _north(f, first.theme),
         '<g id="frame" inkscape:groupmode="layer" inkscape:label="frame">',
         _outline(f, ink, page["frame-width"]),
         "</g>",

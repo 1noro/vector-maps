@@ -8,7 +8,15 @@ from vectormaps.area import fit
 from vectormaps.labels import CHAR_WIDTH
 from vectormaps.layers import select
 from vectormaps.pipeline import Item
-from vectormaps.render import MARK, Job, _corner, legend_lines, path_data, render
+from vectormaps.render import (
+    MARK,
+    Job,
+    _corner,
+    legend_lines,
+    path_data,
+    render,
+    true_north,
+)
 from vectormaps.theme import load
 
 NS = {"svg": "http://www.w3.org/2000/svg", "ink": "http://www.inkscape.org/namespaces/inkscape"}
@@ -66,7 +74,7 @@ def test_overlay_stacks_two_scales_in_one_page():
     b = make_job("b", TL2, BR2, "bw", opacity=0.6)
     root = ET.fromstring(render([a, b]))
     ids = [g.get("id") for g in root.findall("svg:g", NS)]
-    assert ids == ["page", "area-a", "area-b", "frame", "legend"]  # b is drawn over a
+    assert ids == ["page", "area-a", "area-b", "north", "frame", "legend"]  # b over a
     assert root.find("svg:g[@id='area-b']", NS).get("opacity") == "0.6"
     assert root.find("svg:g[@id='area-a']", NS).get("opacity") is None
     assert a.frame.scale > b.frame.scale
@@ -83,7 +91,7 @@ def test_empty_layers_still_exist():
     job.features = {}
     root = ET.fromstring(render([job]))
     assert root.find(".//svg:g[@id='a-roads']", NS) is not None
-    assert root.find(".//svg:path", NS) is None
+    assert root.find(".//svg:g[@id='area-a']//svg:path", NS) is None
 
 
 def test_labels_are_text_on_the_street_and_at_the_place():
@@ -330,3 +338,33 @@ def test_a_pattern_fill_points_at_a_pattern_of_its_zone():
     assert meadow.get("width") == "1"  # a dash of 0.5 and a gap of 0.5
     # Only the patterns the zone's layers use: no water layer here, no water pattern.
     assert root.find(".//svg:pattern[@id='b-pattern-water']", NS) is None
+
+
+def _arrow(svg):
+    north = ET.fromstring(svg).find(".//svg:g[@id='north']", NS)
+    (turned,) = north
+    return turned
+
+
+def test_every_map_has_a_north_arrow_in_its_top_right_corner():
+    job = make_job("a", TL, BR, "dark")
+    f = job.frame
+    turned = _arrow(render([job]))
+    assert turned.find("svg:text", NS).text == "N"
+    x, y = map(float, turned.get("transform").split(")")[0].removeprefix("translate(").split())
+    assert f.map_x + f.map_w * 0.9 < x < f.map_x + f.map_w
+    assert f.map_y < y < f.map_y + f.map_h * 0.1
+    # In the theme's colours: ink, and a halo of the page.
+    page = job.theme.page
+    assert {p.get("fill") for p in turned.findall("svg:path", NS)} >= {page["ink"]}
+    assert turned.find("svg:path", NS).get("stroke") == page["background"]
+
+
+@pytest.mark.parametrize("lon, sign", [(-8.55, -1), (-9.0, 0), (-9.45, 1)])
+def test_the_arrow_points_to_true_north_not_the_grid(lon, sign):
+    # UTM zone 29 has its central meridian at 9 W: east of it, true north leans to
+    # the left of the grid's (and to the right west of it); on it, they are the same.
+    frame = fit((42.884, lon - 0.006), (42.878, lon + 0.006), "A4")
+    angle = true_north(frame)
+    assert abs(angle) < 1
+    assert (round(angle, 2) > 0) - (round(angle, 2) < 0) == sign

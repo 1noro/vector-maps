@@ -200,7 +200,7 @@ def _length(d):
 def _band_lengths(svg):
     root = ET.fromstring(svg)
     paths = root.iter("{http://www.w3.org/2000/svg}path")
-    return {p.get("id"): _length(p.get("d")) for p in paths if "-band-" in p.get("id")}
+    return {p.get("id"): _length(p.get("d")) for p in paths if "-band-" in p.get("id", "")}
 
 
 def test_a_hatched_hillshade_is_lines_steeper_bands_drawing_less(hill_cache, tmp_path):

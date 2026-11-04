@@ -39,6 +39,10 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   (o dos puntos) según el nivel, y la parroquia solo puntos; en `bw` (y
   `monochrome`, teñida) sobre una banda gris translúcida. `vintage-bw` no lleva
   banda, para seguir sin grises (ADR 0010).
+- **Flecha del norte en todos los mapas**: arriba a la derecha dentro del mapa,
+  media en tinta y media en papel, con una «N» en la letra del tema y halo. Apunta
+  al norte geográfico, no al de la cuadrícula UTM (medio grado de diferencia en
+  Cecebre). Capa de Inkscape `north` (ADR 0004).
 - **Límites administrativos** (`INCLUDE_LAYERS=boundaries,municipalities,parishes`):
   tres capas de líneas, ninguna por defecto. `parishes` (parroquias),
   `municipalities` (concellos) y `boundaries` (país, comunidad, provincia y

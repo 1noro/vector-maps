@@ -238,6 +238,16 @@ el papel ni la orientación:
 y la marca arriba. `© OpenStreetMap` no se puede quitar: la licencia de los
 datos (ODbL) pide que el mapa lo diga (ADR 0004).
 
+### El norte
+
+Todo mapa lleva, arriba a la derecha dentro del mapa, una **flecha al norte**: media
+en tinta y media en el color del papel, con una «N» en la letra de los nombres
+del tema y un halo para leerse sobre cualquier cosa. Apunta al **norte
+geográfico**, no al de la cuadrícula: el mapa se dibuja en UTM, cuyo norte se
+separa de los meridianos cuanto más lejos del meridiano central del huso (medio
+grado en Cecebre, hasta ~2,5° al borde del huso). Su tamaño va con el del mapa,
+hasta 24 mm. Está en su propia capa de Inkscape, `north`.
+
 ## Superponer dos zonas
 
 Añade `TL2` y `BR2` (van juntas; o `CENTER2` y `RADIUS2`): una segunda zona sobre la primera, en la

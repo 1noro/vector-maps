@@ -67,7 +67,8 @@ tocar código.
    `name` tal cual** (ADR 0006). No se inventan traducciones. No están en las
    capas por defecto (añadido del 03/11).
 8. **La leyenda lleva las esquinas del mapa tal como está en el papel y la marca
-   «Generated with vector-maps by 1noro»** (ADR 0004, añadido del 03/11).
+   «Generated with vector-maps by 1noro»** (ADR 0004, añadido del 03/11), y todo
+   mapa, **una flecha al norte geográfico** (añadido del 04/11).
 9. **El PDF sale del SVG con Inkscape** (ADR 0007): es el único conversor que
    pinta `textPath` y los halos. Ni librsvg ni CairoSVG.
 10. **El relieve (`hillshade`, `contours`) sale del DEM Copernicus GLO-30 con
