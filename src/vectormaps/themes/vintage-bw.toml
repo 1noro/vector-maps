@@ -1,0 +1,250 @@
+# Vintage for a black-and-white printer: the same 19th-century survey sheet, drawn
+# only in black on white paper. No greys and no opacity (a laser printer dithers
+# them into dots): what tells things apart is the pattern and the weight of the line.
+# Water in fine lines, meadows in sparse dots, buildings hatched, roads as black
+# double lines (the main ones hatched inside), the railway in the classic black and
+# white dashes, italic serif lettering, and the hills hatched by slope.
+#
+# Lengths in mm. `casing-width` (mm on each side) and `casing-color` draw an outline
+# under a line. `fill` or `stroke = "pattern:<name>"` paints with one of the
+# [patterns.<name>]: kind = "lines" (parallel lines `spacing` mm apart, at `angle`
+# degrees, `width` thick, dashes `dash` mm long if given) or "dots" (`radius`), in
+# `color`, over `background` (none if not given).
+
+[page]
+background = "#ffffff"
+ink = "#000000"
+frame-width = 0.5
+
+[patterns.water]
+kind = "lines"
+spacing = 0.5
+width = 0.06
+color = "#000000"
+
+[patterns.meadow]
+kind = "dots"
+spacing = 0.9
+radius = 0.07
+color = "#000000"
+
+[patterns.houses]
+kind = "lines"
+spacing = 0.35
+angle = 45
+width = 0.08
+color = "#000000"
+background = "#ffffff"
+
+[patterns.highway]
+kind = "lines"
+spacing = 0.3
+angle = 45
+width = 0.07
+color = "#000000"
+background = "#ffffff"
+
+[layers.water.water]
+fill = "pattern:water"
+stroke = "#000000"
+stroke-width = 0.15
+
+[layers.water.stream]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.2
+stroke-linecap = "round"
+stroke-linejoin = "round"
+
+# Canals and rivers: white with a black edge, so they read as water, not as roads.
+
+[layers.water.canal]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.35
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.08
+casing-color = "#000000"
+
+[layers.water.river]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.6
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.1
+casing-color = "#000000"
+
+[layers.green.green]
+fill = "pattern:meadow"
+stroke = "none"
+
+[layers.buildings.building]
+fill = "pattern:houses"
+stroke = "#000000"
+stroke-width = 0.08
+
+# The railway in black and white dashes over a black outline.
+
+[layers.railways.rail]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.25
+stroke-dasharray = "1.2 1.2"
+casing-width = 0.1
+casing-color = "#000000"
+
+[layers.railways.tram]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.15
+
+# Roads: white inside a black double line, wider and with a heavier edge the more
+# important they are; the main roads hatched inside.
+
+[layers.roads.path]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.15
+stroke-dasharray = "0.8 0.45"
+
+[layers.roads.service]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.3
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.07
+casing-color = "#000000"
+
+[layers.roads.minor]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.5
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.09
+casing-color = "#000000"
+
+[layers.roads.secondary]
+fill = "none"
+stroke = "#ffffff"
+stroke-width = 0.7
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.13
+casing-color = "#000000"
+
+[layers.roads.major]
+fill = "none"
+stroke = "pattern:highway"
+stroke-width = 0.95
+stroke-linecap = "round"
+stroke-linejoin = "round"
+casing-width = 0.15
+casing-color = "#000000"
+
+# Labels: all italic, in EB Garamond (in the image; DejaVu Serif elsewhere).
+# font-size is in mm on paper; the white stroke behind the letters is a halo.
+
+[layers.street-names.minor]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 1.6
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.4
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.secondary]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 1.9
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.45
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.street-names.major]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 2.2
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.5
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.places.suburb]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 2.6
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.55
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.village]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 3.2
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.65
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.town]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 4.2
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.8
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.places.city]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 5.8
+font-style = "italic"
+letter-spacing = 0.3
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 1.0
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+# Relief (only with INCLUDE_LAYERS=hillshade,contours): the slopes hatched in black,
+# finer than in vintage so the roads and names stay clear. Each band draws its lines
+# where the ground is steeper than `slope` degrees: `spacing` mm apart, at `angle`
+# degrees, `width` thick, moved `offset` mm across.
+
+[layers.hillshade.shade]
+style = "hatch"
+bands = [
+  { slope = 6, spacing = 0.9, angle = 30, width = 0.05, color = "#000000" },
+  { slope = 12, spacing = 0.9, angle = 30, width = 0.05, color = "#000000", offset = 0.45 },
+  { slope = 20, spacing = 0.6, angle = -30, width = 0.06, color = "#000000" },
+]
+
+# Contours: fine, the index ones a little heavier; the minor ones dotted.
+
+[layers.contours.minor]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.06
+stroke-dasharray = "0.25 0.35"
+
+[layers.contours.major]
+fill = "none"
+stroke = "#000000"
+stroke-width = 0.1

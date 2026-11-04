@@ -113,3 +113,20 @@ def test_monochrome_tints_the_hatch_bands_too(tmp_path):
 
 def test_vintage_hatches_its_hills():
     assert theme.load("vintage").style("hillshade", "shade")["style"] == "hatch"
+
+
+def _colours(value):
+    if isinstance(value, dict):
+        return [c for v in value.values() for c in _colours(v)]
+    if isinstance(value, list):
+        return [c for v in value for c in _colours(v)]
+    return [value.lower()] if isinstance(value, str) and value.startswith("#") else []
+
+
+def test_vintage_bw_is_only_black_and_white_with_no_opacity():
+    t = theme.load("vintage-bw")
+    styles = [t.page, t.patterns, t.layers]
+    assert set(_colours(styles)) == {"#000000", "#ffffff"}
+    for classes in t.layers.values():
+        for style in classes.values():
+            assert not any("opacity" in key for key in style)

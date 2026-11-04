@@ -23,8 +23,8 @@ Uso: make <objetivo> [VARIABLE=valor …]
              LAYERS=a,b          capas (sin relieve ni nombres por defecto; make list)
              INCLUDE_LAYERS=a,b  capas que añadir a LAYERS (o a las de por defecto)
              EXCLUDE_LAYERS=a,b  capas que quitar de LAYERS (o de las de por defecto)
-             THEME=bw            bw, color, street, dark, blueprint, vintage, poster,
-                                 monochrome, o un .toml
+             THEME=bw            bw, color, street, dark, blueprint, vintage, vintage-bw,
+                                 poster, monochrome, o un .toml
              TINT=#1f3b5c        color de THEME=monochrome
              LABEL_LANG=es       idioma de los nombres (es, gl, en…; local)
              OUT=out/map.svg     fichero de salida
@@ -122,7 +122,7 @@ check: lint test
 list: .image
 	$(DOCKER_RUN) python -m vectormaps list
 
-# make map TL=lat,lon BR=lat,lon [PAPER=A4]   (o el área por centro y radio: CENTER=lat,lon RADIUS=km) [THEME=bw|color|street|dark|blueprint|vintage|poster] [LAYERS=water,roads]
+# make map TL=lat,lon BR=lat,lon [PAPER=A4]   (o el área por centro y radio: CENTER=lat,lon RADIUS=km) [THEME=bw|color|street|dark|blueprint|vintage|vintage-bw|poster] [LAYERS=water,roads]
 #          [INCLUDE_LAYERS=street-names,places]   (añadir capas a LAYERS o a las de por defecto)
 #          [EXCLUDE_LAYERS=railways]   (quitar capas de LAYERS o de las de por defecto)
 #          [SHAPE=rect|square|circle]   (cómo se imprime el mapa en el papel; por defecto rect)

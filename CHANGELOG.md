@@ -34,6 +34,11 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   línea más ancha (`a-roads-minor-casing`); los contornos de la capa van debajo
   de todas sus líneas, para que los cruces no se corten. El tema `color` lo
   estrena con uno fino (ADR 0004).
+- **Tema `vintage-bw`**: el `vintage` para imprimir en blanco y negro, solo
+  negro sobre blanco y sin grises ni opacidades; lo distinguen las tramas y el
+  grosor de las líneas (agua rayada, prados punteados, calles principales
+  rayadas por dentro, tren en tramos blancos y negros, relieve rayado en negro).
+  Una trama también puede ir en `stroke`, no solo en `fill`.
 - **Relieve rayado**: con `style = "hatch"` en `[layers.hillshade.shade]`, el
   sombreado pasa a ser rayas vectoriales sobre las laderas, una tanda por cada
   banda de `bands` (las laderas de más de `slope` grados, rayas a `spacing` mm con
