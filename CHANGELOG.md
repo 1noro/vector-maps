@@ -127,6 +127,13 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Cambiado
 
+- **Los ríos entran en el embalse en `vintage` y `vintage-bw`**: antes eran una
+  línea gruesa que cruzaba el lago por encima, cortada por su orilla. Ahora ríos y
+  canales se unen al agua con el ancho al que se dibujan, en una sola masa con un
+  solo borde, y los arroyos acaban en la orilla (`join` en el tema). `vintage-bw`
+  la raya; `vintage` la deja clara con líneas finas que siguen la orilla por
+  dentro, como los grabados antiguos (`shore-lines`; ADR 0004).
+
 - **La caché de Overpass sirve para áreas de dentro**: el recuadro se redondea
   hacia fuera a 0,01° (~1 km), así que un mapa movido un poco repite la misma
   consulta, y una respuesta bajada para un área mayor sirve para cualquier mapa

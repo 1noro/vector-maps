@@ -44,10 +44,13 @@ width = 0.07
 color = "#000000"
 background = "#ffffff"
 
+# Rivers and canals join the lakes as one hatched body (`join`, at the width they are
+# drawn); the streams stop at its edge.
 [layers.water.water]
 fill = "pattern:water"
 stroke = "#000000"
 stroke-width = 0.15
+join = ["canal", "river"]
 
 [layers.water.stream]
 fill = "none"

@@ -1,5 +1,5 @@
 # Vintage theme, in the manner of a 19th-century topographic survey sheet: cream
-# paper, hatched turquoise water, meadows in short green dashes, hatched dark
+# paper, pale water lined along its shores, meadows in short green dashes, hatched dark
 # buildings, roads as fine black double lines, and italic serif lettering.
 # The hills come out in red hatching with the relief (INCLUDE_LAYERS=hillshade,contours).
 #
@@ -13,13 +13,6 @@
 background = "#f4ecd2"
 ink = "#2b2622"
 frame-width = 0.5
-
-[patterns.water]
-kind = "lines"
-spacing = 0.45
-width = 0.06
-color = "#6fb2bd"
-background = "#d3e8e0"
 
 [patterns.meadow]
 kind = "lines"
@@ -37,10 +30,17 @@ width = 0.09
 color = "#3b3532"
 background = "#c9b8a6"
 
+# Rivers and canals join the lakes as one body of water (`join`: at the width they
+# are drawn; the streams stop at its edge), and lines follow the shore inside it,
+# `shore-lines` mm in, as on engraved sheets.
 [layers.water.water]
-fill = "pattern:water"
+fill = "#dcece4"
 stroke = "#3f8fa0"
-stroke-width = 0.15
+stroke-width = 0.2
+join = ["canal", "river"]
+shore-lines = [0.35, 0.8, 1.4, 2.2]
+shore-color = "#5fa3b3"
+shore-width = 0.08
 
 [layers.water.stream]
 fill = "none"

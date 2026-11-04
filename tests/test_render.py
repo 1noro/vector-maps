@@ -368,3 +368,50 @@ def test_the_arrow_points_to_true_north_not_the_grid(lon, sign):
     angle = true_north(frame)
     assert abs(angle) < 1
     assert (round(angle, 2) > 0) - (round(angle, 2) < 0) == sign
+
+
+def _water_job(theme, feats):
+    frame = fit(TL, BR, "A4", orientation="landscape")
+    return Job("a", frame, load(theme), select(["water"]), feats)
+
+
+def _area(root, path_id):
+    """Area in mm² of a path's rings (even-odd, as drawn)."""
+    path = root.find(f".//svg:path[@id='{path_id}']", NS)
+    if path is None:
+        return 0.0
+    total = 0.0
+    for ring in path.get("d").removeprefix("M").split("M"):
+        nums = [float(v) for v in ring.rstrip("Z").split()]
+        total += Polygon(list(zip(nums[::2], nums[1::2], strict=True))).area
+    return total
+
+
+def test_joined_rivers_flow_into_the_lake_as_one_body_and_streams_stop_at_its_edge():
+    lake = square(-8.546, 42.880, 0.002)
+    river = LineString([(-8.550, 42.881), (-8.540, 42.881)])  # in, through the lake and out
+    stream = LineString([(-8.550, 42.8815), (-8.540, 42.8815)])
+    feats = {"water": [Item("water", lake), Item("river", river), Item("stream", stream)]}
+    alone = ET.fromstring(render([_water_job("vintage-bw", {"water": [Item("water", lake)]})]))
+    alone = _area(alone, "a-water-water")
+    root = ET.fromstring(render([_water_job("vintage-bw", feats)]))
+    # The river is gone as a line: it is part of the water, which grew by its banks.
+    assert root.find(".//svg:path[@id='a-water-river']", NS) is None
+    assert _area(root, "a-water-water") > alone + 10
+    # The stream is cut out of the body: two stretches, none inside it.
+    stream = root.find(".//svg:path[@id='a-water-stream']", NS).get("d")
+    assert stream.count("M") == 2
+
+
+def test_shore_lines_follow_the_shore_but_not_the_edge_of_the_map():
+    lake = square(-8.546, 42.880, 0.002)
+    root = ET.fromstring(render([_water_job("vintage", {"water": [Item("water", lake)]})]))
+    shore = root.find(".//svg:path[@id='a-water-water-shore']", NS)
+    assert shore.get("stroke-width") == "0.08" and shore.get("shore-lines") is None
+    assert root.find(".//svg:path[@id='a-water-water']", NS).get("join") is None
+    assert shore.get("d").count("M") == 4  # one ring per distance
+    # Water past every edge of the map: it has no shore on the paper.
+    sea = square(-8.56, 42.87, 0.03)
+    root = ET.fromstring(render([_water_job("vintage", {"water": [Item("water", sea)]})]))
+    assert root.find(".//svg:path[@id='a-water-water']", NS) is not None
+    assert root.find(".//svg:path[@id='a-water-water-shore']", NS) is None

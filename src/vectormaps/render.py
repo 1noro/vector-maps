@@ -77,7 +77,11 @@ def path_data(geoms: list[BaseGeometry]) -> str:
     return "".join(d)
 
 
-def _to_page(geom: BaseGeometry, tr: Transformer, frame: Frame) -> BaseGeometry | None:
+def _to_page(
+    geom: BaseGeometry, tr: Transformer, frame: Frame, pad: float = 0.0
+) -> BaseGeometry | None:
+    """The geometry in page mm, cut at the map box (`pad` mm past it, if given)."""
+
     def project(coords: np.ndarray) -> np.ndarray:
         x, y = tr.transform(coords[:, 0], coords[:, 1])
         return np.column_stack((x, y))
@@ -85,8 +89,10 @@ def _to_page(geom: BaseGeometry, tr: Transformer, frame: Frame) -> BaseGeometry 
     geom = affine_transform(shapely.transform(geom, project), frame.page_matrix())
     if not geom.is_valid:
         geom = shapely.make_valid(geom)
-    x0, y0 = frame.map_x, frame.map_y
-    clipped = shapely.clip_by_rect(geom, x0, y0, x0 + frame.map_w, y0 + frame.map_h)
+    x0, y0 = frame.map_x - pad, frame.map_y - pad
+    clipped = shapely.clip_by_rect(
+        geom, x0, y0, x0 + frame.map_w + 2 * pad, y0 + frame.map_h + 2 * pad
+    )
     return None if clipped.is_empty else clipped
 
 
@@ -152,17 +158,27 @@ def _pattern_defs(job: Job) -> str:
 
 
 def _shape_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
+    styles = {c: job.theme.style(layer.name, c) for c in layer.classes}
+    # Shore lines run inside the edge of the water: cut it a bit past the map, so the
+    # edge of the map is not a shore (the zone's clip hides what is past it).
+    pad = max((max(s.get("shore-lines") or [0]) for s in styles.values()), default=0)
+    pad = pad + 1 if pad else 0.0
     by_class: dict[str, list[BaseGeometry]] = {c: [] for c in layer.classes}
     for item in job.features.get(layer.name, []):
-        page_geom = _to_page(item.geom, tr, job.frame)
+        page_geom = _to_page(item.geom, tr, job.frame, pad)
         if page_geom is not None:
             by_class[item.cls].append(page_geom)
+    for cls, style in styles.items():
+        if style.get("join"):
+            _join(cls, style["join"], by_class, styles)
     casings, out = [], []
     for cls in layer.classes:
         d = path_data(by_class[cls])
         if not d:
             continue
-        style = _with_patterns(job.theme.style(layer.name, cls), job.label)
+        style = _with_patterns(styles[cls], job.label)
+        style.pop("join", None)
+        shore = _shore(style, by_class[cls], job.frame)
         casing = _casing(style)
         if casing:
             casings.append(
@@ -173,8 +189,66 @@ def _shape_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
             f'<path id="{job.label}-{layer.name}-{cls}" class="{cls}" '
             f'fill-rule="evenodd" {_attrs(style)} d="{d}"/>'
         )
+        if shore:
+            out.append(
+                f'<path id="{job.label}-{layer.name}-{cls}-shore" class="{cls} shore" '
+                f'{_attrs(shore[0])} d="{shore[1]}"/>'
+            )
     # Every casing under every line: where two streets meet, their outlines do not cut them.
     return casings + out
+
+
+def _join(
+    cls: str,
+    lines: list[str],
+    by_class: dict[str, list[BaseGeometry]],
+    styles: dict[str, dict[str, str | float]],
+) -> None:
+    """The `lines` classes become part of the `cls` area, as wide as they are drawn.
+
+    A river then flows into its lake as one body of water, with one edge, instead of
+    a thick line drawn over the lake (Nov 4). The other classes of the layer (the
+    streams) stop at the edge of that body. Changes `by_class` in place.
+    """
+    parts = [p for g in by_class[cls] for p in _parts(g)]
+    body = [p for p in parts if p.geom_type == "Polygon"]
+    for line in lines:
+        s = styles[line]
+        half = float(s.get("stroke-width", 0)) / 2 + float(s.get("casing-width", 0))
+        body += [shapely.buffer(g, half, quad_segs=4) for g in by_class[line]]
+        by_class[line] = []
+    merged = shapely.union_all(body)
+    by_class[cls] = [merged] + [p for p in parts if p.geom_type != "Polygon"]
+    for other in by_class:
+        if other != cls and by_class[other]:
+            cut = (shapely.difference(g, merged) for g in by_class[other])
+            by_class[other] = [g for g in cut if not g.is_empty]
+
+
+def _shore(
+    style: dict[str, str | float], geoms: list[BaseGeometry], frame: Frame
+) -> tuple[dict[str, str | float], str] | None:
+    """Lines along the shore, `shore-lines` mm inside it, as on old engraved maps.
+
+    Takes the shore keys out of `style`, which are not SVG attributes. Returns the
+    lines' style and path data, or None if there are none.
+    """
+    distances = style.pop("shore-lines", None)
+    colour = style.pop("shore-color", style.get("stroke", "#000000"))
+    width = style.pop("shore-width", 0.08)
+    areas = [p for g in geoms for p in _parts(g) if p.geom_type == "Polygon"]
+    if not distances or not areas:
+        return None
+    water = shapely.union_all(areas)
+    x0, y0, x1, y1 = frame.map_x, frame.map_y, frame.map_x + frame.map_w, frame.map_y + frame.map_h
+    lines = [
+        shapely.clip_by_rect(shapely.buffer(water, -float(d), quad_segs=4).boundary, x0, y0, x1, y1)
+        for d in distances
+    ]
+    d = path_data([g for g in lines if not g.is_empty])
+    if not d:
+        return None
+    return {"fill": "none", "stroke": colour, "stroke-width": width, "stroke-linejoin": "round"}, d
 
 
 def _casing(style: dict[str, str | float]) -> dict[str, str | float] | None:

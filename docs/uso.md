@@ -177,18 +177,20 @@ cámbialo: un test exige que estile todas las clases de todas las capas.
 - **`blueprint`**: un plano de arquitecto, líneas blancas sobre azul. Los
   edificios son solo contorno y las calles, doble línea (el color del fondo sobre
   un contorno blanco). También gasta mucha tinta.
-- **`vintage`**: una hoja topográfica del siglo XIX: papel crema, agua turquesa
-  rayada, prados en trazos verdes, edificios rayados, calles en doble línea negra
-  (las principales rellenas de ocre y amarillo) y todos los nombres en cursiva (EB
-  Garamond). Con el relieve
+- **`vintage`**: una hoja topográfica del siglo XIX: papel crema, agua clara con
+  líneas finas que siguen la orilla por dentro (los ríos entran en el embalse
+  como una sola masa de agua), prados en trazos verdes, edificios rayados,
+  calles en doble línea negra (las principales rellenas de ocre y amarillo) y
+  todos los nombres en cursiva (EB Garamond). Con el relieve
   (`INCLUDE_LAYERS=hillshade,contours`) las laderas salen rayadas en rojo, como
   en aquellas hojas.
 - **`vintage-bw`**: el `vintage` pensado para una impresora en blanco y negro:
   solo negro sobre blanco, sin grises ni transparencias (una láser los convierte
-  en puntos). Lo distinguen las tramas y el grosor: agua rayada, prados
-  punteados, edificios rayados, calles en doble línea (las principales rayadas
-  por dentro), ríos blancos con borde negro, el tren en tramos blancos y negros y
-  el relieve en rayas negras finas, con las curvas secundarias punteadas.
+  en puntos). Lo distinguen las tramas y el grosor: agua rayada (los ríos y
+  canales entran en el embalse como un solo cuerpo rayado), prados punteados,
+  edificios rayados, calles en doble línea (las principales rayadas por dentro),
+  el tren en tramos blancos y negros y el relieve en rayas negras finas, con las
+  curvas secundarias punteadas.
 - **`poster`**: la ciudad en líneas, para enmarcar: calles negras sobre blanco,
   cada clase con su grosor, y agua suave; parques y edificios no se pintan (sus
   grupos siguen en el SVG). Muy bonito con `SHAPE=circle`.

@@ -130,3 +130,19 @@ def test_vintage_bw_is_only_black_and_white_with_no_opacity():
     for classes in t.layers.values():
         for style in classes.values():
             assert not any("opacity" in key for key in style)
+
+
+@pytest.mark.parametrize(
+    "water, message",
+    [
+        ('join = ["lake"]', "join must list classes of water"),
+        ('join = ["water"]', "join must list classes of water"),
+        ('join = "river"', "join must list classes of water"),
+        ("shore-lines = [0.4, 0]", "shore-lines must be distances above 0"),
+        ("shore-lines = 0.4", "shore-lines must be distances above 0"),
+    ],
+)
+def test_join_names_line_classes_and_shore_lines_are_distances(tmp_path, water, message):
+    path = _write(tmp_path, f"[layers.water.water]\n{water}\n[layers.water.river]\n")
+    with pytest.raises(ValueError, match=message):
+        theme.load(path)

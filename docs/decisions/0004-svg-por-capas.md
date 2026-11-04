@@ -194,3 +194,28 @@ No tiene opción, como la atribución.
   «N» va en la letra de los nombres de ciudad del tema (cursiva EB Garamond en
   `vintage`), o sans-serif si el tema no la tiene.
 - Va en su capa de Inkscape, `north`, entre las zonas y el marco.
+
+## Añadido del 04/11/2026: ríos unidos al agua y líneas de orilla
+
+En `vintage` el río era una línea gruesa que cruzaba el embalse por encima del
+rayado, y el borde del lago la cortaba en la desembocadura. El usuario comparó
+cuatro borradores y eligió dos, uno por tema. Son dos claves de la clase de área
+del tema, no código de un tema:
+
+- **`join = ["canal", "river"]`**: esas clases de líneas de la misma capa pasan
+  a ser parte del área, ensanchadas a lo que miden en el papel (`stroke-width` y
+  `casing-width`). Río y lago son un solo cuerpo con un solo borde, y las demás
+  clases de la capa (los arroyos) se cortan en su orilla. Lo usan `vintage` y
+  `vintage-bw` (el cuerpo, rayado).
+- **`shore-lines = [0.35, 0.8, 1.4, 2.2]`**, con `shore-color` y
+  `shore-width`: líneas finas paralelas a la orilla, a esas distancias en mm por
+  dentro del agua, como en los grabados antiguos (*waterlining*). Van en un
+  `<path>` propio (`…-water-shore`) encima del área. `vintage` las usa sobre un
+  agua clara sin rayado.
+
+Se hace en `render`, en mm del papel, porque los anchos son del papel. El borde
+del mapa no es una orilla: con `shore-lines`, la capa se corta unos milímetros
+más allá del mapa, y lo que sobra lo tapa el recorte de la zona. Una clase de
+`join` que no exista en la capa, o una distancia que no sea positiva, es un
+error al cargar el tema.
+

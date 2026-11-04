@@ -3,6 +3,8 @@
 A theme may also define fill patterns (hatching, dots) under `[patterns.<name>]`;
 a style uses one as `fill = "pattern:<name>"`, and the SVG gets a `<pattern>` for it.
 The hillshade is a shaded picture or, with `style = "hatch"`, lines over the slopes.
+An area class can take in line classes of its layer (`join`, rivers into lakes) and
+have lines along its shore (`shore-lines`).
 """
 
 import re
@@ -121,6 +123,26 @@ def _check_relief(name: str, layers: dict) -> None:
             )
 
 
+def _check_shores(name: str, layers: dict) -> None:
+    """`join` names line classes of the same layer; `shore-lines` are distances in mm."""
+    for layer, classes in layers.items():
+        for cls, style in classes.items():
+            joined = style.get("join", [])
+            if not isinstance(joined, list) or any(c not in classes or c == cls for c in joined):
+                raise ValueError(
+                    f"theme {name!r}: {layer}.{cls} join must list classes of {layer} "
+                    f"with a style ({', '.join(c for c in classes if c != cls)})"
+                )
+            shores = style.get("shore-lines", [])
+            if not isinstance(shores, list) or not all(
+                isinstance(d, int | float) and d > 0 for d in shores
+            ):
+                raise ValueError(
+                    f"theme {name!r}: {layer}.{cls} shore-lines must be distances above 0 (mm), "
+                    "like [0.35, 0.8]"
+                )
+
+
 def available() -> list[str]:
     return sorted([p.stem for p in THEMES_DIR.glob("*.toml")] + list(TINTED))
 
@@ -141,4 +163,5 @@ def load(name_or_path: str, tint: str | None = None) -> Theme:
     patterns = data.get("patterns", {})
     _check_patterns(path.stem, data["layers"], patterns)
     _check_relief(path.stem, data["layers"])
+    _check_shores(path.stem, data["layers"])
     return Theme(path.stem, data["page"], data["layers"], patterns)
