@@ -34,6 +34,11 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   línea más ancha (`a-roads-minor-casing`); los contornos de la capa van debajo
   de todas sus líneas, para que los cruces no se corten. El tema `color` lo
   estrena con uno fino (ADR 0004).
+- **Límites legibles en `bw`, `monochrome` y `vintage-bw`**: se distinguían mal de
+  los caminos, que también son trazos. Ahora llevan puntos redondos: raya y punto
+  (o dos puntos) según el nivel, y la parroquia solo puntos; en `bw` (y
+  `monochrome`, teñida) sobre una banda gris translúcida. `vintage-bw` no lleva
+  banda, para seguir sin grises (ADR 0010).
 - **Límites administrativos** (`INCLUDE_LAYERS=boundaries,municipalities,parishes`):
   tres capas de líneas, ninguna por defecto. `parishes` (parroquias),
   `municipalities` (concellos) y `boundaries` (país, comunidad, provincia y

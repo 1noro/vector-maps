@@ -81,3 +81,18 @@ España o de Galicia**, megas de geometría que caen fuera del mapa.
 - Las vías de un límite que aún no está mapeado como relación no salen.
 - No se escriben los nombres de las unidades (concello de Oza…). Si se quiere,
   sería otra capa de texto (ADR 0006).
+
+## Añadido del 04/11/2026: límites con puntos en los temas sin color
+
+En `bw`, `monochrome` y `vintage-bw` los límites se confundían con los caminos:
+todo es negro y todo son trazos. Como no hay un color propio que darles, se
+distinguen por la forma: los caminos son siempre rayas solas, y los límites
+llevan **puntos redondos** (raya y punto, raya y dos puntos, y la parroquia solo
+puntos), más largos y gruesos cuanto más alto el nivel. `bw` añade una banda gris
+translúcida (`casing-opacity`), que `monochrome` tiñe; `vintage-bw` no, porque
+sería gris.
+
+Un punto es una raya de **0,01 mm** con extremos redondos, no de 0: Inkscape
+descarta del PDF las rayas de largo 0 cuando el patrón tiene otras más largas
+(una fila de solo puntos, `"0 0.7"`, sí salía). Por si acaso, todos los puntos
+de los temas usan 0,01.
