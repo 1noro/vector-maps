@@ -228,3 +228,23 @@ def test_legend_uses_the_chosen_coordinate_format():
         legend_lines([job], "full", "utm")
     circle = legend_lines([_shaped_job("circle")], "full", "dms")
     assert circle[1].startswith("⌖ 42°") and "N" in circle[1]
+
+
+def test_a_casing_is_a_wider_line_under_every_line_of_the_layer():
+    root = ET.fromstring(render([make_job("a", TL, BR, "street")]))
+    roads = root.find(".//svg:g[@id='a-roads']", NS)
+    ids = [p.get("id") for p in roads]
+    assert ids == ["a-roads-minor-casing", "a-roads-minor"]
+    casing, line = list(roads)
+    assert casing.get("d") == line.get("d")
+    style = load("street").style("roads", "minor")
+    wider = style["stroke-width"] + 2 * style["casing-width"]
+    assert float(casing.get("stroke-width")) == pytest.approx(wider)
+    assert casing.get("stroke") == style["casing-color"] and casing.get("fill") == "none"
+    # The casing keys are not SVG attributes: they stay out of the drawing.
+    assert line.get("casing-width") is None and line.get("casing-color") is None
+
+
+def test_no_casing_where_the_theme_has_none():
+    root = ET.fromstring(render([make_job("a", TL, BR, "bw")]))
+    assert root.find(".//svg:path[@id='a-roads-minor-casing']", NS) is None

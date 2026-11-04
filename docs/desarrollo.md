@@ -35,9 +35,6 @@ Medido el 03/11, con el extracto de Galicia (112 MB) y Santiago de Compostela:
    solaparse. Falta además el nombre de parques, ríos y edificios y los puntos de
    interés. Lo difícil: decidir qué etiqueta gana (por clase y tamaño) y mover
    o quitar la otra.
-2. **Contorno de las calles** (*casing*) en el tema de color: cada calle
-   dibujada dos veces, la de abajo más ancha y oscura. Es un atributo más del
-   tema (`casing-width`, `casing-color`).
 3. **Puentes, túneles y más clases**: `tunnel=yes` discontinuo, `bridge=yes`
    con contorno, más tipos de `highway`/`railway`, `waterway=riverbank`.
 4. **Recorte a un polígono** (GeoJSON), además del rectángulo. El

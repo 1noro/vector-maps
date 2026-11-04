@@ -28,7 +28,7 @@ ambas `LAT,LON`. El área también se da por centro y radio en km
 como un círculo (o cuadrado) centrado en la hoja, en vez de llenarla. Quedan en `./out/` el SVG y un PDF del tamaño
 del papel (`santiago.pdf`), los dos con tu usuario (no de root). Con `PDF=0`,
 solo el SVG. Por defecto el mapa sale apaisado, en blanco y negro (`THEME=bw`;
-`THEME=color` para el de color), con margen de 6 mm y la leyenda mínima. `THEME=monochrome TINT=#7a2e1f` lo deja en tonos de un solo color,
+`THEME=color` para el de color, `THEME=street` para uno como el de los callejeros web), con margen de 6 mm y la leyenda mínima. `THEME=monochrome TINT=#7a2e1f` lo deja en tonos de un solo color,
 `INCLUDE_LAYERS=street-names,places` le añade los nombres e
 `INCLUDE_LAYERS=hillshade,contours` el relieve (ninguno de los dos sale por defecto).
 

@@ -18,6 +18,14 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Añadido
 
+- **Tema `street`** (`THEME=street`), a la manera de los callejeros web: suelo
+  gris claro, agua azul cielo, verde suave, calles blancas con contorno gris y las
+  principales amarillas con contorno ocre.
+- **Contorno de las calles** (TODO 2): una clase de línea del tema puede llevar
+  `casing-width` (mm a cada lado) y `casing-color`, y se dibuja debajo la misma
+  línea más ancha (`a-roads-minor-casing`); los contornos de la capa van debajo
+  de todas sus líneas, para que los cruces no se corten. El tema `color` lo
+  estrena con uno fino (ADR 0004).
 - **`make wizard`**: un mapa respondiendo preguntas en la terminal, con listas y
   casillas, en vez de recordar las variables. Enseña el `make map` equivalente,
   recuerda las respuestas en `data/wizard.json` y, después de generar, deja

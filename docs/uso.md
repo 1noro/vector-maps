@@ -50,7 +50,7 @@ make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
 | `INCLUDE_LAYERS` | — | Capas que añadir a `LAYERS` (o a las de por defecto): `INCLUDE_LAYERS=street-names,places` |
 | `EXCLUDE_LAYERS` | — | Capas que quitar de `LAYERS` (o de las de por defecto): `EXCLUDE_LAYERS=railways` |
 | `LABEL_LANG` | `es` | Idioma de los nombres de calles y lugares, por código de OSM: `es`, `gl`, `en`, `ja`… Varios, `gl,es`: gana el primero que tenga traducción; `local` = como está mapeado |
-| `THEME` | `bw` | `bw`, `color`, `monochrome`, o la ruta de un `.toml` propio |
+| `THEME` | `bw` | `bw`, `color`, `street`, `monochrome`, o la ruta de un `.toml` propio |
 | `TINT` | `#1f3b5c` | Color del tema `monochrome`, en hexadecimal (`#` opcional) |
 | `PBF` | (Overpass) | Extracto local `.osm.pbf` en vez de Overpass |
 | `OUT` | `out/map.svg` | Fichero de salida |
@@ -118,10 +118,16 @@ make map TL=… BR=… INCLUDE_LAYERS=hillshade,contours
 
 Un tema es un `.toml` en `src/vectormaps/themes/` (o cualquiera por ruta, con
 `THEME=ruta.toml`). Cada `[layers.<capa>.<clase>]` lleva atributos SVG tal cual
-(`fill`, `stroke`, `stroke-width` en mm…). Para uno propio, copia `bw.toml` y
+(`fill`, `stroke`, `stroke-width` en mm…). Una línea puede llevar además
+`casing-width` (mm a cada lado) y `casing-color`: un contorno, la misma línea más
+ancha por debajo. Para uno propio, copia `bw.toml` y
 cámbialo: un test exige que estile todas las clases de todas las capas.
 
-- **`color`**: fondo crema, agua azul, verde, calles blancas y naranjas.
+- **`color`**: fondo crema, agua azul, verde, calles blancas y naranjas, con un
+  contorno fino.
+- **`street`**: a la manera de los callejeros web: suelo gris claro, agua azul
+  cielo, verde suave, edificios grises, calles blancas con contorno gris y las
+  principales amarillas con contorno ocre.
 - **`bw`** (el de por defecto): solo grises y negro, sin grandes superficies
   negras (tinta) y con anchos legibles en papel. El agua es un solo gris sin
   borde, superficies y líneas, para que un río se funda con sus tramos anchos;

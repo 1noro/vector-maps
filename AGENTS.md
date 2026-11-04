@@ -30,7 +30,7 @@ elegancia.** Todo corre en Docker; en el host solo hacen falta `make` y
 | `overpass.py`, `osmexport.py`, `download.py` | cliente con caché, `osmium export`, descarga de PBF |
 | `geofabrik.py` | qué extracto cubre un área, para la pista cuando Overpass falla |
 | `pipeline.py` | `Frame` + capas + fuente → features por capa |
-| `theme.py`, `themes/*.toml` | los estilos (color, bw, y monochrome: el bw tintado) |
+| `theme.py`, `themes/*.toml` | los estilos (color, street, bw, y monochrome: el bw tintado) |
 | `pdf.py` | el PDF del tamaño del papel, con Inkscape |
 | `relief.py` | el relieve: teselas del DEM de Copernicus, curvas y sombreado con GDAL |
 | `progress.py` | el spinner de los pasos lentos, solo con terminal |
@@ -177,7 +177,6 @@ herramienta**, y **que siga siendo corto**.
 El orden y el porqué, en `docs/desarrollo.md`. Abiertos:
 
 - **1** — etiquetas sin pisarse (antichoque) y los nombres de parques y ríos.
-- **2** — contorno (*casing*) de las calles en el tema de color.
 - **3** — puentes y túneles (trazo distinto) y más clases de calle.
 - **4** — recorte de la hoja a un polígono (GeoJSON).
 - **5** — escala redonda opcional (`--scale 1:5000`) en vez de la que salga.

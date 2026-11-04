@@ -130,3 +130,20 @@ devuelve) y las coordenadas en **`dms`** (antes `dd`). Es el mapa que más usa.
 La atribución de OSM sigue en las dos leyendas (decisión 5). Lo que dice
 arriba el apartado de la leyenda mínima («la leyenda completa sigue siendo la
 de por defecto») deja de valer.
+
+## Añadido del 04/11/2026: el contorno de las líneas (TODO 2)
+
+Una clase de línea del tema puede llevar `casing-width` (mm a cada lado) y
+`casing-color`. No son atributos SVG: el renderizador los quita del `<path>` y
+dibuja **debajo** otro, `a-roads-minor-casing` (clase `minor casing`), con el
+mismo `d`, `fill="none"`, ese color y `stroke-width` + 2 × `casing-width`; copia
+solo `stroke-linecap`, `stroke-linejoin` y `opacity` (no el discontinuo).
+
+**Todos los contornos de una capa van antes que todas sus líneas**, no cada uno
+bajo la suya: así, donde se cruzan dos calles, el contorno de una no corta a la
+otra. Sigue siendo un `<path>` por clase (dos, con contorno), editable en
+Inkscape, y el orden de dibujo entre capas no cambia.
+
+Lo estrenan `color` (fino) y el tema nuevo `street`, a la manera de los
+callejeros web: calles blancas con contorno gris y las principales amarillas.
+`monochrome` tinta `casing-color` como cualquier otro color.

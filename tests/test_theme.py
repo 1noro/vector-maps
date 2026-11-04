@@ -43,3 +43,13 @@ def test_monochrome_has_a_default_tint_and_is_listed():
 def test_a_tint_only_goes_with_monochrome():
     with pytest.raises(ValueError, match="monochrome"):
         theme.load("color", "#204060")
+
+
+def test_monochrome_tints_the_casing_too(tmp_path):
+    plain = tmp_path / "cased.toml"
+    plain.write_text(
+        '[page]\nbackground = "#ffffff"\nink = "#000000"\n'
+        '[layers.roads.minor]\nstroke = "#ffffff"\ncasing-color = "#000000"\n'
+    )
+    t = theme.tinted(theme.load(str(plain)), "#204060", "monochrome")
+    assert t.style("roads", "minor")["casing-color"] == "#204060"

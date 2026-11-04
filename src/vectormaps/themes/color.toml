@@ -1,5 +1,6 @@
 # Colour theme. Every attribute under [layers.<layer>.<class>] is copied as an
-# SVG presentation attribute (so it works in any editor), lengths in mm.
+# SVG presentation attribute (so it works in any editor), lengths in mm;
+# `casing-width` (mm on each side) and `casing-color` draw an outline under the line.
 
 [page]
 background = "#f7f4ee"
@@ -67,6 +68,8 @@ stroke = "#ffffff"
 stroke-width = 0.55
 stroke-linecap = "round"
 stroke-linejoin = "round"
+casing-width = 0.07
+casing-color = "#d8cfc4"
 
 [layers.roads.secondary]
 fill = "none"
@@ -74,6 +77,8 @@ stroke = "#fdd9a0"
 stroke-width = 0.8
 stroke-linecap = "round"
 stroke-linejoin = "round"
+casing-width = 0.09
+casing-color = "#e3b878"
 
 [layers.roads.major]
 fill = "none"
@@ -81,6 +86,8 @@ stroke = "#f9a97d"
 stroke-width = 1.1
 stroke-linecap = "round"
 stroke-linejoin = "round"
+casing-width = 0.11
+casing-color = "#d9875a"
 
 # Labels. font-size is in mm on paper; the white stroke behind the letters is a halo.
 

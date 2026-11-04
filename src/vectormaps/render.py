@@ -96,17 +96,44 @@ def _shape_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
         page_geom = _to_page(item.geom, tr, job.frame)
         if page_geom is not None:
             by_class[item.cls].append(page_geom)
-    out = []
+    casings, out = [], []
     for cls in layer.classes:
         d = path_data(by_class[cls])
         if not d:
             continue
-        style = job.theme.style(layer.name, cls)
+        style = dict(job.theme.style(layer.name, cls))
+        casing = _casing(style)
+        if casing:
+            casings.append(
+                f'<path id="{job.label}-{layer.name}-{cls}-casing" class="{cls} casing" '
+                f'{_attrs(casing)} d="{d}"/>'
+            )
         out.append(
             f'<path id="{job.label}-{layer.name}-{cls}" class="{cls}" '
             f'fill-rule="evenodd" {_attrs(style)} d="{d}"/>'
         )
-    return out
+    # Every casing under every line: where two streets meet, their outlines do not cut them.
+    return casings + out
+
+
+def _casing(style: dict[str, str | float]) -> dict[str, str | float] | None:
+    """The outline under a line: the same line, `casing-width` mm wider on each side.
+
+    Takes the casing keys out of `style`, which are not SVG attributes.
+    """
+    width = style.pop("casing-width", None)
+    colour = style.pop("casing-color", None)
+    if not width or not colour:
+        return None
+    casing = {
+        k: v for k, v in style.items() if k in ("stroke-linecap", "stroke-linejoin", "opacity")
+    }
+    return {
+        "fill": "none",
+        "stroke": colour,
+        "stroke-width": _num(float(style.get("stroke-width", 0)) + 2 * float(width)),
+        **casing,
+    }
 
 
 def _hillshade_layer(job: Job, layer: Layer) -> list[str]:
