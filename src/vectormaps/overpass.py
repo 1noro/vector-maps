@@ -1,10 +1,14 @@
 """Overpass client with an on-disk cache.
 
 The public servers limit by IP, so: one request at a time, a cache keyed by the
-exact query, and a wait (not a blind retry loop) when the server says no.
+exact query, and a wait (not a blind retry loop) when the server says no. "One
+at a time" holds between processes too: two `make map` at once take turns
+through a lock file in the cache.
 """
 
+import contextlib
 import email.utils
+import fcntl
 import hashlib
 import http.client
 import logging
@@ -14,6 +18,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+
+from vectormaps.tmpfile import tmp_beside
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +53,18 @@ def retry_after(value: str | None, default: int) -> int:
     return max(0, round(when.timestamp() - time.time()))
 
 
+@contextlib.contextmanager
+def _one_at_a_time(cache_dir: Path):
+    """Hold the cache's lock file: one Overpass request at a time, across processes too."""
+    with (cache_dir / ".lock").open("a") as fh:
+        try:
+            fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            log.info("another run is querying Overpass, waiting for it to finish")
+            fcntl.flock(fh, fcntl.LOCK_EX)
+        yield  # closing the file releases the lock
+
+
 def fetch(query: str, cache_dir: Path, url: str | None = None, sleep=time.sleep) -> Path:
     """Return the path of the OSM XML for `query`, downloading it if not cached."""
     url = url or os.environ.get("OVERPASS_URL", DEFAULT_URL)
@@ -55,7 +73,22 @@ def fetch(query: str, cache_dir: Path, url: str | None = None, sleep=time.sleep)
         log.info("cached: %s", path.name)
         return path
     cache_dir.mkdir(parents=True, exist_ok=True)
+    with _one_at_a_time(cache_dir):
+        if path.exists():  # the other run asked the same while we waited
+            log.info("cached: %s", path.name)
+            return path
+        data = _download(query, url, sleep)
+        tmp = tmp_beside(path)
+        try:
+            tmp.write_bytes(data)
+            tmp.replace(path)
+        finally:
+            tmp.unlink(missing_ok=True)
+        sleep(PAUSE_BETWEEN_REQUESTS)  # still holding the lock: the pause counts for everyone
+    return path
 
+
+def _download(query: str, url: str, sleep) -> bytes:
     body = urllib.parse.urlencode({"data": query}).encode()
     req = urllib.request.Request(url, data=body, headers={"User-Agent": USER_AGENT})
     for attempt in range(1, MAX_ATTEMPTS + 1):
@@ -68,7 +101,14 @@ def fetch(query: str, cache_dir: Path, url: str | None = None, sleep=time.sleep)
                 raise OverpassError(f"Overpass answered HTTP {err.code}") from err
             header = err.headers.get("Retry-After") if err.headers else None
             wait = retry_after(header, 30 * attempt)
-            log.warning("Overpass answered HTTP %d, waiting %d s", err.code, wait)
+            # The spinner counts the whole layer, so say when the next attempt starts.
+            log.warning(
+                "Overpass answered HTTP %d; attempt %d/%d in %d s",
+                err.code,
+                attempt + 1,
+                MAX_ATTEMPTS,
+                wait,
+            )
             sleep(wait)
         except urllib.error.URLError as err:
             raise OverpassError(f"cannot reach Overpass: {err.reason}") from err
@@ -85,8 +125,4 @@ def fetch(query: str, cache_dir: Path, url: str | None = None, sleep=time.sleep)
     text = data.decode("utf-8", "replace")
     if "<osm" not in text or "runtime error" in text:
         raise OverpassError("Overpass returned an error or a truncated answer; try a smaller area")
-    tmp = path.with_suffix(".tmp")
-    tmp.write_bytes(data)
-    tmp.rename(path)
-    sleep(PAUSE_BETWEEN_REQUESTS)
-    return path
+    return data

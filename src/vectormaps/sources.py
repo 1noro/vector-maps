@@ -15,6 +15,7 @@ from shapely.geometry.base import BaseGeometry
 
 from vectormaps import osmexport, overpass
 from vectormaps.layers import Layer
+from vectormaps.tmpfile import tmp_beside
 
 log = logging.getLogger(__name__)
 
@@ -124,7 +125,7 @@ class PbfSource:
         if bounds not in self._memo:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             key = self._key(bounds)
-            extract = self.cache_dir / f"{key}.osm.pbf"
+            extract = tmp_beside(self.cache_dir / f"{key}.osm.pbf")  # dropped once exported
             geojson = self.cache_dir / f"{key}.geojsonseq"
             if not geojson.exists():
                 s, w, n, e = bounds
@@ -133,11 +134,13 @@ class PbfSource:
                     "osmium", "extract", "--overwrite", "--strategy=smart",
                     "-b", f"{w},{s},{e},{n}", "-o", str(extract), str(self.pbf),
                 ]  # fmt: skip
-                done = subprocess.run(cmd, capture_output=True, text=True)
-                if done.returncode != 0:
-                    raise RuntimeError(f"osmium extract failed: {done.stderr.strip()}")
-                osmexport.export(extract, geojson)
-                extract.unlink()
+                try:
+                    done = subprocess.run(cmd, capture_output=True, text=True)
+                    if done.returncode != 0:
+                        raise RuntimeError(f"osmium extract failed: {done.stderr.strip()}")
+                    osmexport.export(extract, geojson)
+                finally:
+                    extract.unlink(missing_ok=True)
             self._memo[bounds] = list(osmexport.read_features(geojson))
         return self._memo[bounds]
 

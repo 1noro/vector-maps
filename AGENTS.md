@@ -34,6 +34,7 @@ elegancia.** Todo corre en Docker; en el host solo hacen falta `make` y
 | `pdf.py` | el PDF del tamaño del papel, con Inkscape |
 | `relief.py` | el relieve: teselas del DEM de Copernicus, curvas y sombreado con GDAL |
 | `progress.py` | el spinner de los pasos lentos, solo con terminal |
+| `tmpfile.py` | el nombre del temporal de cada fichero, único para que dos `make map` no se pisen |
 | `render.py` | features → SVG; un `Job` por zona, apiladas |
 | `cli.py` | `map`, `list`, `download`, `wizard` |
 | `wizard.py` | las preguntas en la terminal → el `argv` de `map`, y su memoria |

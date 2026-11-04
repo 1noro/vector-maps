@@ -1,6 +1,9 @@
 import email.utils
+import fcntl
 import http.client
 import io
+import logging
+import threading
 import time
 import urllib.error
 
@@ -48,6 +51,50 @@ def test_fetch_waits_and_retries_on_429(tmp_path, monkeypatch):
     monkeypatch.setattr(overpass.urllib.request, "urlopen", fake_urlopen)
     overpass.fetch("q", tmp_path, url="http://x", sleep=waits.append)
     assert waits[0] == 7
+
+
+def test_the_wait_says_which_attempt_comes_and_when(tmp_path, monkeypatch, caplog):
+    answers = [
+        urllib.error.HTTPError("http://x", 502, "bad gateway", {}, None),
+        FakeResponse(b"<osm></osm>"),
+    ]
+
+    def fake_urlopen(req, timeout):
+        a = answers.pop(0)
+        if isinstance(a, Exception):
+            raise a
+        return a
+
+    monkeypatch.setattr(overpass.urllib.request, "urlopen", fake_urlopen)
+    with caplog.at_level(logging.WARNING):
+        overpass.fetch("q", tmp_path, url="http://x", sleep=lambda s: None)
+    assert "HTTP 502; attempt 2/3 in 30 s" in caplog.text
+
+
+def test_a_second_run_waits_for_the_first_and_takes_its_answer(tmp_path, monkeypatch):
+    def fake_urlopen(req, timeout):
+        raise AssertionError("the answer was already cached by the other run")
+
+    monkeypatch.setattr(overpass.urllib.request, "urlopen", fake_urlopen)
+    lock = (tmp_path / ".lock").open("a")
+    fcntl.flock(lock, fcntl.LOCK_EX)  # the other run, mid-request
+
+    def other_run_finishes():
+        time.sleep(0.2)
+        (tmp_path / f"{overpass.cache_key('q')}.osm").write_text("<osm></osm>")
+        lock.close()
+
+    threading.Thread(target=other_run_finishes).start()
+    path = overpass.fetch("q", tmp_path, url="http://x", sleep=lambda s: None)
+    assert path.read_text() == "<osm></osm>"
+
+
+def test_nothing_temporary_is_left_behind(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        overpass.urllib.request, "urlopen", lambda r, timeout: FakeResponse(b"<osm></osm>")
+    )
+    overpass.fetch("q", tmp_path, url="http://x", sleep=lambda s: None)
+    assert not list(tmp_path.glob("*tmp*"))
 
 
 def test_fetch_gives_up_on_other_errors(tmp_path, monkeypatch):

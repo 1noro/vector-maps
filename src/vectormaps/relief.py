@@ -27,6 +27,7 @@ from shapely.geometry import shape
 from vectormaps.area import Frame
 from vectormaps.download import USER_AGENT
 from vectormaps.overpass import RETRY_STATUS, retry_after
+from vectormaps.tmpfile import tmp_beside
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ def fetch_tile(name: str, cache_dir: Path, sleep=time.sleep) -> Path | None:
         return None
     cache_dir.mkdir(parents=True, exist_ok=True)
     req = urllib.request.Request(TILE_URL.format(name=name), headers={"User-Agent": USER_AGENT})
-    tmp = path.with_name(path.name + ".part")
+    tmp = tmp_beside(path)
     log.info("downloading elevation tile %s (~40 MB, once)", name)
     try:
         for attempt in range(1, MAX_ATTEMPTS + 1):
@@ -92,7 +93,13 @@ def fetch_tile(name: str, cache_dir: Path, sleep=time.sleep) -> Path | None:
                     raise ReliefError(f"elevation tile {name}: HTTP {err.code}") from err
                 header = err.headers.get("Retry-After") if err.headers else None
                 wait = retry_after(header, 30 * attempt)
-                log.warning("elevation server answered HTTP %d, waiting %d s", err.code, wait)
+                log.warning(
+                    "elevation server answered HTTP %d; attempt %d/%d in %d s",
+                    err.code,
+                    attempt + 1,
+                    MAX_ATTEMPTS,
+                    wait,
+                )
                 sleep(wait)
             except urllib.error.URLError as err:
                 raise ReliefError(f"cannot reach the elevation server: {err.reason}") from err
@@ -125,15 +132,18 @@ def frame_dem(frame: Frame, cache_dir: Path) -> Path | None:
     raw = f"{epsg}|{box}|{cols}x{rows}|{[t.name for t in tiles]}"
     out = cache_dir / f"frame-{hashlib.sha1(raw.encode()).hexdigest()[:16]}.tif"
     if not out.exists():
-        tmp = out.with_name(out.stem + ".tmp.tif")
-        _gdal(
-            ["gdalwarp", "-q", "-overwrite", "-t_srs", epsg, "-r", "bilinear"]
-            + ["-te", *(f"{v:.3f}" for v in box), "-ts", str(cols), str(rows)]
-            + ["-wo", "INIT_DEST=0", "-ot", "Float32"]  # missing tiles are sea: 0 m
-            + [str(t) for t in tiles]
-            + [str(tmp)]
-        )
-        tmp.replace(out)
+        tmp = tmp_beside(out)
+        try:
+            _gdal(
+                ["gdalwarp", "-q", "-overwrite", "-t_srs", epsg, "-r", "bilinear"]
+                + ["-te", *(f"{v:.3f}" for v in box), "-ts", str(cols), str(rows)]
+                + ["-wo", "INIT_DEST=0", "-ot", "Float32"]  # missing tiles are sea: 0 m
+                + [str(t) for t in tiles]
+                + [str(tmp)]
+            )
+            tmp.replace(out)
+        finally:
+            tmp.unlink(missing_ok=True)
     return out
 
 
@@ -148,16 +158,15 @@ def contours(frame: Frame, dem: Path) -> list[tuple[str, float, shapely.Geometry
     step = contour_step(frame)
     out_path = dem.with_name(f"{dem.stem}-contours-{step}.geojson")
     if not out_path.exists():
-        tmp = out_path.with_name(out_path.stem + ".tmp.geojson")
-        tmp.unlink(missing_ok=True)
-        _gdal(
-            ["gdal_contour", "-q", "-a", "ELEV", "-i", str(step), "-f", "GeoJSON"]
-            + [
-                str(dem),
-                str(tmp),
-            ]
-        )
-        tmp.replace(out_path)
+        tmp = tmp_beside(out_path)  # fresh: gdal_contour does not overwrite
+        try:
+            _gdal(
+                ["gdal_contour", "-q", "-a", "ELEV", "-i", str(step), "-f", "GeoJSON"]
+                + [str(dem), str(tmp)]
+            )
+            tmp.replace(out_path)
+        finally:
+            tmp.unlink(missing_ok=True)
     back = Transformer.from_crs(frame.crs, 4326, always_xy=True)
 
     def to_lonlat(coords: np.ndarray) -> np.ndarray:
@@ -180,9 +189,12 @@ def hillshade(dem: Path) -> Path:
     """Shade of the ground, 0 (dark) to 255 (lit), sun from the north-west at 45 degrees."""
     out = dem.with_name(f"{dem.stem}-shade.tif")
     if not out.exists():
-        tmp = out.with_name(out.stem + ".tmp.tif")
-        _gdal(["gdaldem", "hillshade", "-q", "-compute_edges", str(dem), str(tmp)])
-        tmp.replace(out)
+        tmp = tmp_beside(out)
+        try:
+            _gdal(["gdaldem", "hillshade", "-q", "-compute_edges", str(dem), str(tmp)])
+            tmp.replace(out)
+        finally:
+            tmp.unlink(missing_ok=True)
     return out
 
 
@@ -195,8 +207,8 @@ def _rgb(hex_colour: str) -> str:
 
 def shade_png(shade: Path, shadow: str, highlight: str) -> bytes:
     """The hillshade as a transparent PNG: flat ground clear, slopes in the theme's colours."""
-    table = shade.with_name(shade.stem + ".colours.txt")
-    png = shade.with_name(shade.stem + ".tmp.png")
+    table = tmp_beside(shade.with_name(shade.stem + ".colours.txt"))
+    png = tmp_beside(shade.with_name(shade.stem + ".png"))
     dark, light = _rgb(shadow), _rgb(highlight)
     # Shade value -> colour and alpha, linear in between; "nv" is gdaldem's no-data.
     table.write_text(

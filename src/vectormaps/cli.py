@@ -16,6 +16,7 @@ from vectormaps.pipeline import load_features
 from vectormaps.progress import ProgressHandler, Spinner
 from vectormaps.render import COORDS, LEGENDS, Job, render
 from vectormaps.sources import Bounds, OverpassSource, PbfSource, Source, local_pbf_for
+from vectormaps.tmpfile import tmp_beside
 
 log = logging.getLogger("vectormaps")
 
@@ -243,9 +244,12 @@ def _map(a: argparse.Namespace) -> int:
     with Spinner("drawing the SVG"):
         svg = render(jobs, a.legend, a.coords)
     a.out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = a.out.with_name(a.out.name + ".tmp")
-    tmp.write_text(svg, encoding="utf-8")
-    tmp.replace(a.out)
+    tmp = tmp_beside(a.out)
+    try:
+        tmp.write_text(svg, encoding="utf-8")
+        tmp.replace(a.out)
+    finally:
+        tmp.unlink(missing_ok=True)
     log.info("wrote %s (%d KiB)", a.out, len(svg) // 1024)
     if a.pdf:
         pdf = a.out.with_suffix(".pdf")

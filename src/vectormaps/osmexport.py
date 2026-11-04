@@ -12,6 +12,8 @@ from pathlib import Path
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 
+from vectormaps.tmpfile import tmp_beside
+
 # Bump when `export` changes what it writes: the cached files are named after it.
 VERSION = "v2"  # v2: also points (place names)
 
@@ -32,7 +34,7 @@ def export(osm_path: Path, out_path: Path) -> Path:
     """Run osmium; skip if already exported."""
     if out_path.exists():
         return out_path
-    tmp = out_path.with_suffix(".tmp")
+    tmp = tmp_beside(out_path)
     cmd = [
         "osmium",
         "export",
@@ -44,10 +46,13 @@ def export(osm_path: Path, out_path: Path) -> Path:
         str(tmp),
         str(osm_path),
     ]
-    done = subprocess.run(cmd, capture_output=True, text=True)
-    if done.returncode != 0:
-        raise RuntimeError(f"osmium export failed: {done.stderr.strip()}")
-    tmp.rename(out_path)
+    try:
+        done = subprocess.run(cmd, capture_output=True, text=True)
+        if done.returncode != 0:
+            raise RuntimeError(f"osmium export failed: {done.stderr.strip()}")
+        tmp.replace(out_path)
+    finally:
+        tmp.unlink(missing_ok=True)
     return out_path
 
 

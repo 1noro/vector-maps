@@ -8,9 +8,11 @@ width and height in mm, so the PDF comes out at the paper size.
 import subprocess
 from pathlib import Path
 
+from vectormaps.tmpfile import tmp_beside
+
 
 def svg_to_pdf(svg: Path, pdf: Path) -> Path:
-    tmp = pdf.with_name(pdf.stem + ".tmp.pdf")  # Inkscape wants the .pdf ending
+    tmp = tmp_beside(pdf)  # keeps the .pdf ending, which Inkscape wants
     cmd = [
         "inkscape",
         str(svg),

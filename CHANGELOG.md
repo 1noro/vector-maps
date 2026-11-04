@@ -102,6 +102,14 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 - Con `SHAPE=circle` la leyenda da el centro (`⌖ lat, lon`) en vez de las esquinas. La imagen instala `fonts-symbola` para
   dibujarlo (`make docker`; ADR 0007).
 - `ORIENTATION=auto` elige apaisado cuando el área es casi cuadrada (±5 %).
+- **La espera de Overpass dice qué viene**: `Overpass answered HTTP 502; attempt
+  2/3 in 30 s` (antes `waiting 30 s`, que junto al spinner de la capa, que
+  cuenta la capa entera, parecía no cumplirse). Igual en el servidor del relieve.
+- **Dos `make map` a la vez ya no se pisan**: cada uno escribe la caché, el SVG y
+  el PDF en un temporal con nombre propio, que se borra si algo falla, y las
+  peticiones a Overpass esperan su turno entre procesos (un cerrojo en
+  `data/cache/overpass/.lock`); si la otra ejecución ya bajó la misma consulta,
+  se usa la suya (ADR 0002).
 - `make help` recoge `CENTER`/`RADIUS`, `SHAPE` y `CENTER2`/`RADIUS2`.
 - `make` ya no muestra los comandos que ejecuta (`.SILENT`): el log lleva solo lo
   que dicen los programas.
@@ -113,7 +121,7 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 - ADR 0006 (etiquetas e idioma), 0007 (el PDF con Inkscape), 0008 (relieve) y
   0009 (el wizard); añadidos del 03/11 a los ADR 0002 y 0004, y del 04/11 a los
-  ADR 0002, 0003, 0004 y 0007.
+  ADR 0002 (dos), 0003, 0004 y 0007.
 - README, `docs/uso.md`, `docs/desarrollo.md`, los ADR 0001 a 0005, `AGENTS.md`
   y los procedimientos de `docs/agentes/` con sus comandos para Claude Code,
   Qwen Code y OpenCode.

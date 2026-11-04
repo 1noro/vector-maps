@@ -116,3 +116,25 @@ saliendo del extracto sin que se notara. Ahora:
   (`…; drawing every layer from the local extract …`).
 
 Nada cambia en cómo se piden, se esperan o se cachean los datos.
+
+## Añadido del 04/11/2026: una petición cada vez, también entre dos `make map`
+
+«Una petición cada vez» solo se cumplía dentro de un proceso: dos `make map` a la
+vez preguntaban a Overpass a la vez, y además escribían la caché en el mismo
+temporal (`x.tmp`), así que uno podía renombrar el fichero a medio escribir del
+otro. Ahora:
+
+- **Las peticiones a Overpass hacen cola entre procesos** con un `flock` sobre
+  `data/cache/overpass/.lock`; la pausa entre peticiones se cumple con el
+  cerrojo cogido, así que vale para los dos. Quien espera lo dice en el log y,
+  al entrar, vuelve a mirar la caché: si la otra ejecución bajó la misma
+  consulta, se usa la suya y no se repite la petición. El cerrojo vale porque
+  todos los contenedores montan el mismo `./data`.
+- **Cada fichero se escribe en un temporal con nombre propio**
+  (`tmpfile.tmp_beside`: `abc.3f9a1c2e.tmp.osm`) y se renombra al terminar; si
+  algo falla, se borra. El PID no sirve para distinguirlos: cada `make map` es
+  su contenedor y en todos Python es el PID 1. Igual para la caché del PBF, del
+  relieve y del índice de Geofabrik, y para el SVG y el PDF de `out/`.
+
+Las descargas del relieve y de Geofabrik no hacen cola: no son Overpass, y cada
+una se hace una sola vez.

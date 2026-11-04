@@ -15,6 +15,7 @@ from typing import NamedTuple
 from shapely.geometry import MultiPolygon, box, shape
 
 from vectormaps.download import USER_AGENT
+from vectormaps.tmpfile import tmp_beside
 
 log = logging.getLogger(__name__)
 
@@ -44,9 +45,12 @@ def _index(cache_dir: Path) -> dict | None:
         log.warning("cannot get the Geofabrik index: %s", err)
         return None  # just a hint: the caller says something generic instead
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_bytes(data)
-    tmp.replace(path)
+    tmp = tmp_beside(path)
+    try:
+        tmp.write_bytes(data)
+        tmp.replace(path)
+    finally:
+        tmp.unlink(missing_ok=True)
     return index
 
 

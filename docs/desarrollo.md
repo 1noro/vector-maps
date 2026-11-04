@@ -56,19 +56,12 @@ Medido el 03/11, con el extracto de Galicia (112 MB) y Santiago de Compostela:
 Salieron en la revisión del 03/11. Ninguna estropea un mapa normal; no llevan
 número porque no hay `TODO` en el código.
 
-- **El mensaje de espera de Overpass confunde.** «waiting 30 s» va seguido del
-  spinner de la capa, que cuenta el tiempo de la capa entera (intentos y
-  esperas), no la espera: parece que no se cumple. Mejor algo como
-  `HTTP 502, attempt 2/3 in 30 s` (`overpass.py`).
 - **El aviso de área grande sale también con PBF** y habla del Overpass público
   (`pipeline.py`, `LARGE_AREA_DEG2`). Debería depender de la fuente.
 - **Los lugares mapeados como área no salen**: las reglas de `places` solo
   cogen nodos, y muchos barrios y parroquias son polígonos en OSM
   (`layers.py`).
 - **`make pbf` deja el `.part`** si la descarga falla a medias (`download.py`).
-- **Dos `make map` a la vez** comparten los temporales de la caché (`x.tmp`) y
-  pueden pisarse; y «una petición cada vez» a Overpass se cumple dentro de un
-  proceso, no entre dos.
 - `render()` escribe el fondo, la tinta y el grosor del marco del tema sin
   escapar, a diferencia del resto de estilos.
 - `fill-rule="evenodd"` se pone también en las líneas, donde no hace nada.
