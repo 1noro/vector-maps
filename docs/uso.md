@@ -120,7 +120,11 @@ Un tema es un `.toml` en `src/vectormaps/themes/` (o cualquiera por ruta, con
 `THEME=ruta.toml`). Cada `[layers.<capa>.<clase>]` lleva atributos SVG tal cual
 (`fill`, `stroke`, `stroke-width` en mm…). Una línea puede llevar además
 `casing-width` (mm a cada lado) y `casing-color`: un contorno, la misma línea más
-ancha por debajo. Para uno propio, copia `bw.toml` y
+ancha por debajo. Un relleno puede ser una trama: `fill = "pattern:<nombre>"`, con
+la trama definida en `[patterns.<nombre>]` (`kind = "lines"`, rayas a `spacing` mm
+con `angle`, `width`, `color`, `background` y, si se quiere, trazos de `dash` mm;
+o `kind = "dots"`, puntos de `radius`); `vintage.toml` trae tres de ejemplo.
+Para uno propio, copia `bw.toml` y
 cámbialo: un test exige que estile todas las clases de todas las capas.
 
 - **`color`**: fondo crema, agua azul, verde, calles blancas y naranjas, con un
@@ -134,9 +138,11 @@ cámbialo: un test exige que estile todas las clases de todas las capas.
 - **`blueprint`**: un plano de arquitecto, líneas blancas sobre azul. Los
   edificios son solo contorno y las calles, doble línea (el color del fondo sobre
   un contorno blanco). También gasta mucha tinta.
-- **`vintage`**: un mapa antiguo: papel envejecido, tinta sepia, agua verdosa y
-  letra con serifa. Queda muy bien con el relieve
-  (`INCLUDE_LAYERS=hillshade,contours`).
+- **`vintage`**: una hoja topográfica del siglo XIX: papel crema, agua turquesa
+  rayada, prados en trazos verdes, edificios rayados, calles en doble línea negra
+  fina y todos los nombres en cursiva (EB Garamond). Con el relieve
+  (`INCLUDE_LAYERS=hillshade,contours`) las lomas salen en rojo, como en aquellas
+  hojas.
 - **`poster`**: la ciudad en líneas, para enmarcar: calles negras sobre blanco,
   cada clase con su grosor, y agua suave; parques y edificios no se pintan (sus
   grupos siguen en el SVG). Muy bonito con `SHAPE=circle`.

@@ -53,3 +53,35 @@ def test_monochrome_tints_the_casing_too(tmp_path):
     )
     t = theme.tinted(theme.load(str(plain)), "#204060", "monochrome")
     assert t.style("roads", "minor")["casing-color"] == "#204060"
+
+
+def _write(tmp_path, body):
+    path = tmp_path / "t.toml"
+    path.write_text('[page]\nbackground = "#ffffff"\nink = "#000000"\n' + body)
+    return str(path)
+
+
+def test_a_style_cannot_name_a_pattern_the_theme_lacks(tmp_path):
+    path = _write(tmp_path, '[layers.water.water]\nfill = "pattern:nope"\n')
+    with pytest.raises(ValueError, match=r"no \[patterns.nope\]"):
+        theme.load(path)
+
+
+@pytest.mark.parametrize(
+    "pattern, message",
+    [('kind = "stars"\nspacing = 1', "kind"), ('kind = "lines"\nspacing = 0', "spacing")],
+)
+def test_a_pattern_needs_a_known_kind_and_a_spacing(tmp_path, pattern, message):
+    path = _write(tmp_path, f"[patterns.p]\n{pattern}\n[layers.water.water]\nfill = 'pattern:p'\n")
+    with pytest.raises(ValueError, match=message):
+        theme.load(path)
+
+
+def test_monochrome_tints_the_patterns_too(tmp_path):
+    path = _write(
+        tmp_path,
+        '[patterns.p]\nkind = "lines"\nspacing = 1\ncolor = "#000000"\n'
+        '[layers.water.water]\nfill = "pattern:p"\n',
+    )
+    t = theme.tinted(theme.load(path), "#204060", "monochrome")
+    assert t.patterns["p"]["color"] == "#204060"

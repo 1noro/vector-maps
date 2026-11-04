@@ -1,11 +1,17 @@
-"""Themes: TOML files that say how each layer class looks."""
+"""Themes: TOML files that say how each layer class looks.
+
+A theme may also define fill patterns (hatching, dots) under `[patterns.<name>]`;
+a style uses one as `fill = "pattern:<name>"`, and the SVG gets a `<pattern>` for it.
+"""
 
 import re
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 THEMES_DIR = Path(__file__).parent / "themes"
+PATTERN_KINDS = ("lines", "dots")
+PATTERN_PREFIX = "pattern:"
 
 
 @dataclass(frozen=True)
@@ -13,6 +19,7 @@ class Theme:
     name: str
     page: dict[str, str | float]
     layers: dict[str, dict[str, dict[str, str | float]]]
+    patterns: dict[str, dict[str, str | float]] = field(default_factory=dict)
 
     def style(self, layer: str, cls: str) -> dict[str, str | float]:
         try:
@@ -58,7 +65,30 @@ def tinted(theme: Theme, tint: str, name: str) -> Theme:
         layer: {cls: recolour(style) for cls, style in classes.items()}
         for layer, classes in theme.layers.items()
     }
-    return Theme(name, recolour(theme.page), layers)
+    patterns = {n: recolour(p) for n, p in theme.patterns.items()}
+    return Theme(name, recolour(theme.page), layers, patterns)
+
+
+def _check_patterns(name: str, layers: dict, patterns: dict) -> None:
+    """Every pattern has a known kind and every `pattern:` a style names exists."""
+    for pname, p in patterns.items():
+        if p.get("kind") not in PATTERN_KINDS:
+            raise ValueError(
+                f"theme {name!r}: pattern {pname!r} needs kind = one of {', '.join(PATTERN_KINDS)}"
+            )
+        if not float(p.get("spacing", 0)) > 0:
+            raise ValueError(f"theme {name!r}: pattern {pname!r} needs a spacing above 0 (mm)")
+    for layer, classes in layers.items():
+        for cls, style in classes.items():
+            for value in style.values():
+                if not (isinstance(value, str) and value.startswith(PATTERN_PREFIX)):
+                    continue
+                pname = value.removeprefix(PATTERN_PREFIX)
+                if pname not in patterns:
+                    raise ValueError(
+                        f"theme {name!r}: {layer}.{cls} uses {value!r}, "
+                        f"but there is no [patterns.{pname}]"
+                    )
 
 
 def available() -> list[str]:
@@ -78,4 +108,6 @@ def load(name_or_path: str, tint: str | None = None) -> Theme:
         raise ValueError(f"unknown theme {name_or_path!r}; bundled: {', '.join(available())}")
     with path.open("rb") as fh:
         data = tomllib.load(fh)
-    return Theme(path.stem, data["page"], data["layers"])
+    patterns = data.get("patterns", {})
+    _check_patterns(path.stem, data["layers"], patterns)
+    return Theme(path.stem, data["page"], data["layers"], patterns)

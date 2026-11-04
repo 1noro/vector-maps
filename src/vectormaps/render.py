@@ -20,7 +20,7 @@ from vectormaps.area import Frame
 from vectormaps.labels import CHAR_WIDTH, street_pieces, text_width
 from vectormaps.layers import Layer
 from vectormaps.pipeline import Features
-from vectormaps.theme import Theme
+from vectormaps.theme import PATTERN_PREFIX, Theme
 
 MIN_POLYGON_MM2 = 0.005  # below this a polygon is a speck on paper
 MARK = "Generated with vector-maps by 1noro"
@@ -90,6 +90,63 @@ def _attrs(style: dict[str, str | float]) -> str:
     return " ".join(f"{k}={quoteattr(str(v))}" for k, v in style.items())
 
 
+def _with_patterns(style: dict[str, str | float], label: str) -> dict[str, str | float]:
+    """`pattern:<name>` as the url of that zone's `<pattern>`."""
+    return {
+        k: f"url(#{_pattern_id(label, v.removeprefix(PATTERN_PREFIX))})"
+        if isinstance(v, str) and v.startswith(PATTERN_PREFIX)
+        else v
+        for k, v in style.items()
+    }
+
+
+def _pattern_id(label: str, name: str) -> str:
+    return f"{label}-pattern-{name}"
+
+
+def _pattern(pid: str, p: dict[str, str | float]) -> str:
+    """A tile in mm, repeated over the fill: parallel lines (dashed or not) or dots."""
+    s = float(p["spacing"])
+    colour = quoteattr(str(p.get("color", "#000000")))
+    if p["kind"] == "lines":
+        dash = float(p.get("dash", 0))
+        w = 2 * dash if dash else s
+        mark = (
+            f'<line x1="0" y1="{_num(s / 2)}" x2="{_num(dash or w)}" y2="{_num(s / 2)}" '
+            f'stroke={colour} stroke-width="{p.get("width", 0.1)}"/>'
+        )
+    else:  # dots
+        w = s
+        r = _num(float(p.get("radius", s / 6)))
+        mark = f'<circle cx="{_num(s / 2)}" cy="{_num(s / 2)}" r="{r}" fill={colour}/>'
+    background = p.get("background")
+    rect = (
+        f'<rect width="{_num(w)}" height="{_num(s)}" fill={quoteattr(str(background))}/>'
+        if background
+        else ""
+    )
+    angle = float(p.get("angle", 0))
+    rotate = f' patternTransform="rotate({angle:g})"' if angle else ""
+    return (
+        f'<pattern id="{pid}" patternUnits="userSpaceOnUse" width="{_num(w)}" '
+        f'height="{_num(s)}"{rotate}>{rect}{mark}</pattern>'
+    )
+
+
+def _pattern_defs(job: Job) -> str:
+    """The `<pattern>`s this zone's shape layers use, once each."""
+    used: list[str] = []
+    for layer in job.layers:
+        if layer.text or layer.name == "hillshade":
+            continue
+        for cls in layer.classes:
+            for v in job.theme.style(layer.name, cls).values():
+                name = v.removeprefix(PATTERN_PREFIX) if isinstance(v, str) else ""
+                if isinstance(v, str) and v.startswith(PATTERN_PREFIX) and name not in used:
+                    used.append(name)
+    return "".join(_pattern(_pattern_id(job.label, n), job.theme.patterns[n]) for n in used)
+
+
 def _shape_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
     by_class: dict[str, list[BaseGeometry]] = {c: [] for c in layer.classes}
     for item in job.features.get(layer.name, []):
@@ -101,7 +158,7 @@ def _shape_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
         d = path_data(by_class[cls])
         if not d:
             continue
-        style = dict(job.theme.style(layer.name, cls))
+        style = _with_patterns(job.theme.style(layer.name, cls), job.label)
         casing = _casing(style)
         if casing:
             casings.append(
@@ -256,7 +313,7 @@ def _job_group(job: Job) -> str:
     out = [
         f'<g id="area-{job.label}" inkscape:groupmode="layer" '
         f'inkscape:label={quoteattr(label)}{opacity} clip-path="url(#clip-{job.label})">',
-        f'<defs><clipPath id="clip-{job.label}">{shape}</clipPath></defs>',
+        f'<defs><clipPath id="clip-{job.label}">{shape}</clipPath>{_pattern_defs(job)}</defs>',
     ]
     for layer in job.layers:
         out.append(

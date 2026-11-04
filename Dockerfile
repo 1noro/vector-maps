@@ -12,9 +12,11 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 # fonts-symbola: el símbolo ⌖ de la leyenda de los mapas circulares (DejaVu no lo trae).
+# fonts-ebgaramond: una serifa clásica con cursiva de verdad, para el tema vintage
+# (DejaVu Serif no trae cursiva y Inkscape la inclinaría a la fuerza).
 # Capa aparte para no repetir la de arriba al tocarla.
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends fonts-symbola \
+	&& apt-get install -y --no-install-recommends fonts-symbola fonts-ebgaramond \
 	&& rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt requirements-dev.txt /tmp/

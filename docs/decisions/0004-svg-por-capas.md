@@ -147,3 +147,23 @@ Inkscape, y el orden de dibujo entre capas no cambia.
 Lo estrenan `color` (fino) y el tema nuevo `street`, a la manera de los
 callejeros web: calles blancas con contorno gris y las principales amarillas.
 `monochrome` tinta `casing-color` como cualquier otro color.
+
+## Añadido del 04/11/2026: tramas
+
+Para imitar las hojas topográficas antiguas (agua rayada, prados, edificios
+rayados), un tema puede definir **tramas** en `[patterns.<nombre>]` y un estilo
+usarlas como relleno, `fill = "pattern:<nombre>"`. Hay dos tipos:
+
+- `kind = "lines"`: rayas a `spacing` mm, giradas `angle` grados, de grosor
+  `width` y color `color`; con `dash`, trazos de esa longitud y un hueco igual.
+- `kind = "dots"`: un punto de radio `radius` cada `spacing` mm.
+
+Las dos aceptan `background` (el color bajo la trama; sin él, se ve lo de debajo).
+
+Sigue siendo SVG sin CSS: cada trama es un `<pattern>` en mm
+(`patternUnits="userSpaceOnUse"`), en los `<defs>` de la zona y con su letra
+delante (`a-pattern-water`), así que dos zonas superpuestas no chocan aunque sus
+temas usen el mismo nombre. Solo se escriben las tramas que usan las capas de la
+zona. Inkscape las edita y las pasa al PDF. Una trama desconocida, sin `kind`
+válido o sin `spacing` es un error al cargar el tema. `monochrome` tiñe sus
+colores como los demás.

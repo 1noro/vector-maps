@@ -299,3 +299,23 @@ def test_in_a_circle_a_name_in_the_corner_is_left_out():
     job = Job("a", frame, load("color"), select(["places"]), feats)
     root = ET.fromstring(render([job]))
     assert root.find(".//svg:g[@id='a-places-village']", NS) is None
+
+
+def test_a_pattern_fill_points_at_a_pattern_of_its_zone():
+    feats = {
+        "buildings": [Item("building", square(-8.545, 42.881, 0.001))],
+        "green": [Item("green", square(-8.544, 42.880, 0.001))],
+    }
+    frame = fit(TL, BR, "A4", orientation="landscape")
+    job = Job("b", frame, load("vintage"), select(["green", "buildings"]), feats)
+    root = ET.fromstring(render([job]))
+    building = root.find(".//svg:path[@id='b-buildings-building']", NS)
+    assert building.get("fill") == "url(#b-pattern-houses)"
+    houses = root.find(".//svg:pattern[@id='b-pattern-houses']", NS)
+    assert houses.get("patternUnits") == "userSpaceOnUse"
+    assert houses.get("patternTransform") == "rotate(45)"
+    assert houses.find("svg:line", NS) is not None and houses.find("svg:rect", NS) is not None
+    meadow = root.find(".//svg:pattern[@id='b-pattern-meadow']", NS)
+    assert meadow.get("width") == "1"  # a dash of 0.5 and a gap of 0.5
+    # Only the patterns the zone's layers use: no water layer here, no water pattern.
+    assert root.find(".//svg:pattern[@id='b-pattern-water']", NS) is None

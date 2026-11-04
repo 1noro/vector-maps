@@ -25,6 +25,10 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   (plano de arquitecto, líneas blancas sobre azul y calles en doble línea),
   `vintage` (mapa antiguo, sepia y serifa) y `poster` (la ciudad en líneas negras
   sobre blanco, para enmarcar). Solo `.toml`: sin cambios de código.
+- **Tramas en los temas**: `[patterns.<nombre>]` define una trama de rayas
+  (`lines`, con ángulo y trazos opcionales) o de puntos (`dots`), y un relleno la
+  usa con `fill = "pattern:<nombre>"`. En el SVG es un `<pattern>` por zona
+  (`a-pattern-water`); `monochrome` también lo tiñe (ADR 0004).
 - **Contorno de las calles** (TODO 2): una clase de línea del tema puede llevar
   `casing-width` (mm a cada lado) y `casing-color`, y se dibuja debajo la misma
   línea más ancha (`a-roads-minor-casing`); los contornos de la capa van debajo
@@ -92,6 +96,11 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   para la zona de encima; ADR 0004).
 
 ### Cambiado
+
+- **`vintage` se parece a una hoja topográfica del siglo XIX**: agua turquesa
+  rayada, prados en trazos verdes, edificios rayados, calles en doble línea negra,
+  relieve rojizo y todos los nombres en cursiva. La imagen instala
+  `fonts-ebgaramond` para la cursiva (`make docker`).
 
 - **Nuevos valores por defecto de `make map`**: apaisado (`ORIENTATION=landscape`;
   antes `auto`), margen de 6 mm (antes 10), tema `bw` (antes `color`), leyenda
