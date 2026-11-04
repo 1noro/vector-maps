@@ -52,6 +52,7 @@ FLAT = 180  # gdaldem's shade of flat ground with the sun at 45 degrees: shown t
 SHADOW_RANGE = 80
 LIGHT_RANGE = 50
 HIGHLIGHT_ALPHA = 140  # how much the slopes facing the sun light up, 0-255
+HATCH_STEP = 0.12  # mm along a hatch line between two looks at the slope grid
 GDAL_ENV = {**os.environ, "GDAL_PAM_ENABLED": "NO"}  # no .aux.xml files next to the outputs
 
 
@@ -202,6 +203,68 @@ def hillshade(dem: Path) -> Path:
         finally:
             tmp.unlink(missing_ok=True)
     return out
+
+
+def slope(dem: Path) -> Path:
+    """Steepness of the ground in degrees, on the DEM's grid (metres in UTM: true slope)."""
+    out = dem.with_name(f"{dem.stem}-slope.tif")
+    if not out.exists():
+        tmp = tmp_beside(out)
+        try:
+            _gdal(["gdaldem", "slope", "-q", "-compute_edges", str(dem), str(tmp)])
+            tmp.replace(out)
+        finally:
+            tmp.unlink(missing_ok=True)
+    return out
+
+
+def read_grid(tif: Path) -> np.ndarray:
+    """A one-band raster as a (rows, cols) array; row 0 is the top (north) of the map."""
+    done = subprocess.run(["gdalinfo", "-json", str(tif)], capture_output=True, text=True)
+    if done.returncode != 0:
+        raise ReliefError(f"gdalinfo failed: {done.stderr.strip()[-500:]}")
+    cols, rows = json.loads(done.stdout)["size"]
+    raw = tmp_beside(tif.with_suffix(".bin"))
+    try:
+        _gdal(["gdal_translate", "-q", "-of", "ENVI", "-ot", "Float32", str(tif), str(raw)])
+        return np.fromfile(raw, dtype="<f4").reshape(rows, cols).astype(float)
+    finally:
+        for leftover in (raw, raw.with_suffix(".hdr"), Path(f"{raw}.hdr")):
+            leftover.unlink(missing_ok=True)
+
+
+def hatch(
+    grid: np.ndarray,
+    box: tuple[float, float, float, float],
+    above: float,
+    spacing: float,
+    angle: float,
+    offset: float = 0.0,
+) -> str:
+    """SVG path data: straight lines `spacing` mm apart, at `angle` degrees (clockwise on
+    the page, as the patterns), across the box (x, y, w, h in page mm) the grid covers,
+    drawn only where the grid is above `above`. Empty if it never is."""
+    x0, y0, w, h = box
+    rows, cols = grid.shape
+    a = math.radians(angle)
+    ux, uy = math.cos(a), math.sin(a)  # along a line
+    vx, vy = -uy, ux  # from one line to the next
+    cx, cy = x0 + w / 2, y0 + h / 2
+    reach = math.hypot(w, h) / 2
+    ts = np.arange(-reach, reach, HATCH_STEP)
+    d = []
+    for k in np.arange(-reach + offset % spacing, reach, spacing):
+        x = cx + vx * k + ux * ts
+        y = cy + vy * k + uy * ts
+        j = np.floor((x - x0) / w * cols).astype(int)
+        i = np.floor((y - y0) / h * rows).astype(int)
+        on = (i >= 0) & (i < rows) & (j >= 0) & (j < cols)
+        on[on] = grid[i[on], j[on]] > above
+        edges = np.flatnonzero(np.diff(np.r_[0, on.astype(np.int8), 0]))
+        for s, e in zip(edges[::2], edges[1::2], strict=True):
+            if e - s >= 2:  # a single look is a dot, not a stroke
+                d.append(f"M{x[s]:.2f} {y[s]:.2f}L{x[e - 1]:.2f} {y[e - 1]:.2f}")
+    return "".join(d)
 
 
 def _rgb(hex_colour: str) -> str:

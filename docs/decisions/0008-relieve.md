@@ -104,3 +104,28 @@ era exactamente ese. Ahora:
 - Con **`LEGEND=minimal`** va **entero, pero al 70 % del tamaño de la leyenda y
   con opacidad 0,6**, y su largo ya no cuenta para el tamaño del resto (antes
   encogía también la marca y las esquinas). Con `LEGEND=full`, como siempre.
+
+## Añadido del 04/11/2026: relieve rayado
+
+El usuario quería que `vintage` dibujara el relieve como las hojas topográficas
+antiguas, con rayas y no con un sombreado que parece 3D. Se probaron en borrador
+cinco estilos sobre Cecebre (normales de pendiente, bandas de pendiente, rayado
+de las laderas en sombra, curvas de Tanaka y punteado), y eligió **bandas de
+pendiente**: rayas paralelas donde el terreno pasa de cierto ángulo, una tanda
+más por cada banda más empinada.
+
+- Es **otra forma de dibujar la capa `hillshade`**, no una capa nueva: la elige
+  el tema con `style = "hatch"` y una lista `bands` en
+  `[layers.hillshade.shade]`; sin `style`, sigue la imagen sombreada de siempre.
+  Por eso el pipeline entrega ahora el DEM del mapa y es el render el que saca de
+  él el sombreado o la pendiente.
+- **La pendiente** sale de `gdaldem slope` sobre el DEM del mapa (en UTM, así
+  que en grados reales) y se cachea a su lado (`frame-….-slope.tif`). Se lee como
+  rejilla con numpy y cada raya se recorre en pasos de 0,12 mm, partiéndola donde
+  la pendiente baja del umbral.
+- **Es vectorial**: un `<path>` por banda (`a-hillshade-band-1`…), que se
+  recorta con el marco como lo demás. Crece con el papel y con lo montañoso (un A4
+  apaisado de Cecebre, unos 175 KiB de rayas), pero se imprime nítido a cualquier
+  tamaño.
+- Lleva la misma atribución de Copernicus: sigue siendo un derivado del DEM.
+- `monochrome` tiñe los colores de las bandas como los de las tramas.

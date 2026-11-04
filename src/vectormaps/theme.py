@@ -2,6 +2,7 @@
 
 A theme may also define fill patterns (hatching, dots) under `[patterns.<name>]`;
 a style uses one as `fill = "pattern:<name>"`, and the SVG gets a `<pattern>` for it.
+The hillshade is a shaded picture or, with `style = "hatch"`, lines over the slopes.
 """
 
 import re
@@ -12,6 +13,7 @@ from pathlib import Path
 THEMES_DIR = Path(__file__).parent / "themes"
 PATTERN_KINDS = ("lines", "dots")
 PATTERN_PREFIX = "pattern:"
+RELIEF_STYLES = ("shade", "hatch")  # the hillshade: a shaded picture, or lines on the slopes
 
 
 @dataclass(frozen=True)
@@ -55,11 +57,15 @@ def _tint_colour(value: str, tint: tuple[int, int, int]) -> str:
 def tinted(theme: Theme, tint: str, name: str) -> Theme:
     rgb = parse_tint(tint)
 
+    def tint(v):
+        if isinstance(v, str) and v.startswith("#"):
+            return _tint_colour(v, rgb)
+        if isinstance(v, list):  # the hillshade's hatch bands
+            return [recolour(x) if isinstance(x, dict) else x for x in v]
+        return v
+
     def recolour(style: dict) -> dict:
-        return {
-            k: _tint_colour(v, rgb) if isinstance(v, str) and v.startswith("#") else v
-            for k, v in style.items()
-        }
+        return {k: tint(v) for k, v in style.items()}
 
     layers = {
         layer: {cls: recolour(style) for cls, style in classes.items()}
@@ -91,6 +97,30 @@ def _check_patterns(name: str, layers: dict, patterns: dict) -> None:
                     )
 
 
+def _check_relief(name: str, layers: dict) -> None:
+    """The hillshade is a shade or a hatch, and a hatch says over which slopes."""
+    shade = layers.get("hillshade", {}).get("shade", {})
+    kind = shade.get("style", "shade")
+    if kind not in RELIEF_STYLES:
+        raise ValueError(
+            f"theme {name!r}: hillshade.shade style is {kind!r}; "
+            f"use one of {', '.join(RELIEF_STYLES)}"
+        )
+    if kind != "hatch":
+        return
+    bands = shade.get("bands")
+    if not (isinstance(bands, list) and bands):
+        raise ValueError(
+            f"theme {name!r}: a hatched hillshade needs bands = [{{ slope = 6, spacing = 1 }}, …]"
+        )
+    for band in bands:
+        if not (isinstance(band, dict) and "slope" in band and float(band.get("spacing", 0)) > 0):
+            raise ValueError(
+                f"theme {name!r}: every hillshade band needs a slope (degrees) "
+                "and a spacing above 0 (mm)"
+            )
+
+
 def available() -> list[str]:
     return sorted([p.stem for p in THEMES_DIR.glob("*.toml")] + list(TINTED))
 
@@ -110,4 +140,5 @@ def load(name_or_path: str, tint: str | None = None) -> Theme:
         data = tomllib.load(fh)
     patterns = data.get("patterns", {})
     _check_patterns(path.stem, data["layers"], patterns)
+    _check_relief(path.stem, data["layers"])
     return Theme(path.stem, data["page"], data["layers"], patterns)

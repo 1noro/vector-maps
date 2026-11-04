@@ -1,7 +1,7 @@
 # Vintage theme, in the manner of a 19th-century topographic survey sheet: cream
 # paper, hatched turquoise water, meadows in short green dashes, hatched dark
 # buildings, roads as fine black double lines, and italic serif lettering.
-# The hills come out in red with the relief (INCLUDE_LAYERS=hillshade,contours).
+# The hills come out in red hatching with the relief (INCLUDE_LAYERS=hillshade,contours).
 #
 # Lengths in mm. `casing-width` (mm on each side) and `casing-color` draw an outline
 # under a line. `fill = "pattern:<name>"` fills with one of the [patterns.<name>]:
@@ -82,46 +82,49 @@ fill = "none"
 stroke = "#3b3532"
 stroke-width = 0.15
 
+# Roads: a light fill inside a black double line, wide enough to read over the red
+# hatching of the relief; the more important, the wider and the warmer the fill.
+
 [layers.roads.path]
 fill = "none"
-stroke = "#3b3532"
-stroke-width = 0.12
-stroke-dasharray = "0.7 0.45"
+stroke = "#2b2622"
+stroke-width = 0.16
+stroke-dasharray = "0.8 0.45"
 
 [layers.roads.service]
 fill = "none"
-stroke = "#f7efd8"
-stroke-width = 0.25
+stroke = "#fdf8ea"
+stroke-width = 0.3
 stroke-linecap = "round"
 stroke-linejoin = "round"
-casing-width = 0.05
+casing-width = 0.08
 casing-color = "#2b2622"
 
 [layers.roads.minor]
 fill = "none"
-stroke = "#f7efd8"
-stroke-width = 0.4
+stroke = "#fdf8ea"
+stroke-width = 0.5
 stroke-linecap = "round"
 stroke-linejoin = "round"
-casing-width = 0.06
-casing-color = "#2b2622"
+casing-width = 0.1
+casing-color = "#1e1a17"
 
 [layers.roads.secondary]
 fill = "none"
-stroke = "#f7efd8"
-stroke-width = 0.55
+stroke = "#f7e3a1"
+stroke-width = 0.7
 stroke-linecap = "round"
 stroke-linejoin = "round"
-casing-width = 0.07
-casing-color = "#2b2622"
+casing-width = 0.12
+casing-color = "#1e1a17"
 
 [layers.roads.major]
 fill = "none"
-stroke = "#efc7a0"
-stroke-width = 0.75
+stroke = "#efbf4f"
+stroke-width = 0.95
 stroke-linecap = "round"
 stroke-linejoin = "round"
-casing-width = 0.08
+casing-width = 0.14
 casing-color = "#1e1a17"
 
 # Labels: all italic, in EB Garamond (in the image; DejaVu Serif elsewhere).
@@ -203,13 +206,18 @@ paint-order = "stroke"
 text-anchor = "middle"
 
 # Relief (only with INCLUDE_LAYERS=hillshade,contours), red as the hills of the old
-# survey sheets. The shade is a picture: `shadow` and `highlight` are its colours,
-# not SVG attributes; flat ground stays clear.
+# survey sheets. No shading: the slopes are hatched in red, denser the steeper they
+# are. Each band draws its lines where the ground is steeper than `slope` degrees:
+# `spacing` mm apart, at `angle` degrees, `width` thick, moved `offset` mm across (so
+# two bands at the same angle interleave instead of overlapping).
 
 [layers.hillshade.shade]
-shadow = "#c8643c"
-highlight = "#fff6dc"
-opacity = 0.5
+style = "hatch"
+bands = [
+  { slope = 6, spacing = 0.9, angle = 30, width = 0.08, color = "#c8643c" },
+  { slope = 12, spacing = 0.9, angle = 30, width = 0.08, color = "#c8643c", offset = 0.45 },
+  { slope = 20, spacing = 0.6, angle = -30, width = 0.09, color = "#8a3a1e" },
+]
 
 [layers.contours.minor]
 fill = "none"

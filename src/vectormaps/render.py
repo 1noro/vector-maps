@@ -6,6 +6,7 @@ Several areas can be stacked on the same page (the overlay): each one is a
 
 import base64
 from dataclasses import dataclass
+from pathlib import Path
 from xml.sax.saxutils import escape, quoteattr
 
 import numpy as np
@@ -196,8 +197,12 @@ def _casing(style: dict[str, str | float]) -> dict[str, str | float] | None:
 
 
 def _hillshade_layer(job: Job, layer: Layer) -> list[str]:
-    """The shade as a PNG over the map rectangle; the DEM grid is aligned with it."""
+    """The relief from the map's DEM, whose grid is aligned with the map rectangle: a
+    shaded PNG over it (`style = "shade"`, the default) or, with `style = "hatch"`, lines
+    over the slopes, one set per band of the theme's `bands`."""
     style = dict(job.theme.style(layer.name, "shade"))
+    kind = style.pop("style", "shade")
+    bands = style.pop("bands", [])
     shadow = str(style.pop("shadow", "#000000"))
     highlight = str(style.pop("highlight", "#ffffff"))
     f = job.frame
@@ -205,12 +210,46 @@ def _hillshade_layer(job: Job, layer: Layer) -> list[str]:
     for item in job.features.get(layer.name, []):
         if item.raster is None:
             continue
-        png = base64.b64encode(relief.shade_png(item.raster, shadow, highlight)).decode()
+        if kind == "hatch":
+            out += _hatches(job, layer, item.raster, bands, style)
+            continue
+        shade = relief.hillshade(item.raster)
+        png = base64.b64encode(relief.shade_png(shade, shadow, highlight)).decode()
         out.append(
             f'<image id="{job.label}-{layer.name}-shade" class="shade" {_attrs(style)} '
             f'x="{_num(f.map_x)}" y="{_num(f.map_y)}" width="{_num(f.map_w)}" '
             f'height="{_num(f.map_h)}" preserveAspectRatio="none" '
             f'xlink:href="data:image/png;base64,{png}"/>'
+        )
+    return out
+
+
+def _hatches(job: Job, layer: Layer, dem: Path, bands: list[dict], style: dict) -> list[str]:
+    """One path per band: lines where the ground is steeper than the band's `slope`."""
+    f = job.frame
+    grid = relief.read_grid(relief.slope(dem))
+    area = (f.map_x, f.map_y, f.map_w, f.map_h)
+    out = []
+    for n, band in enumerate(bands, 1):
+        d = relief.hatch(
+            grid,
+            area,
+            float(band["slope"]),
+            float(band["spacing"]),
+            float(band.get("angle", 0)),
+            float(band.get("offset", 0)),
+        )
+        if not d:
+            continue
+        stroke = {
+            "fill": "none",
+            "stroke": band.get("color", job.theme.page["ink"]),
+            "stroke-width": band.get("width", 0.1),
+            "stroke-linecap": "butt",
+        }
+        out.append(
+            f'<path id="{job.label}-{layer.name}-band-{n}" class="shade" '
+            f'{_attrs(stroke | style)} d="{d}"/>'
         )
     return out
 

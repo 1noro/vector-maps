@@ -85,3 +85,31 @@ def test_monochrome_tints_the_patterns_too(tmp_path):
     )
     t = theme.tinted(theme.load(path), "#204060", "monochrome")
     assert t.patterns["p"]["color"] == "#204060"
+
+
+@pytest.mark.parametrize(
+    "shade, message",
+    [
+        ('style = "stripes"', "shade, hatch"),
+        ('style = "hatch"', "needs bands"),
+        ('style = "hatch"\nbands = [{ slope = 6 }]', "spacing"),
+    ],
+)
+def test_a_hillshade_style_must_be_known_and_a_hatch_needs_bands(tmp_path, shade, message):
+    path = _write(tmp_path, f"[layers.hillshade.shade]\n{shade}\n")
+    with pytest.raises(ValueError, match=message):
+        theme.load(path)
+
+
+def test_monochrome_tints_the_hatch_bands_too(tmp_path):
+    path = _write(
+        tmp_path,
+        '[layers.hillshade.shade]\nstyle = "hatch"\n'
+        'bands = [{ slope = 6, spacing = 1, color = "#000000" }]\n',
+    )
+    t = theme.tinted(theme.load(path), "#204060", "monochrome")
+    assert t.style("hillshade", "shade")["bands"][0]["color"] == "#204060"
+
+
+def test_vintage_hatches_its_hills():
+    assert theme.load("vintage").style("hillshade", "shade")["style"] == "hatch"

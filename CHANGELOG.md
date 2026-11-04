@@ -34,6 +34,12 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   línea más ancha (`a-roads-minor-casing`); los contornos de la capa van debajo
   de todas sus líneas, para que los cruces no se corten. El tema `color` lo
   estrena con uno fino (ADR 0004).
+- **Relieve rayado**: con `style = "hatch"` en `[layers.hillshade.shade]`, el
+  sombreado pasa a ser rayas vectoriales sobre las laderas, una tanda por cada
+  banda de `bands` (las laderas de más de `slope` grados, rayas a `spacing` mm con
+  `angle`, `width`, `color` y `offset`): más densas cuanto más empinado. La
+  pendiente sale de `gdaldem slope` y se cachea junto al DEM. `vintage` lo usa,
+  en rojo; los demás temas siguen con la imagen sombreada (ADR 0008).
 - **`make wizard`**: un mapa respondiendo preguntas en la terminal, con listas y
   casillas, en vez de recordar las variables. Enseña el `make map` equivalente,
   recuerda las respuestas en `data/wizard.json` y, después de generar, deja
@@ -98,9 +104,10 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 ### Cambiado
 
 - **`vintage` se parece a una hoja topográfica del siglo XIX**: agua turquesa
-  rayada, prados en trazos verdes, edificios rayados, calles en doble línea negra,
-  relieve rojizo y todos los nombres en cursiva. La imagen instala
-  `fonts-ebgaramond` para la cursiva (`make docker`).
+  rayada, prados en trazos verdes, edificios rayados, calles en doble línea negra
+  (las principales rellenas de ocre y amarillo, para leerse sobre el relieve),
+  relieve rojizo (rayado, no sombreado) y todos los nombres en cursiva. La imagen
+  instala `fonts-ebgaramond` para la cursiva (`make docker`).
 
 - **Nuevos valores por defecto de `make map`**: apaisado (`ORIENTATION=landscape`;
   antes `auto`), margen de 6 mm (antes 10), tema `bw` (antes `color`), leyenda

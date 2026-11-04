@@ -21,7 +21,7 @@ LARGE_AREA_DEG2 = 0.04  # ~ 20 x 20 km at mid latitudes: too much for the public
 
 class Item(NamedTuple):
     """One thing to draw: its class (what a theme styles), its lon/lat geometry and, for
-    the label layers, the text to write; for the hillshade, the raster instead."""
+    the label layers, the text to write; for the hillshade, the map's DEM instead."""
 
     cls: str
     geom: BaseGeometry | None
@@ -50,7 +50,7 @@ def _relief(frame: Frame, layer: Layer, cache: Path) -> list[Item]:
     if dem is None:
         return []  # open sea
     if layer.name == "hillshade":
-        return [Item("shade", None, raster=relief.hillshade(dem))]
+        return [Item("shade", None, raster=dem)]  # the theme says how to draw it
     return [Item(cls, line) for cls, _elev, line in relief.contours(frame, dem)]
 
 

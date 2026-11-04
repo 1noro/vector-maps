@@ -176,3 +176,48 @@ def test_a_minimal_legend_writes_the_relief_notice_small_and_grey_but_whole(hill
     assert quiet.text == full.text == relief.ATTRIBUTION
     assert float(quiet.get("font-size")) < float(full.get("font-size"))
     assert quiet.get("fill-opacity") and not full.get("fill-opacity")
+
+
+def test_a_hatch_only_draws_where_the_grid_is_above_its_threshold():
+    grid = np.zeros((10, 20))
+    grid[:, 10:] = 30  # steep on the right half of the box only
+    d = relief.hatch(grid, (100.0, 50.0, 40.0, 20.0), above=10, spacing=1, angle=90)
+    xs = [float(seg.split()[0]) for seg in d.split("M")[1:]]
+    assert len(xs) > 10
+    assert all(120 <= x <= 140 for x in xs)  # vertical lines, all in the right half
+    assert relief.hatch(grid, (100.0, 50.0, 40.0, 20.0), 40, 1, 90) == ""
+
+
+def _length(d):
+    total = 0.0
+    for seg in d.split("M")[1:]:
+        a, b = seg.split("L")
+        (x0, y0), (x1, y1) = map(float, a.split()), map(float, b.split())
+        total += np.hypot(x1 - x0, y1 - y0)
+    return total
+
+
+def _band_lengths(svg):
+    root = ET.fromstring(svg)
+    paths = root.iter("{http://www.w3.org/2000/svg}path")
+    return {p.get("id"): _length(p.get("d")) for p in paths if "-band-" in p.get("id")}
+
+
+def test_a_hatched_hillshade_is_lines_steeper_bands_drawing_less(hill_cache, tmp_path):
+    theme = tmp_path / "hatched.toml"
+    theme.write_text(
+        '[page]\nbackground = "#ffffff"\nink = "#000000"\nframe-width = 0.3\n'
+        '[layers.hillshade.shade]\nstyle = "hatch"\nbands = [\n'
+        '  { slope = 2, spacing = 1, angle = 30, color = "#c8643c" },\n'
+        "  { slope = 8, spacing = 1, angle = -30 },\n"
+        "]\n"
+    )
+    frame = fit(TL, BR, "A4")
+    layers = select(["hillshade"])
+    feats = load_features(frame, layers, source=None, cache=hill_cache)
+    svg = render([Job("a", frame, load(str(theme)), layers, feats)])
+    assert "data:image/png" not in svg  # no picture
+    lines = _band_lengths(svg)
+    assert set(lines) == {"a-hillshade-band-1", "a-hillshade-band-2"}
+    assert 0 < lines["a-hillshade-band-2"] < lines["a-hillshade-band-1"]
+    assert "Relief produced using Copernicus" in svg  # still derived from the DEM

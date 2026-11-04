@@ -70,7 +70,7 @@ abajo arriba, y dentro de cada una, de la clase menos a la más importante:
 |---|---|
 | `green` | `green` |
 | `water` | `water`, `stream`, `canal`, `river` |
-| `hillshade` | `shade` (imagen; no sale por defecto) |
+| `hillshade` | `shade` (imagen o rayado; no sale por defecto) |
 | `contours` | `minor`, `major` (no sale por defecto) |
 | `buildings` | `building` |
 | `railways` | `tram`, `rail` |
@@ -108,6 +108,21 @@ make map TL=… BR=… INCLUDE_LAYERS=hillshade,contours
   transparente y solo se oscurecen las laderas en sombra (y se aclaran un poco
   las que miran al sol), así que se ve sobre cualquier capa. Sus colores son
   `shadow` y `highlight` del tema.
+- **O rayado**, si el tema pone `style = "hatch"` en `[layers.hillshade.shade]`:
+  rayas vectoriales sobre las laderas, más densas cuanto más empinadas, como en
+  los mapas antiguos. Cada banda de `bands` raya donde la pendiente pasa de
+  `slope` grados, con rayas a `spacing` mm, `angle`, `width`, `color` y `offset`
+  (para intercalarla con otra del mismo ángulo). Lo usa `vintage`:
+
+  ```toml
+  [layers.hillshade.shade]
+  style = "hatch"
+  bands = [
+    { slope = 6, spacing = 0.9, angle = 30, width = 0.08, color = "#c8643c" },
+    { slope = 12, spacing = 0.9, angle = 30, width = 0.08, color = "#c8643c", offset = 0.45 },
+    { slope = 20, spacing = 0.6, angle = -30, width = 0.09, color = "#8a3a1e" },
+  ]
+  ```
 - Con relieve, el margen de arriba lleva a la izquierda la **atribución de
   Copernicus**, que exige su licencia.
 - El DEM mide la superficie (con edificios y árboles): en un plano urbano las
@@ -140,9 +155,10 @@ cámbialo: un test exige que estile todas las clases de todas las capas.
   un contorno blanco). También gasta mucha tinta.
 - **`vintage`**: una hoja topográfica del siglo XIX: papel crema, agua turquesa
   rayada, prados en trazos verdes, edificios rayados, calles en doble línea negra
-  fina y todos los nombres en cursiva (EB Garamond). Con el relieve
-  (`INCLUDE_LAYERS=hillshade,contours`) las lomas salen en rojo, como en aquellas
-  hojas.
+  (las principales rellenas de ocre y amarillo) y todos los nombres en cursiva (EB
+  Garamond). Con el relieve
+  (`INCLUDE_LAYERS=hillshade,contours`) las laderas salen rayadas en rojo, como
+  en aquellas hojas.
 - **`poster`**: la ciudad en líneas, para enmarcar: calles negras sobre blanco,
   cada clase con su grosor, y agua suave; parques y edificios no se pintan (sus
   grupos siguen en el SVG). Muy bonito con `SHAPE=circle`.
