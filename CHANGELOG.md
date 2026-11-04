@@ -129,6 +129,18 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   versión del export en el nombre (`v2`), así que los de antes no se reusan. El
   texto de los `.osm` descargados sí se reutiliza.
 
+### Corregido
+
+- **Ninguna letra se sale del mapa.** Un nombre de lugar cuyo texto no cabe entero
+  dentro del marco (o del círculo) ya no se escribe: antes solo se miraba su punto
+  y el texto podía pasar por encima del marco hasta el margen. Un nombre de calle
+  solo se escribe en el tramo que queda a media letra y el halo del borde
+  (ADR 0006).
+- **Ningún trazo se sale del mapa.** El remate redondo de una calle cortada en el
+  borde, su contorno o una línea pegada al marco asomaban medio grosor por fuera.
+  Ahora cada zona lleva un `clipPath` del área del mapa, también en el rectángulo
+  y el cuadrado (antes solo el círculo; ADR 0003).
+
 ### Documentación
 
 - ADR 0006 (etiquetas e idioma), 0007 (el PDF con Inkscape), 0008 (relieve) y

@@ -75,3 +75,16 @@ A petición del usuario, la orientación por defecto pasa a ser **`landscape`**
 (antes `auto`) y el margen, **6 mm** (antes 10, y sigue siendo el mínimo).
 `ORIENTATION=auto` sigue eligiendo la que más se parezca al área. Lo demás de
 este ADR no cambia.
+
+## Añadido del 04/11/2026: el rectángulo también se recorta
+
+Las geometrías se cortan en el borde del mapa (`clip_by_rect`), pero el trazo se
+pinta alrededor de la línea: el remate redondo de una calle cortada en el borde
+(`stroke-linecap="round"`), su contorno (ADR 0004) o una calle paralela al marco
+y muy pegada **asomaban medio grosor por fuera del marco**. Se veía sobre todo
+con los temas oscuros y las calles anchas.
+
+Ahora **todas las formas llevan el `<clipPath>`** en el grupo de cada zona, no
+solo el círculo: en `rect` y `square` es el rectángulo del mapa (`map_x`,
+`map_y`, `map_w`, `map_h`). Se suelta en Inkscape igual que el del círculo. El
+marco sigue dibujándose encima, fuera del recorte.

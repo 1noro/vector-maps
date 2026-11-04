@@ -68,3 +68,20 @@ por defecto**, como el relieve (ADR 0008): un `make map` sin `LAYERS` dibuja
 agua, verde, edificios, ferrocarril y calles, sin texto. Los nombres se añaden
 con `INCLUDE_LAYERS=street-names,places` (o se piden en `LAYERS`). Lo
 demás de este ADR (qué se etiqueta, el idioma, el halo) no cambia.
+
+## Añadido del 04/11/2026: ninguna letra fuera del mapa
+
+Un nombre de lugar se escribía si su **punto** caía dentro del mapa, sin mirar
+hasta dónde llegaba el texto: «Sarela de Abaixo», a un milímetro del borde,
+cruzaba el marco y acababa en el margen. Ahora:
+
+- **Un nombre de lugar que no cabe entero no se escribe.** Su caja (el ancho
+  sobreestimado de siempre, más el `letter-spacing` del tema, de 0,8 em sobre la
+  línea base a 0,25 em por debajo, más medio halo) tiene que caer dentro del
+  área del mapa: el rectángulo o, con `SHAPE=circle`, el círculo. No se mueve
+  hacia dentro: desplazado ya no señalaría su sitio.
+- **Un nombre de calle solo se escribe en el tramo que está a media letra y
+  medio halo del borde** (el área del mapa encogida eso). Una calle pegada al
+  borde se queda sin nombre.
+
+Elegir entre etiquetas que se pisan sigue pendiente (TODO 1).

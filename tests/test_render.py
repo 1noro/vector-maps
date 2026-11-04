@@ -176,9 +176,15 @@ def test_circle_is_clipped_and_outlined():
 
 
 @pytest.mark.parametrize("shape", ["rect", "square"])
-def test_rect_and_square_have_no_clip_and_a_rect_outline(shape):
-    root = ET.fromstring(render([_shaped_job(shape)]))
-    assert root.find(".//svg:clipPath", NS) is None
+def test_rect_and_square_are_clipped_to_the_map_and_have_a_rect_outline(shape):
+    # Clipped too: a round line end at the edge would reach past the frame.
+    job = _shaped_job(shape)
+    root = ET.fromstring(render([job]))
+    clip = root.find(".//svg:clipPath[@id='clip-a']/svg:rect", NS)
+    f = job.frame
+    box = [float(clip.get(k)) for k in ("x", "y", "width", "height")]
+    assert box == pytest.approx([f.map_x, f.map_y, f.map_w, f.map_h], abs=0.01)
+    assert root.find(".//svg:g[@id='area-a']", NS).get("clip-path") == "url(#clip-a)"
     outline = root.find(".//svg:g[@id='frame']/svg:rect", NS)
     w = float(outline.get("width"))
     assert w == pytest.approx(277 if shape == "rect" else 190)
@@ -248,3 +254,48 @@ def test_a_casing_is_a_wider_line_under_every_line_of_the_layer():
 def test_no_casing_where_the_theme_has_none():
     root = ET.fromstring(render([make_job("a", TL, BR, "bw")]))
     assert root.find(".//svg:path[@id='a-roads-minor-casing']", NS) is None
+
+
+def _defs_xy(root):
+    for p in root.findall(".//svg:defs/svg:path", NS):
+        nums = [float(v) for v in p.get("d").removeprefix("M").split()]
+        yield from zip(nums[::2], nums[1::2], strict=True)
+
+
+def test_no_label_goes_past_the_edge_of_the_map():
+    frame = fit(TL, BR, "A4", orientation="landscape")
+    (top, left), (bottom, right) = frame.corners()
+    cy, cx = (top + bottom) / 2, (left + right) / 2
+    tiny = (right - left) / 1000
+    feats = {
+        # A road from the top edge to the middle: its name must stop short of the frame.
+        "street-names": [
+            Item("major", LineString([(cx, top - tiny), (cx + 3 * tiny, cy)]), "Rúa"),
+            # One all along the edge: no room for its name at all.
+            Item("major", LineString([(left, top - tiny), (right, top - tiny)]), "Borde"),
+        ],
+        "places": [
+            Item("village", Point(left + tiny, cy), "Sarela de Abaixo"),  # point in, text out
+            Item("town", Point(cx, cy), "Compostela"),
+        ],
+    }
+    job = Job("a", frame, load("poster"), select(["street-names", "places"]), feats)
+    root = ET.fromstring(render([job]))
+    assert root.find(".//svg:g[@id='a-places-village']", NS) is None
+    assert [t.text for t in root.findall(".//svg:g[@id='a-places-town']/svg:text", NS)] == [
+        "Compostela"
+    ]
+    style = job.theme.style("street-names", "major")
+    room = style["font-size"] / 2 + style["stroke-width"] / 2
+    ys = [y for _, y in _defs_xy(root)]
+    assert ys  # the name is still written, on the part of the road away from the edge
+    assert min(ys) >= frame.map_y + room - 0.01
+
+
+def test_in_a_circle_a_name_in_the_corner_is_left_out():
+    frame = fit(TL, BR, "A4", orientation="landscape", shape="circle")
+    (top, left), _ = frame.corners()
+    feats = {"places": [Item("village", Point(left + 0.0002, top - 0.0002), "Canto")]}
+    job = Job("a", frame, load("color"), select(["places"]), feats)
+    root = ET.fromstring(render([job]))
+    assert root.find(".//svg:g[@id='a-places-village']", NS) is None

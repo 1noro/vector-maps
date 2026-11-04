@@ -12,12 +12,12 @@ import numpy as np
 import shapely
 from pyproj import Transformer
 from shapely.affinity import affine_transform
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Point, box
 from shapely.geometry.base import BaseGeometry
 
 from vectormaps import relief
 from vectormaps.area import Frame
-from vectormaps.labels import CHAR_WIDTH, street_pieces
+from vectormaps.labels import CHAR_WIDTH, street_pieces, text_width
 from vectormaps.layers import Layer
 from vectormaps.pipeline import Features
 from vectormaps.theme import Theme
@@ -166,13 +166,39 @@ def _page_xy(geom: BaseGeometry, tr: Transformer, frame: Frame) -> tuple[float, 
     return (x, y) if inside else None
 
 
+def _map_area(frame: Frame, inset: float = 0.0) -> BaseGeometry:
+    """The drawn part of the page (the rectangle, or the circle), `inset` mm smaller all round."""
+    x0, y0, w, h = frame.map_x, frame.map_y, frame.map_w, frame.map_h
+    if frame.shape == "circle":
+        return Point(x0 + w / 2, y0 + h / 2).buffer(max(w / 2 - inset, 0), quad_segs=32)
+    return box(x0 + inset, y0 + inset, x0 + w - inset, y0 + h - inset)
+
+
+def _place_box(x: float, y: float, text: str, style: dict) -> BaseGeometry:
+    """Where a name written at (x, y) goes on the page, halo included; widths on the high side."""
+    size = float(style["font-size"])
+    w = text_width(text, size) + len(text) * float(style.get("letter-spacing", 0))
+    anchor = style.get("text-anchor", "start")
+    x0 = x - w / 2 if anchor == "middle" else x - w if anchor == "end" else x
+    halo = float(style.get("stroke-width", 0)) / 2
+    # From the baseline: capitals reach ~0.75 em up, descenders ~0.25 em down.
+    return box(x0 - halo, y - 0.8 * size - halo, x0 + w + halo, y + 0.25 * size + halo)
+
+
 def _text_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
-    """Labels: names of places at their point, names of streets written along the street."""
+    """Labels: names of places at their point, names of streets written along the street.
+
+    No letter goes past the edge of the map: a place name that does not fit is left out
+    (moved, it would no longer point at its place), and a street name is only written on
+    the stretch that is half a letter and the halo away from the edge.
+    """
     defs: list[str] = []
     groups: list[str] = []
+    whole = _map_area(job.frame)
     for cls in layer.classes:
         style = job.theme.style(layer.name, cls)
         size = float(style["font-size"])
+        inner = _map_area(job.frame, size / 2 + float(style.get("stroke-width", 0)) / 2)
         lines: dict[str, list[LineString]] = {}
         texts: list[str] = []
         for item in job.features.get(layer.name, []):
@@ -180,7 +206,7 @@ def _text_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
                 continue
             if item.geom.geom_type == "Point":
                 xy = _page_xy(item.geom, tr, job.frame)
-                if xy is not None:
+                if xy is not None and _place_box(*xy, item.text, style).within(whole):
                     texts.append(
                         f'<text x="{_num(xy[0])}" y="{_num(xy[1])}">{escape(item.text)}</text>'
                     )
@@ -188,7 +214,9 @@ def _text_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
             page_geom = _to_page(item.geom, tr, job.frame)
             if page_geom is not None:
                 lines.setdefault(item.text, []).extend(
-                    p for p in _parts(page_geom) if p.geom_type == "LineString"
+                    p
+                    for p in _parts(page_geom.intersection(inner))
+                    if p.geom_type == "LineString" and not p.is_empty
                 )
         n = 0
         for text, parts in sorted(lines.items()):
@@ -214,16 +242,22 @@ def _job_group(job: Job) -> str:
     label = f"{job.label.upper()} 1:{job.frame.scale} {job.theme.name}"
     opacity = f' opacity="{job.opacity:g}"' if job.opacity < 1 else ""
     f = job.frame
-    clip = f' clip-path="url(#clip-{job.label})"' if f.shape == "circle" else ""
+    # Every zone is clipped to the map: the geometry is cut at the edge, but a round
+    # line end, a casing or a stroke along the edge would still reach past it by half a width.
+    if f.shape == "circle":
+        shape = (
+            f'<circle cx="{_num(f.page_w / 2)}" cy="{_num(f.page_h / 2)}" r="{_num(f.map_w / 2)}"/>'
+        )
+    else:
+        shape = (
+            f'<rect x="{_num(f.map_x)}" y="{_num(f.map_y)}" '
+            f'width="{_num(f.map_w)}" height="{_num(f.map_h)}"/>'
+        )
     out = [
         f'<g id="area-{job.label}" inkscape:groupmode="layer" '
-        f"inkscape:label={quoteattr(label)}{opacity}{clip}>"
+        f'inkscape:label={quoteattr(label)}{opacity} clip-path="url(#clip-{job.label})">',
+        f'<defs><clipPath id="clip-{job.label}">{shape}</clipPath></defs>',
     ]
-    if clip:
-        out.append(
-            f'<defs><clipPath id="clip-{job.label}"><circle cx="{_num(f.page_w / 2)}" '
-            f'cy="{_num(f.page_h / 2)}" r="{_num(f.map_w / 2)}"/></clipPath></defs>'
-        )
     for layer in job.layers:
         out.append(
             f'<g id="{job.label}-{layer.name}" inkscape:groupmode="layer" '
