@@ -130,3 +130,26 @@ def test_open_sea_has_no_relief(tmp_path, monkeypatch):
     frame = fit((42.5, -15.1), (42.49, -15.08), "A5")  # the Atlantic
     feats = load_features(frame, select(["contours"]), source=None, cache=tmp_path)
     assert feats["contours"] == []
+
+
+def _row_through_the_hill(dem, tmp_path):
+    asc = tmp_path / "frame.asc"
+    subprocess.run(["gdal_translate", "-q", "-of", "AAIGrid", dem, asc], check=True)
+    lines = asc.read_text().splitlines()
+    rows = [list(map(float, ln.split())) for ln in lines if ln and not ln[0].isalpha()]
+    z = np.array(rows)
+    return z[np.unravel_index(z.argmax(), z.shape)[0]]
+
+
+@pytest.mark.parametrize("method, smooth", [("bilinear", False), ("cubicspline", True)])
+def test_zoomed_in_the_ground_is_smooth_not_a_plane_per_cell(
+    hill_cache, tmp_path, monkeypatch, method, smooth
+):
+    # A frame much finer than the tile's cells (~300 m here, 30 m in Copernicus).
+    monkeypatch.setattr(relief, "RESAMPLING", method)
+    frame = fit(TL, BR, "A4")
+    row = _row_through_the_hill(relief.frame_dem(frame, hill_cache / "dem"), tmp_path)
+    bends = np.abs(np.diff(row, 2))
+    # A plane per cell: the slope only changes at the cell edges, flat in between.
+    flat = np.mean(bends < bends.max() * 0.01)
+    assert (flat < 0.5) == smooth

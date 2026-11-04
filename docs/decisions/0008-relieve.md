@@ -71,3 +71,19 @@ de Overpass y del PBF (ADR 0002).
   equidistancia a mano.
 - Los tests no tocan la red: la bajada se simula, y GDAL corre de verdad sobre
   una tesela sintética (una colina gaussiana) hecha en el propio test.
+
+## Añadido del 04/11/2026: spline cúbico, no bilineal
+
+El DEM se remuestreaba a la rejilla del mapa (`CELL_MM`, 0,25 mm de papel) con
+**bilineal**. Entre cuatro valores, la bilineal es casi un plano, con una sola
+pendiente por celda, y el sombreado depende de la pendiente: a escala de pueblo
+(1:12000, donde 30 m son ~2,4 mm) cada celda salía como **un cuadro de un solo
+tono** y las curvas se quebraban en cada borde de celda.
+
+Ahora `gdalwarp -r cubicspline` (`relief.RESAMPLING`): una superficie suave, sin
+aristas, sobre la que la pendiente cambia poco a poco. No inventa detalle (sigue
+siendo el DEM de 30 m), pero ya no lo enseña en cuadros. A escalas pequeñas,
+donde una celda del mapa abarca varias del DEM, apenas cambia nada.
+
+El método va en la clave de la caché (`frame-….tif`), así que los DEM de antes no
+se reusan; `make clean-cache` borra los viejos.

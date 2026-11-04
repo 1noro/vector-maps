@@ -38,6 +38,9 @@ ATTRIBUTION = (
 )
 MAX_ATTEMPTS = 3
 CELL_MM = 0.25  # one DEM cell on paper (~100 dpi): fine for print, light enough for A0
+# A smooth surface between the 30 m cells (Nov 4). Bilinear gave a plane per cell, so a
+# zoomed-in hillshade (one shade per slope) came out in squares of 30 m.
+RESAMPLING = "cubicspline"
 STEPS = (5, 10, 20, 25, 50, 100, 200, 250, 500)  # m; under 5 m the 30 m DEM is noise
 MAJOR_EVERY = 5  # every 5th contour is a major (index) one
 FLAT = 180  # gdaldem's shade of flat ground with the sun at 45 degrees: shown transparent
@@ -129,13 +132,13 @@ def frame_dem(frame: Frame, cache_dir: Path) -> Path | None:
     rows = max(2, round(frame.map_h / CELL_MM))
     epsg = f"EPSG:{frame.crs.to_epsg()}"
     box = [frame.xmin, frame.ymin, frame.xmax, frame.ymax]
-    raw = f"{epsg}|{box}|{cols}x{rows}|{[t.name for t in tiles]}"
+    raw = f"{epsg}|{box}|{cols}x{rows}|{[t.name for t in tiles]}|{RESAMPLING}"
     out = cache_dir / f"frame-{hashlib.sha1(raw.encode()).hexdigest()[:16]}.tif"
     if not out.exists():
         tmp = tmp_beside(out)
         try:
             _gdal(
-                ["gdalwarp", "-q", "-overwrite", "-t_srs", epsg, "-r", "bilinear"]
+                ["gdalwarp", "-q", "-overwrite", "-t_srs", epsg, "-r", RESAMPLING]
                 + ["-te", *(f"{v:.3f}" for v in box), "-ts", str(cols), str(rows)]
                 + ["-wo", "INIT_DEST=0", "-ot", "Float32"]  # missing tiles are sea: 0 m
                 + [str(t) for t in tiles]

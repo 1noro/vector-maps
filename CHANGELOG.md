@@ -140,6 +140,13 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Corregido
 
+- **El sombreado ya no sale en cuadros al acercarse.** El DEM de 30 m se
+  remuestreaba con bilineal, que da un plano por celda: a escala de pueblo
+  (1:12000) cada celda era un cuadro de un solo tono de ~2,4 mm. Ahora es spline
+  cúbico (`cubicspline`): el sombreado es continuo y las curvas de nivel, más
+  redondas. Los DEM de la caché se rehacen solos (el método va en la clave;
+  ADR 0008).
+
 - **Ninguna letra se sale del mapa.** Un nombre de lugar cuyo texto no cabe entero
   dentro del marco (o del círculo) ya no se escribe: antes solo se miraba su punto
   y el texto podía pasar por encima del marco hasta el margen. Un nombre de calle
