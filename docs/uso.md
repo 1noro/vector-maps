@@ -7,15 +7,17 @@ La primera vez, `make` construye la imagen sola; `make docker` la reconstruye.
 ## `make map`
 
 ```bash
-make map TL=lat,lon BR=lat,lon [PAPER=A4] [ORIENTATION=auto] [MARGIN=10] \
+make map TL=lat,lon BR=lat,lon [PAPER=A4]   # o: CENTER=lat,lon RADIUS=km [ORIENTATION=auto] [SHAPE=rect] [MARGIN=10] \
          [LAYERS=water,roads] [INCLUDE_LAYERS=places] [EXCLUDE_LAYERS=railways] [THEME=color] [TINT=#1f3b5c] [LABEL_LANG=es] [PBF=ruta] \
          [OUT=out/map.svg] [PDF=1] [LEGEND=minimal]
 ```
 
 | Variable | Defecto | Qué hace |
 |---|---|---|
-| `TL`, `BR` | (obligatorias) | Esquinas arriba-izquierda y abajo-derecha, `LAT,LON` en grados |
+| `TL`, `BR` | (una de las dos formas) | Esquinas arriba-izquierda y abajo-derecha, `LAT,LON` en grados |
+| `CENTER`, `RADIUS` | (la otra forma) | Centro `LAT,LON` y radio en km, en vez de `TL`/`BR`. El círculo de ese radio se ve siempre entero; el papel añade más mapa por el lado largo. No se mezclan con `TL`/`BR` |
 | `PAPER` | `A4` | `A0`, `A1`, `A2`, `A3`, `A4` o `A5` |
+| `SHAPE` | `rect` | Cómo se imprime el mapa en el papel (aparte del papel): `rect` llena la hoja; `square` es un cuadrado centrado y `circle` un círculo centrado, los dos tan anchos como el lado corto de la hoja. El círculo lleva un borde fino y lo de fuera queda en blanco. Con `circle` y `TL`/`BR` el círculo contiene todo el rectángulo (su diámetro es la diagonal); con `CENTER`/`RADIUS` es exactamente el de radio R |
 | `ORIENTATION` | `auto` | `landscape`, `portrait`, o la que más se parezca al área |
 | `MARGIN` | `10` | Mm de margen. Mínimo 6: ahí va la atribución |
 | `LAYERS` | todas menos el relieve y los nombres | `water,green,buildings,railways,roads,street-names,places`, y `hillshade,contours` (relieve), separadas por comas |
@@ -129,7 +131,7 @@ Con `LEGEND=minimal` el pie se queda en una sola línea, sin el papel ni la
 orientación:
 
 ```
-TL 43.29888, -8.32043 · BR 43.27792, -8.27935 · A 1:12102 · © OpenStreetMap
+↖ 43.29888, -8.32043 · ↘ 43.27792, -8.27935 · A 1:12102 · © OpenStreetMap
 ```
 
 y la marca arriba. `© OpenStreetMap` no se puede quitar: la licencia de los

@@ -18,6 +18,14 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Añadido
 
+- **Forma del mapa en la hoja**: `SHAPE=rect|square|circle` (`--shape`), aparte del
+  papel. `square` y `circle` son una caja cuadrada centrada del lado corto de la
+  hoja; el círculo se recorta con un `clipPath` por zona y lleva un borde fino
+  (ADR 0003).
+- **Área por centro y radio**: `CENTER=lat,lon RADIUS=km` (y `CENTER2`/`RADIUS2`
+  para la zona superpuesta) como alternativa a `TL`/`BR`. El círculo de ese
+  radio cabe siempre entero (ADR 0003). Un área casi cuadrada (±5 %) elige el
+  apaisado con `ORIENTATION=auto`.
 - **`make map`**: de dos esquinas (`TL`, `BR`) y un papel A0–A5 a un SVG en mm,
   con un grupo de Inkscape por capa (`water`, `green`, `buildings`, `railways`,
   `roads`), a escala real en UTM, con la atribución de OSM en el pie. La zona se

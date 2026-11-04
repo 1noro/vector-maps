@@ -46,7 +46,7 @@ El pie del mapa pasa a ser una **leyenda** (capa `legend` en el SVG), en dos
 líneas en el margen de abajo:
 
 1. La atribución de OSM, el papel y la escala de cada zona.
-2. **Las esquinas** `TL lat, lon · BR lat, lon`, con 5 decimales (~1 m). Son las
+2. **Las esquinas** `↖ lat, lon · ↘ lat, lon`, con 5 decimales (~1 m). Son las
    del **mapa tal como está en el papel**, no las que se pidieron: la zona
    crece hasta la forma de la hoja (ADR 0003), y son esas las que se ven.
    Pasadas de vuelta a `TL` y `BR` dan el mapa entero, pero **no el mismo**:

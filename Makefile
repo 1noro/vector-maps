@@ -110,9 +110,10 @@ check: lint test
 list: .image
 	$(DOCKER_RUN) python -m vectormaps list
 
-# make map TL=lat,lon BR=lat,lon [PAPER=A4] [THEME=color|bw] [LAYERS=water,roads]
+# make map TL=lat,lon BR=lat,lon [PAPER=A4]   (o el área por centro y radio: CENTER=lat,lon RADIUS=km) [THEME=color|bw] [LAYERS=water,roads]
 #          [INCLUDE_LAYERS=street-names,places]   (añadir capas a LAYERS o a las de por defecto)
 #          [EXCLUDE_LAYERS=railways]   (quitar capas de LAYERS o de las de por defecto)
+#          [SHAPE=rect|square|circle]   (cómo se imprime el mapa en el papel; por defecto rect)
 #          [ORIENTATION=auto|landscape|portrait] [MARGIN=10] [OUT=out/map.svg]
 #          [LABEL_LANG=es]   (idioma de los nombres: es, gl, en… o varios: gl,es)
 #          [PDF=1]           (además del SVG, un PDF del tamaño del papel al lado)
@@ -120,20 +121,22 @@ list: .image
 #          [THEME=monochrome TINT=#1f3b5c]   (el bw tintado de un color; # opcional)
 # Datos: por defecto Overpass; con PBF=ruta.osm.pbf, desde un extracto local.
 # Y, para superponer una segunda área encima (mismo papel, otro zoom):
-#          [TL2=lat,lon BR2=lat,lon] [LAYERS2=…] [INCLUDE_LAYERS2=…] [EXCLUDE_LAYERS2=…]
+#          [TL2=lat,lon BR2=lat,lon | CENTER2=lat,lon RADIUS2=km] [LAYERS2=…] [INCLUDE_LAYERS2=…] [EXCLUDE_LAYERS2=…]
 #          [THEME2=…] [TINT2=…] [OPACITY2=0.6]
 # El relieve (hillshade, contours) y los nombres (street-names, places) no salen por
 # defecto: se añaden con INCLUDE_LAYERS o se piden en LAYERS (ADR 0006 y 0008).
 # Se pasa con `--tl=` (con el igual) para que una latitud negativa no se lea como flag.
 map: .image data-dir
-	test -n "$(TL)" -a -n "$(BR)" || { echo "faltan TL y BR: make map TL=lat,lon BR=lat,lon" >&2; exit 1; }
+	test \( -n "$(TL)" -a -n "$(BR)" \) -o \( -n "$(CENTER)" -a -n "$(RADIUS)" \) || { echo "falta el área: TL=lat,lon BR=lat,lon, o CENTER=lat,lon RADIUS=km" >&2; exit 1; }
 	# PDF y PBF se confunden al teclear: PDF solo admite 1.
 	test -z "$(PDF)" -o "$(PDF)" = 1 || { echo "PDF=1 añade el PDF; para un extracto local es PBF=$(PDF)" >&2; exit 1; }
 	$(DOCKER_RUN) python -m vectormaps map \
-		--tl="$(TL)" --br="$(BR)" \
+		$(if $(TL),--tl="$(TL)") $(if $(BR),--br="$(BR)") \
+		$(if $(CENTER),--center="$(CENTER)") $(if $(RADIUS),--radius $(RADIUS)) \
 		$(if $(PAPER),--paper $(PAPER)) \
 		$(if $(ORIENTATION),--orientation $(ORIENTATION)) \
 		$(if $(MARGIN),--margin $(MARGIN)) \
+		$(if $(SHAPE),--shape $(SHAPE)) \
 		$(if $(LAYERS),--layers $(LAYERS)) \
 		$(if $(INCLUDE_LAYERS),--include-layers $(INCLUDE_LAYERS)) \
 		$(if $(EXCLUDE_LAYERS),--exclude-layers $(EXCLUDE_LAYERS)) \
@@ -145,6 +148,7 @@ map: .image data-dir
 		$(if $(LEGEND),--legend $(LEGEND)) \
 		$(if $(PBF),--pbf $(PBF)) \
 		$(if $(TL2),--over-tl="$(TL2)") $(if $(BR2),--over-br="$(BR2)") \
+		$(if $(CENTER2),--over-center="$(CENTER2)") $(if $(RADIUS2),--over-radius $(RADIUS2)) \
 		$(if $(LAYERS2),--over-layers $(LAYERS2)) \
 		$(if $(INCLUDE_LAYERS2),--over-include-layers $(INCLUDE_LAYERS2)) \
 		$(if $(EXCLUDE_LAYERS2),--over-exclude-layers $(EXCLUDE_LAYERS2)) \

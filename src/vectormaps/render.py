@@ -80,8 +80,8 @@ def _to_page(geom: BaseGeometry, tr: Transformer, frame: Frame) -> BaseGeometry 
     geom = affine_transform(shapely.transform(geom, project), frame.page_matrix())
     if not geom.is_valid:
         geom = shapely.make_valid(geom)
-    m = frame.margin
-    clipped = shapely.clip_by_rect(geom, m, m, frame.page_w - m, frame.page_h - m)
+    x0, y0 = frame.map_x, frame.map_y
+    clipped = shapely.clip_by_rect(geom, x0, y0, x0 + frame.map_w, y0 + frame.map_h)
     return None if clipped.is_empty else clipped
 
 
@@ -121,7 +121,7 @@ def _hillshade_layer(job: Job, layer: Layer) -> list[str]:
         png = base64.b64encode(relief.shade_png(item.raster, shadow, highlight)).decode()
         out.append(
             f'<image id="{job.label}-{layer.name}-shade" class="shade" {_attrs(style)} '
-            f'x="{_num(f.margin)}" y="{_num(f.margin)}" width="{_num(f.map_w)}" '
+            f'x="{_num(f.map_x)}" y="{_num(f.map_y)}" width="{_num(f.map_w)}" '
             f'height="{_num(f.map_h)}" preserveAspectRatio="none" '
             f'xlink:href="data:image/png;base64,{png}"/>'
         )
@@ -133,8 +133,8 @@ def _page_xy(geom: BaseGeometry, tr: Transformer, frame: Frame) -> tuple[float, 
     x, y = tr.transform(geom.x, geom.y)
     a, _, _, e, xoff, yoff = frame.page_matrix()
     x, y = a * x + xoff, e * y + yoff
-    m = frame.margin
-    inside = m <= x <= frame.page_w - m and m <= y <= frame.page_h - m
+    x0, y0 = frame.map_x, frame.map_y
+    inside = x0 <= x <= x0 + frame.map_w and y0 <= y <= y0 + frame.map_h
     return (x, y) if inside else None
 
 
@@ -185,10 +185,17 @@ def _job_group(job: Job) -> str:
     tr = Transformer.from_crs(4326, job.frame.crs, always_xy=True)
     label = f"{job.label.upper()} 1:{job.frame.scale} {job.theme.name}"
     opacity = f' opacity="{job.opacity:g}"' if job.opacity < 1 else ""
+    f = job.frame
+    clip = f' clip-path="url(#clip-{job.label})"' if f.shape == "circle" else ""
     out = [
         f'<g id="area-{job.label}" inkscape:groupmode="layer" '
-        f"inkscape:label={quoteattr(label)}{opacity}>"
+        f"inkscape:label={quoteattr(label)}{opacity}{clip}>"
     ]
+    if clip:
+        out.append(
+            f'<defs><clipPath id="clip-{job.label}"><circle cx="{_num(f.page_w / 2)}" '
+            f'cy="{_num(f.page_h / 2)}" r="{_num(f.map_w / 2)}"/></clipPath></defs>'
+        )
     for layer in job.layers:
         out.append(
             f'<g id="{job.label}-{layer.name}" inkscape:groupmode="layer" '
@@ -223,7 +230,7 @@ def legend_lines(jobs: list[Job], legend: str = "full") -> tuple[str, ...]:
     for j in jobs:
         tl, br = j.frame.corners()
         prefix = f"{j.label.upper()}: " if len(jobs) > 1 else ""
-        zones.append(f"{prefix}TL {_corner(tl)} · BR {_corner(br)}")
+        zones.append(f"{prefix}↖ {_corner(tl)} · ↘ {_corner(br)}")
     corners = "   |   ".join(zones)
     if legend == "minimal":
         return (f"{corners} · {scales} · {SHORT_ATTRIBUTION}",)
@@ -240,7 +247,7 @@ def _legend(jobs: list[Job], ink: str, legend: str) -> list[str]:
     # The relief's attribution (its licence asks for it) goes top left, beside the mark.
     top = relief.ATTRIBUTION if uses_relief(jobs) else ""
     widest = max(*(len(line) for line in lines), len(top) + len(MARK) + 4)
-    size = min(LEGEND_SIZE, f.margin / 3, f.map_w / (widest * CHAR_WIDTH))
+    size = min(LEGEND_SIZE, f.margin / 3, f.print_w / (widest * CHAR_WIDTH))
     # The lines centred in the bottom margin, the mark centred in the top one.
     pad = (f.margin - size - (len(lines) - 1) * 1.35 * size) / 2
     y1 = f.page_h - f.margin + pad + 0.85 * size
@@ -270,6 +277,18 @@ def _credits(jobs: list[Job]) -> tuple[str, ...]:
     return ((relief.ATTRIBUTION,) if uses_relief(jobs) else ()) + (MARK,)
 
 
+def _outline(f: Frame, ink: str, width: float | str) -> str:
+    if f.shape == "circle":
+        return (
+            f'<circle cx="{_num(f.page_w / 2)}" cy="{_num(f.page_h / 2)}" '
+            f'r="{_num(f.map_w / 2)}" fill="none" stroke="{ink}" stroke-width="{width}"/>'
+        )
+    return (
+        f'<rect x="{_num(f.map_x)}" y="{_num(f.map_y)}" width="{_num(f.map_w)}" '
+        f'height="{_num(f.map_h)}" fill="none" stroke="{ink}" stroke-width="{width}"/>'
+    )
+
+
 def render(jobs: list[Job], legend: str = "full") -> str:
     first = jobs[0]
     f = first.frame
@@ -290,9 +309,7 @@ def render(jobs: list[Job], legend: str = "full") -> str:
     parts += [_job_group(j) for j in jobs]
     parts += [
         '<g id="frame" inkscape:groupmode="layer" inkscape:label="frame">',
-        f'<rect x="{_num(f.margin)}" y="{_num(f.margin)}" width="{_num(f.map_w)}" '
-        f'height="{_num(f.map_h)}" fill="none" stroke="{ink}" '
-        f'stroke-width="{page["frame-width"]}"/>',
+        _outline(f, ink, page["frame-width"]),
         "</g>",
         *_legend(jobs, ink, legend),
         "</svg>",

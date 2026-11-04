@@ -1,6 +1,9 @@
-import pytest
+import math
 
-from vectormaps.area import fit, parse_corner, utm_crs
+import pytest
+from pyproj import Transformer
+
+from vectormaps.area import corners_around, fit, parse_corner, utm_crs
 from vectormaps.paper import paper_size
 
 # Roughly 1.0 km wide and 0.8 km high, in Santiago de Compostela.
@@ -91,3 +94,82 @@ def test_corners_must_be_in_order(tl, br):
 def test_margin_must_leave_room_for_the_attribution():
     with pytest.raises(ValueError):
         fit(TL, BR, "A4", margin=2)
+
+
+def test_circle_around_a_centre_is_always_fully_shown():
+    centre = (42.8805, -8.5448)
+    for paper in ("A5", "A3"):
+        f = fit(*corners_around(centre, 2.0), paper)
+        south, west, north, east = f.lonlat_bounds(pad=0)
+        # the circle of 2 km (~0.018 deg lat) fits in the frame in every direction
+        assert north >= centre[0] + 0.0179 and south <= centre[0] - 0.0179
+        assert east >= centre[1] + 0.0243 and west <= centre[1] - 0.0243 / 1.0
+        assert f.growth >= 0
+
+
+def test_radius_sets_the_size_of_the_area():
+    f = fit(*corners_around((42.88, -8.54), 1.0), "A4")
+    # a 2 km square on an A4 landscape page (277 x 190 mm): 2 km fit in the short side
+    assert f.ymax - f.ymin == pytest.approx(2000, rel=0.03)
+
+
+@pytest.mark.parametrize("radius", [0, -1, float("nan")])
+def test_radius_must_be_positive(radius):
+    with pytest.raises(ValueError, match="radius"):
+        corners_around((42.88, -8.54), radius)
+
+
+def test_rect_is_the_default_shape():
+    f = fit(TL, BR, "A4")
+    assert f.shape == "rect"
+    assert (f.map_x, f.map_y) == (f.margin, f.margin)
+    assert (f.map_w, f.map_h) == (f.print_w, f.print_h)
+
+
+@pytest.mark.parametrize("paper", ["A5", "A4", "A0"])
+def test_circle_and_square_boxes_are_squares_centred_on_the_page(paper):
+    for shape in ("square", "circle"):
+        f = fit(TL, BR, paper, shape=shape)
+        assert f.map_w == f.map_h == min(f.print_w, f.print_h)
+        assert f.map_x + f.map_w / 2 == pytest.approx(f.page_w / 2)
+        assert f.map_y + f.map_h / 2 == pytest.approx(f.page_h / 2)
+        assert (f.xmax - f.xmin) == pytest.approx(f.ymax - f.ymin)
+
+
+def test_circle_holds_the_corners_of_the_requested_area():
+    f = fit(TL, BR, "A4", shape="circle")
+    south, west, north, east = f.lonlat_bounds(pad=0)
+    # the box is the circumscribed square: the whole requested rectangle is inside it
+    assert north >= TL[0] and south <= BR[0] and west <= TL[1] and east >= BR[1]
+    # and the diameter is the diagonal of the area: its corners sit on the circle
+    to_utm = Transformer.from_crs(4326, f.crs, always_xy=True)
+    (x1, y1), (x2, y2) = to_utm.transform(TL[1], TL[0]), to_utm.transform(BR[1], BR[0])
+    assert f.xmax - f.xmin == pytest.approx(math.hypot(x2 - x1, y2 - y1), rel=0.03)
+
+
+def test_square_holds_the_longest_side():
+    f = fit(TL, BR, "A4", shape="square")
+    wide = fit(TL, BR, "A4", orientation="landscape")
+    assert f.xmax - f.xmin == pytest.approx(f.ymax - f.ymin)
+    assert f.xmax - f.xmin >= (wide.ymax - wide.ymin) * 0.99  # not narrower than the area
+
+
+def test_circle_with_a_radius_is_exactly_that_circle():
+    f = fit(*corners_around((42.88, -8.54), 2.0), "A4", shape="circle", radius_km=2.0)
+    assert f.xmax - f.xmin == pytest.approx(4000)
+    assert f.growth == 0
+    # A4 landscape: 190 mm for 4 km
+    assert f.scale == pytest.approx(4000 / 190 * 1000, rel=0.001)
+
+
+def test_page_matrix_puts_the_box_on_the_page():
+    f = fit(TL, BR, "A4", shape="circle")
+    a, _, _, e, xoff, yoff = f.page_matrix()
+    assert a * f.xmin + xoff == pytest.approx(f.map_x)
+    assert e * f.ymax + yoff == pytest.approx(f.map_y)
+    assert a * f.xmax + xoff == pytest.approx(f.map_x + f.map_w)
+
+
+def test_unknown_shape():
+    with pytest.raises(ValueError, match="shape"):
+        fit(TL, BR, "A4", shape="triangle")

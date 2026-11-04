@@ -116,7 +116,7 @@ def test_legend_has_the_corners_the_attribution_and_the_mark():
     assert texts[0].startswith("© OpenStreetMap contributors (ODbL)")
     assert f"1:{job.frame.scale}" in texts[0]
     tl, br = job.frame.corners()
-    assert texts[1] == f"TL {tl[0]:.5f}, {tl[1]:.5f} · BR {br[0]:.5f}, {br[1]:.5f}"
+    assert texts[1] == f"↖ {tl[0]:.5f}, {tl[1]:.5f} · ↘ {br[0]:.5f}, {br[1]:.5f}"
     assert texts[2] == "Generated with vector-maps by 1noro"
     # The corners are the ones of the map on paper (it grew to the shape of the page).
     assert tl[0] >= TL[0] and br[0] <= BR[0] and tl[1] <= TL[1] and br[1] >= BR[1]
@@ -127,7 +127,7 @@ def test_minimal_legend_keeps_the_corners_the_scale_the_credit_and_the_mark():
     root = ET.fromstring(render([job], "minimal"))
     texts = [t.text for t in root.findall(".//svg:g[@id='legend']/svg:text", NS)]
     tl, br = job.frame.corners()
-    corners = f"TL {tl[0]:.5f}, {tl[1]:.5f} · BR {br[0]:.5f}, {br[1]:.5f}"
+    corners = f"↖ {tl[0]:.5f}, {tl[1]:.5f} · ↘ {br[0]:.5f}, {br[1]:.5f}"
     assert texts == [f"{corners} · A 1:{job.frame.scale} · © OpenStreetMap", MARK]
     with pytest.raises(ValueError, match="unknown legend"):
         render([job], "none")
@@ -137,7 +137,7 @@ def test_overlay_legend_lists_both_zones():
     a = make_job("a", TL, BR, "color")
     b = make_job("b", TL2, BR2, "bw")
     corners = legend_lines([a, b])[1]
-    assert corners.startswith("A: TL ") and "   |   B: TL " in corners
+    assert corners.startswith("A: ↖ ") and "   |   B: ↖ " in corners
 
 
 @pytest.mark.parametrize("legend", ["full", "minimal"])
@@ -155,3 +155,30 @@ def test_legend_text_stays_inside_the_page(paper, margin, legend):
             assert len(t.text) * size * CHAR_WIDTH <= frame.map_w + 0.01  # fits the width
     last = max(float(t.get("y")) for t in root.findall(".//svg:g[@id='legend']/svg:text", NS))
     assert last + size * 0.3 <= frame.page_h  # the bottom line does not run off the paper
+
+
+def _shaped_job(shape):
+    frame = fit(TL, BR, "A4", orientation="landscape", shape=shape)
+    feats = {"roads": [Item("minor", LineString([(TL[1], 42.881), (BR[1], 42.881)]))]}
+    return Job("a", frame, load("color"), select(["roads"]), feats)
+
+
+def test_circle_is_clipped_and_outlined():
+    svg = render([_shaped_job("circle")])
+    root = ET.fromstring(svg)
+    clip = root.find(".//svg:clipPath[@id='clip-a']/svg:circle", NS)
+    assert clip is not None and float(clip.get("r")) == pytest.approx(95)  # 190 mm wide
+    assert (float(clip.get("cx")), float(clip.get("cy"))) == pytest.approx((148.5, 105))
+    area = root.find(".//svg:g[@id='area-a']", NS)
+    assert area.get("clip-path") == "url(#clip-a)"
+    frame = root.find(".//svg:g[@id='frame']/svg:circle", NS)
+    assert frame is not None and frame.get("fill") == "none"
+
+
+@pytest.mark.parametrize("shape", ["rect", "square"])
+def test_rect_and_square_have_no_clip_and_a_rect_outline(shape):
+    root = ET.fromstring(render([_shaped_job(shape)]))
+    assert root.find(".//svg:clipPath", NS) is None
+    outline = root.find(".//svg:g[@id='frame']/svg:rect", NS)
+    w = float(outline.get("width"))
+    assert w == pytest.approx(277 if shape == "rect" else 190)

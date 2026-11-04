@@ -33,3 +33,38 @@ falta interfaz gráfica.
   lado; el log lo dice ("grown 11% to fit the paper").
 - Una esquina negativa se pasa con `--tl=-33.8,151.2` (con el igual) para que
   argparse no la tome por un flag. El `Makefile` ya lo hace.
+
+## Añadido el 04/11/2026 — centro y radio
+
+Se admite una segunda forma de dar el área: **`--center=LAT,LON` y
+`--radius=KM`** (`CENTER`/`RADIUS` en `make`; `--over-center`/`--over-radius`
+para la zona superpuesta). Excluyente con `--tl`/`--br`.
+
+- Se convierte en las dos esquinas del **cuadrado de lado 2R** centrado (en
+  UTM), y de ahí sigue `fit` como siempre. El círculo de radio R queda inscrito
+  en ese cuadrado, así que **se ve siempre entero** y el papel añade mapa por el
+  lado largo: sigue sin recortarse nada.
+- Un área casi cuadrada (el lado corto, al menos el 95 % del largo) es un
+  empate y `auto` elige apaisado: la conversión a lat/lon y vuelta la deja unos
+  puntos por encima o por debajo y no debe decidir la orientación.
+
+## Añadido el 04/11/2026 — forma del mapa en la hoja
+
+Aparte del papel, **`--shape=rect|square|circle`** (`SHAPE` en `make`; `rect`
+por defecto, como hasta ahora). La misma forma vale para las dos zonas
+superpuestas.
+
+- `rect`: el mapa llena la parte imprimible y la zona crece a su forma.
+- `square` y `circle`: el mapa es una **caja cuadrada centrada** de lado el lado
+  corto de la parte imprimible. `Frame` distingue ahora el margen de la página
+  de la caja del mapa (`map_x`, `map_y`, `map_w`, `map_h`); los datos, el relieve
+  y la escala se calculan solo sobre la caja.
+- Sigue sin recortarse lo pedido: el **cuadrado** lleva el lado largo del área;
+  el **círculo es el circunscrito** (diámetro = diagonal del rectángulo). Con
+  `--center`/`--radius` el cuadrado mide 2R y el círculo es exactamente el de
+  radio R.
+- El círculo se recorta con un `<clipPath>` en el grupo de cada zona (se puede
+  soltar en Inkscape) y lleva un trazo fino del borde; lo de fuera queda con el
+  fondo del tema. La leyenda y la atribución siguen en el margen de la hoja.
+- `Frame.growth` con un círculo o cuadrado compara su área con la del rectángulo
+  pedido (un círculo circunscrito crece al menos un 57 %); con un radio es 0.

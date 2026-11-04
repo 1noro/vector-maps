@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from vectormaps import cli
 from vectormaps.geofabrik import Region
 from vectormaps.overpass import OverpassError
@@ -57,3 +59,21 @@ def test_overpass_failing_without_a_known_extract_points_to_the_list(tmp_path, m
     monkeypatch.setattr(cli.geofabrik, "region_for", lambda b, c: None)
     assert cli.main([*MAP, f"--cache={tmp_path}"]) == 1
     assert "https://download.geofabrik.de/" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "args, message",
+    [
+        (["--tl=1,1", "--br=0,2", "--center=1,1", "--radius=2"], "either"),
+        (["--center=1,1"], "go together"),
+        (["--radius=2"], "go together"),
+        ([], "give the area"),
+        (["--center=1,1", "--radius=0"], "radius"),
+        (["--tl=2,1", "--br=1,2", "--over-center=1,1"], "--over-center and --over-radius"),
+    ],
+)
+def test_the_area_is_corners_or_centre_and_radius(args, message, capsys):
+    assert cli.main(["map", *args]) == 1
+    err = capsys.readouterr().err
+    assert message in err
+    assert "Traceback" not in err

@@ -6,6 +6,7 @@ grown (never cropped) until it has the exact shape of the printable part of the
 paper. That is what lets two areas with different zoom share the same page.
 """
 
+import math
 from dataclasses import dataclass
 
 from pyproj import CRS, Transformer
@@ -13,6 +14,7 @@ from pyproj import CRS, Transformer
 from vectormaps.paper import ORIENTATIONS, paper_size
 
 MIN_MARGIN_MM = 6.0  # the attribution line lives in the margin
+SHAPES = ("rect", "square", "circle")
 
 
 @dataclass(frozen=True)
@@ -30,14 +32,33 @@ class Frame:
     xmax: float
     ymax: float
     growth: float  # how much the requested area grew to fit the paper (0.25 = +25% area)
+    shape: str = "rect"  # rect: all the printable part; square, circle: a centred square box
 
     @property
-    def map_w(self) -> float:
+    def print_w(self) -> float:
+        """Width of the printable part of the page (inside the margins)."""
         return self.page_w - 2 * self.margin
 
     @property
-    def map_h(self) -> float:
+    def print_h(self) -> float:
         return self.page_h - 2 * self.margin
+
+    @property
+    def map_w(self) -> float:
+        return self.print_w if self.shape == "rect" else min(self.print_w, self.print_h)
+
+    @property
+    def map_h(self) -> float:
+        return self.print_h if self.shape == "rect" else min(self.print_w, self.print_h)
+
+    @property
+    def map_x(self) -> float:
+        """Left edge of the map box on the page, in mm."""
+        return (self.page_w - self.map_w) / 2
+
+    @property
+    def map_y(self) -> float:
+        return (self.page_h - self.map_h) / 2
 
     @property
     def metres_per_mm(self) -> float:
@@ -70,7 +91,7 @@ class Frame:
     def page_matrix(self) -> list[float]:
         """Affine matrix [a, b, d, e, xoff, yoff] taking projected metres to page mm."""
         s = 1.0 / self.metres_per_mm
-        return [s, 0.0, 0.0, -s, self.margin - self.xmin * s, self.margin + self.ymax * s]
+        return [s, 0.0, 0.0, -s, self.map_x - self.xmin * s, self.map_y + self.ymax * s]
 
 
 def parse_corner(text: str) -> tuple[float, float]:
@@ -90,14 +111,44 @@ def utm_crs(lon: float, lat: float) -> CRS:
     return CRS.from_epsg((32600 if lat >= 0 else 32700) + zone)
 
 
+def corners_around(
+    center: tuple[float, float], radius_km: float
+) -> tuple[tuple[float, float], tuple[float, float]]:
+    """The (top-left, bottom-right) corners of the square of side 2R centred on a point.
+
+    The circle of radius R fits inside that square, so once `fit` grows the square to
+    the paper the whole circle is always visible.
+    """
+    if not radius_km > 0:
+        raise ValueError(f"radius must be a positive number of km (got {radius_km:g})")
+    lat, lon = center
+    crs = utm_crs(lon, lat)
+    x, y = Transformer.from_crs(4326, crs, always_xy=True).transform(lon, lat)
+    r = radius_km * 1000.0
+    back = Transformer.from_crs(crs, 4326, always_xy=True)
+    (lon1, lat1) = back.transform(x - r, y + r)
+    (lon2, lat2) = back.transform(x + r, y - r)
+    return (lat1, lon1), (lat2, lon2)
+
+
 def fit(
     top_left: tuple[float, float],
     bottom_right: tuple[float, float],
     paper: str,
     margin: float = 10.0,
     orientation: str = "auto",
+    shape: str = "rect",
+    radius_km: float | None = None,
 ) -> Frame:
-    """Fit the area between two (lat, lon) corners to a paper size."""
+    """Fit the area between two (lat, lon) corners to a paper size.
+
+    `shape` is how the map is printed: `rect` fills the printable part of the paper (the
+    area grows to its shape); `square` and `circle` are a centred square or circle as
+    wide as the short side of the printable part, and hold the whole area: the square
+    its longest side, the circle its diagonal. `radius_km` says the corners came from a
+    centre and a radius (`corners_around`): then the square is 2R wide and the circle is
+    exactly the one of radius R.
+    """
     (lat1, lon1), (lat2, lon2) = top_left, bottom_right
     if lat1 <= lat2:
         raise ValueError("top-left must be north of bottom-right (its latitude must be larger)")
@@ -105,6 +156,8 @@ def fit(
         raise ValueError("top-left must be west of bottom-right (its longitude must be smaller)")
     if margin < MIN_MARGIN_MM:
         raise ValueError(f"margin must be at least {MIN_MARGIN_MM:g} mm (room for the attribution)")
+    if shape not in SHAPES:
+        raise ValueError(f"shape must be one of {', '.join(SHAPES)}, not {shape!r}")
     if orientation != "auto" and orientation not in ORIENTATIONS:
         raise ValueError(f"orientation must be auto, landscape or portrait, not {orientation!r}")
 
@@ -118,17 +171,31 @@ def fit(
     w, h = xmax - xmin, ymax - ymin
 
     if orientation == "auto":
-        orientation = "landscape" if w >= h else "portrait"
+        # A nearly square area (within 5%), like a centre and a radius, is a tie: landscape wins.
+        orientation = "landscape" if w >= h * 0.95 else "portrait"
     page_w, page_h = paper_size(paper, orientation)
     if page_w - 2 * margin <= 0 or page_h - 2 * margin <= 0:
         raise ValueError("margin leaves no room for the map")
-    target = (page_w - 2 * margin) / (page_h - 2 * margin)
-
-    if w / h < target:  # too narrow for the paper: widen
-        new_w, new_h = h * target, h
-    else:  # too wide: heighten
-        new_w, new_h = w, w / target
     cx, cy = (xmin + xmax) / 2, (ymin + ymax) / 2
+
+    if shape == "rect":
+        target = (page_w - 2 * margin) / (page_h - 2 * margin)
+        if w / h < target:  # too narrow for the paper: widen
+            new_w, new_h = h * target, h
+        else:  # too wide: heighten
+            new_w, new_h = w, w / target
+        growth = (new_w * new_h) / (w * h) - 1
+    else:
+        # The whole shape box holds the area: a square of this side, a circle of this diameter.
+        if shape == "circle":
+            side = 2000.0 * radius_km if radius_km else math.hypot(w, h)
+            shown = math.pi / 4 * side * side
+        else:
+            side = 2000.0 * radius_km if radius_km else max(w, h)
+            shown = side * side
+        new_w = new_h = side  # the frame is the box itself
+        growth = 0.0 if radius_km else shown / (w * h) - 1  # a radius is shown exactly
+
     return Frame(
         paper=paper.upper(),
         orientation=orientation,
@@ -140,5 +207,6 @@ def fit(
         xmax=cx + new_w / 2,
         ymin=cy - new_h / 2,
         ymax=cy + new_h / 2,
-        growth=(new_w * new_h) / (w * h) - 1,
+        growth=growth,
+        shape=shape,
     )

@@ -6,7 +6,7 @@ from pathlib import Path
 from vectormaps import geofabrik
 from vectormaps import layers as layer_defs
 from vectormaps import theme as themes
-from vectormaps.area import Frame, fit, parse_corner
+from vectormaps.area import SHAPES, Frame, corners_around, fit, parse_corner
 from vectormaps.download import PBF_DIR, download
 from vectormaps.labels import DEFAULT_LANG, parse_langs
 from vectormaps.overpass import OverpassError
@@ -29,13 +29,25 @@ def build_parser() -> argparse.ArgumentParser:
     m = sub.add_parser(
         "map",
         help="draw an area as SVG, optionally with a second area stacked on top",
-        description="Corners are LAT,LON. Use --tl=LAT,LON (with '=') so negative values parse.",
+        description="Corners and centres are LAT,LON. Use --tl=LAT,LON (with '=') so negative "
+        "values parse. The area is either --tl and --br, or --center and --radius.",
     )
-    m.add_argument("--tl", required=True, metavar="LAT,LON", help="top-left corner")
-    m.add_argument("--br", required=True, metavar="LAT,LON", help="bottom-right corner")
+    m.add_argument("--tl", metavar="LAT,LON", help="top-left corner")
+    m.add_argument("--br", metavar="LAT,LON", help="bottom-right corner")
+    m.add_argument("--center", metavar="LAT,LON", help="centre of the area (with --radius)")
+    m.add_argument(
+        "--radius", type=float, metavar="KM", help="radius in km: the circle is always fully shown"
+    )
     m.add_argument("--paper", default="A4", choices=list(PAPERS), type=str.upper)
     m.add_argument("--orientation", default="auto", choices=["auto", "landscape", "portrait"])
     m.add_argument("--margin", type=float, default=10.0, metavar="MM")
+    m.add_argument(
+        "--shape",
+        default="rect",
+        choices=SHAPES,
+        help="how the map is printed on the paper: rect fills it, square and circle are centred "
+        "and as wide as its short side (circle: clipped, with a thin border). default: %(default)s",
+    )
     m.add_argument(
         "--layers", metavar="A,B", help="default: all but relief and names, see `vectormaps list`"
     )
@@ -81,6 +93,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     o.add_argument("--over-tl", metavar="LAT,LON")
     o.add_argument("--over-br", metavar="LAT,LON")
+    o.add_argument("--over-center", metavar="LAT,LON", help="instead of --over-tl/--over-br")
+    o.add_argument("--over-radius", type=float, metavar="KM")
     o.add_argument("--over-layers", metavar="A,B", help="default: the ones of the first area")
     o.add_argument("--over-exclude-layers", metavar="A,B", help="leave these out of the overlay")
     o.add_argument("--over-include-layers", metavar="A,B", help="add these to the overlay")
@@ -102,7 +116,8 @@ def _split(text: str | None) -> list[str] | None:
 
 def _describe(label: str, frame: Frame) -> str:
     grown = f", grown {frame.growth:.0%} to fit the paper" if frame.growth > 0.005 else ""
-    return f"{label}: 1:{frame.scale}, {frame.paper} {frame.orientation}{grown}"
+    shape = "" if frame.shape == "rect" else f" {frame.shape}"
+    return f"{label}: 1:{frame.scale}, {frame.paper} {frame.orientation}{shape}{grown}"
 
 
 def offline_hint(areas: list[Bounds], cache: Path) -> str:
@@ -138,25 +153,40 @@ def _list() -> int:
     return 0
 
 
+def _corners(
+    tl: str | None, br: str | None, center: str | None, radius: float | None, flag: str = "--"
+) -> tuple[tuple[float, float], tuple[float, float], float | None]:
+    """The two corners (and the radius, if any) of an area given as corners or as centre and radius.
+
+    `flag` is the prefix of the option names, only used in the messages.
+    """
+    if (tl or br) and (center or radius is not None):
+        raise ValueError(f"use either {flag}tl and {flag}br, or {flag}center and {flag}radius")
+    if center or radius is not None:
+        if not (center and radius is not None):
+            raise ValueError(f"{flag}center and {flag}radius go together")
+        return *corners_around(parse_corner(center), radius), radius
+    if not (tl and br):
+        raise ValueError(f"give the area: {flag}tl and {flag}br, or {flag}center and {flag}radius")
+    return parse_corner(tl), parse_corner(br), None
+
+
 def _map(a: argparse.Namespace) -> int:
-    if bool(a.over_tl) != bool(a.over_br):
-        raise ValueError("--over-tl and --over-br go together")
+    over = bool(a.over_tl or a.over_br or a.over_center or a.over_radius is not None)
     if not 0 <= a.over_opacity <= 1:
         raise ValueError("--over-opacity must be between 0 and 1")
 
     langs = parse_langs(a.lang)
     layers = layer_defs.select(_split(a.layers), _split(a.exclude_layers), _split(a.include_layers))
-    base_frame = fit(parse_corner(a.tl), parse_corner(a.br), a.paper, a.margin, a.orientation)
+    tl, br, radius = _corners(a.tl, a.br, a.center, a.radius)
+    base_frame = fit(tl, br, a.paper, a.margin, a.orientation, a.shape, radius)
     specs = [("a", base_frame, layers, themes.load(a.theme, a.tint), 1.0)]
-    if a.over_tl:
+    if over:
         # Same paper, orientation and margin: the page is the common shape.
-        over_frame = fit(
-            parse_corner(a.over_tl),
-            parse_corner(a.over_br),
-            a.paper,
-            a.margin,
-            base_frame.orientation,
+        o_tl, o_br, o_radius = _corners(
+            a.over_tl, a.over_br, a.over_center, a.over_radius, "--over-"
         )
+        over_frame = fit(o_tl, o_br, a.paper, a.margin, base_frame.orientation, a.shape, o_radius)
         over_layers = layer_defs.select(
             _split(a.over_layers) or [layer.name for layer in layers],
             _split(a.over_exclude_layers),
