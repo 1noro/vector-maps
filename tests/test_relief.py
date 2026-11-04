@@ -1,6 +1,7 @@
 import io
 import subprocess
 import urllib.error
+import xml.etree.ElementTree as ET
 
 import numpy as np
 import pytest
@@ -113,7 +114,9 @@ def test_contours_and_hillshade_from_the_dem(hill_cache):
     svg = render([Job("a", frame, load("bw"), select(["hillshade", "contours"]), feats)])
     assert 'xlink:href="data:image/png;base64,iVBORw0KGgo' in svg  # a PNG
     assert 'id="a-contours-major"' in svg
-    assert "Copernicus DEM GLO-30" in svg  # its licence asks for the credit
+    # Its licence asks for this notice, word for word, on anything derived from it.
+    assert "produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014" in svg
+    assert "provided under COPERNICUS by the European Union and ESA; all rights reserved" in svg
 
 
 def test_no_relief_no_copernicus_credit(hill_cache):
@@ -153,3 +156,23 @@ def test_zoomed_in_the_ground_is_smooth_not_a_plane_per_cell(
     # A plane per cell: the slope only changes at the cell edges, flat in between.
     flat = np.mean(bends < bends.max() * 0.01)
     assert (flat < 0.5) == smooth
+
+
+def _notice(svg):
+    root = ET.fromstring(svg)
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    for t in root.findall(".//svg:g[@id='legend']/svg:text", ns):
+        if t.text and t.text.startswith("Relief produced"):
+            return t
+    raise AssertionError("no relief notice")
+
+
+def test_a_minimal_legend_writes_the_relief_notice_small_and_grey_but_whole(hill_cache):
+    frame = fit(TL, BR, "A4")
+    layers = select(["hillshade", "contours"])
+    feats = load_features(frame, layers, source=None, cache=hill_cache)
+    full = _notice(render([Job("a", frame, load("bw"), layers, feats)], "full"))
+    quiet = _notice(render([Job("a", frame, load("bw"), layers, feats)], "minimal"))
+    assert quiet.text == full.text == relief.ATTRIBUTION
+    assert float(quiet.get("font-size")) < float(full.get("font-size"))
+    assert quiet.get("fill-opacity") and not full.get("fill-opacity")

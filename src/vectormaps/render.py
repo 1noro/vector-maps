@@ -29,6 +29,8 @@ SHORT_ATTRIBUTION = "© OpenStreetMap"  # the short form OSM accepts; the minima
 LEGENDS = ("full", "minimal")
 COORDS = ("dd", "dm", "dms")  # decimal degrees, degrees and decimal minutes, d-m-s
 LEGEND_SIZE = 2.4  # mm; smaller on small margins or long lines, so everything fits
+QUIET_SCALE = 0.7  # the relief's notice in a minimal legend: this much smaller, and grey
+QUIET_OPACITY = 0.6
 
 
 @dataclass
@@ -387,12 +389,23 @@ def _legend(jobs: list[Job], ink: str, legend: str, coords: str) -> list[str]:
     lines = legend_lines(jobs, legend, coords)
     # The relief's attribution (its licence asks for it) goes top left, beside the mark.
     top = relief.ATTRIBUTION if uses_relief(jobs) else ""
-    widest = max(*(len(line) for line in lines), len(top) + len(MARK) + 4)
+    # A minimal legend writes it small and grey, so it neither shrinks the rest nor
+    # competes with the map; it cannot be shortened (its licence has no short form).
+    quiet = legend == "minimal"
+    widest = max(*(len(line) for line in lines), 0 if quiet else len(top) + len(MARK) + 4)
     size = min(LEGEND_SIZE, f.margin / 3, f.print_w / (widest * CHAR_WIDTH))
     # The lines centred in the bottom margin, the mark centred in the top one.
     pad = (f.margin - size - (len(lines) - 1) * 1.35 * size) / 2
     y1 = f.page_h - f.margin + pad + 0.85 * size
     common = f'font-family="sans-serif" font-size="{_num(size)}" fill="{ink}"'
+    top_common = common
+    if quiet and top:
+        room = f.print_w - (len(MARK) + 4) * size * CHAR_WIDTH  # what the mark leaves
+        top_size = min(size * QUIET_SCALE, room / (len(top) * CHAR_WIDTH))
+        top_common = (
+            f'font-family="sans-serif" font-size="{_num(top_size)}" fill="{ink}" '
+            f'fill-opacity="{QUIET_OPACITY:g}"'
+        )
     return [
         '<g id="legend" inkscape:groupmode="layer" inkscape:label="legend">',
         *(
@@ -404,8 +417,8 @@ def _legend(jobs: list[Job], ink: str, legend: str, coords: str) -> list[str]:
         f'text-anchor="end" {common}>{escape(MARK)}</text>',
         *(
             [
-                f'<text x="{_num(f.margin)}" y="{_num(f.margin / 2 + 0.35 * size)}" {common}>'
-                f"{escape(top)}</text>"
+                f'<text x="{_num(f.margin)}" y="{_num(f.margin / 2 + 0.35 * size)}" '
+                f"{top_common}>{escape(top)}</text>"
             ]
             if top
             else []

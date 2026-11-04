@@ -32,9 +32,12 @@ from vectormaps.tmpfile import tmp_beside
 log = logging.getLogger(__name__)
 
 TILE_URL = "https://copernicus-dem-30m.s3.amazonaws.com/{name}/{name}.tif"
+# The notice the Copernicus DEM licence asks of products derived from GLO-30, word for word:
+# it has no short form (Nov 4). "Relief" before it says what was derived.
 ATTRIBUTION = (
-    "Relief: Copernicus DEM GLO-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space "
-    "GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved"
+    "Relief produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence "
+    "and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; "
+    "all rights reserved"
 )
 MAX_ATTEMPTS = 3
 CELL_MM = 0.25  # one DEM cell on paper (~100 dpi): fine for print, light enough for A0

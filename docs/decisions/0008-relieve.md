@@ -87,3 +87,20 @@ donde una celda del mapa abarca varias del DEM, apenas cambia nada.
 
 El método va en la clave de la caché (`frame-….tif`), así que los DEM de antes no
 se reusan; `make clean-cache` borra los viejos.
+
+## Añadido del 04/11/2026: el texto exacto de Copernicus, y discreto en la leyenda mínima
+
+El usuario pidió acortar la atribución de Copernicus con `LEGEND=minimal`, como
+se acorta la de OSM («© OpenStreetMap»). **No se puede**: la licencia del DEM
+(según el Copernicus Data Space) da dos textos fijos y ninguna forma corta, uno
+para el DEM sin tocar y otro para lo modificado o derivado. El sombreado y las
+curvas son derivados, así que corresponde el segundo, y el que escribíamos no
+era exactamente ese. Ahora:
+
+- El texto es **«Relief produced using Copernicus WorldDEM-30 © DLR e.V.
+  2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under
+  COPERNICUS by the European Union and ESA; all rights reserved»**: el de la
+  licencia, palabra por palabra, con «Relief» delante para decir qué se derivó.
+- Con **`LEGEND=minimal`** va **entero, pero al 70 % del tamaño de la leyenda y
+  con opacidad 0,6**, y su largo ya no cuenta para el tamaño del resto (antes
+  encogía también la marca y las esquinas). Con `LEGEND=full`, como siempre.

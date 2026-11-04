@@ -140,6 +140,11 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Corregido
 
+- **La atribución de Copernicus es la que pide su licencia** para lo derivado del
+  DEM: «Relief produced using Copernicus WorldDEM-30 © DLR e.V. … all rights
+  reserved» (antes «Relief: Copernicus DEM GLO-30 © …»). No tiene forma corta, así
+  que con `LEGEND=minimal` va entera pero más pequeña y en gris, y ya no encoge el
+  resto de la leyenda (ADR 0008).
 - **El sombreado ya no sale en cuadros al acercarse.** El DEM de 30 m se
   remuestreaba con bilineal, que da un plano por celda: a escala de pueblo
   (1:12000) cada celda era un cuadro de un solo tono de ~2,4 mm. Ahora es spline
