@@ -12,6 +12,7 @@ from vectormaps.render import (
     MARK,
     Job,
     _corner,
+    _num,
     legend_lines,
     path_data,
     render,
@@ -335,9 +336,25 @@ def test_a_pattern_fill_points_at_a_pattern_of_its_zone():
     assert houses.get("patternTransform") == "rotate(45)"
     assert houses.find("svg:line", NS) is not None and houses.find("svg:rect", NS) is not None
     meadow = root.find(".//svg:pattern[@id='b-pattern-meadow']", NS)
-    assert meadow.get("width") == "1"  # a dash of 0.5 and a gap of 0.5
+    # Staggered crosses: a tile two rows high, one cross in the middle of the first and
+    # one cut in half at each side of the second.
+    assert (meadow.get("width"), meadow.get("height")) == ("2", "4")
+    assert meadow.find("svg:path", NS).get("d").count("M") == 6  # two strokes per cross
     # Only the patterns the zone's layers use: no water layer here, no water pattern.
     assert root.find(".//svg:pattern[@id='b-pattern-water']", NS) is None
+
+
+def test_a_margin_colour_paints_the_sheet_and_leaves_the_background_to_the_map():
+    frame = fit(TL, BR, "A4", orientation="landscape")
+    job = Job("a", frame, load("vintage"), select(["roads"]), {"roads": []})
+    page = ET.fromstring(render([job])).find(".//svg:g[@id='page']", NS)
+    sheet, inner = page
+    assert sheet.get("fill") == "#ffffff" and sheet.get("width") == _num(frame.page_w)
+    assert inner.get("fill") == "#f4ecd2"
+    assert (inner.get("x"), inner.get("width")) == (_num(frame.map_x), _num(frame.map_w))
+    # Without a margin colour, one sheet in the background, as before.
+    plain = Job("a", frame, load("bw"), select(["roads"]), {"roads": []})
+    assert len(ET.fromstring(render([plain])).find(".//svg:g[@id='page']", NS)) == 1
 
 
 def _arrow(svg):

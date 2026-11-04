@@ -161,8 +161,13 @@ ancha por debajo; con `casing-opacity`, translúcido (la banda de los límites d
 `vintage`). Un relleno puede ser una trama: `fill = "pattern:<nombre>"`, con
 la trama definida en `[patterns.<nombre>]` (`kind = "lines"`, rayas a `spacing` mm
 con `angle`, `width`, `color`, `background` y, si se quiere, trazos de `dash` mm;
-o `kind = "dots"`, puntos de `radius`); `vintage.toml` trae tres de ejemplo.
+`kind = "dots"`, puntos de `radius`; o `kind = "crosses"`, cruces «+» de `size` mm
+y `width` de grosor, al tresbolillo con `stagger = true`); `vintage.toml` trae tres
+de ejemplo.
 También vale en `stroke`: `vintage-bw` raya así el interior de las calles principales.
+En `[page]`, `background` es el color del papel y, si se da `margin`, ese color
+queda solo dentro del mapa y el margen de alrededor va en `margin` (`vintage`: mapa
+crema sobre hoja blanca).
 Para uno propio, copia `bw.toml` y
 cámbialo: un test exige que estile todas las clases de todas las capas.
 
@@ -177,9 +182,9 @@ cámbialo: un test exige que estile todas las clases de todas las capas.
 - **`blueprint`**: un plano de arquitecto, líneas blancas sobre azul. Los
   edificios son solo contorno y las calles, doble línea (el color del fondo sobre
   un contorno blanco). También gasta mucha tinta.
-- **`vintage`**: una hoja topográfica del siglo XIX: papel crema, agua clara con
+- **`vintage`**: una hoja topográfica del siglo XIX: papel crema (el margen, blanco), agua clara con
   líneas finas que siguen la orilla por dentro (los ríos entran en el embalse
-  como una sola masa de agua), prados en trazos verdes, edificios rayados,
+  como una sola masa de agua), prados en cruces verdes al tresbolillo, edificios rayados,
   calles en doble línea negra (las principales rellenas de ocre y amarillo) y
   todos los nombres en cursiva (EB Garamond). Con el relieve
   (`INCLUDE_LAYERS=hillshade,contours`) las laderas salen rayadas en rojo, como
@@ -187,7 +192,7 @@ cámbialo: un test exige que estile todas las clases de todas las capas.
 - **`vintage-bw`**: el `vintage` pensado para una impresora en blanco y negro:
   solo negro sobre blanco, sin grises ni transparencias (una láser los convierte
   en puntos). Lo distinguen las tramas y el grosor: agua rayada (los ríos y
-  canales entran en el embalse como un solo cuerpo rayado), prados punteados,
+  canales entran en el embalse como un solo cuerpo rayado), prados en cruces,
   edificios rayados, calles en doble línea (las principales rayadas por dentro),
   el tren en tramos blancos y negros y el relieve en rayas negras finas, con las
   curvas secundarias punteadas.

@@ -219,3 +219,27 @@ más allá del mapa, y lo que sobra lo tapa el recorte de la zona. Una clase de
 `join` que no exista en la capa, o una distancia que no sea positiva, es un
 error al cargar el tema.
 
+
+## Añadido del 04/11/2026: trama de cruces
+
+Los prados de `vintage` y `vintage-bw` (trazos verdes en filas y puntos sueltos)
+no convencían. Se renderizaron nueve alternativas con las tramas que había (tinta
+plana, puntos, rayas, contorno) y tampoco; el usuario pidió cruces, el signo de
+prado de los mapas antiguos. Un tercer tipo de trama:
+
+- `kind = "crosses"`: una cruz «+» cada `spacing` mm, de `size` mm de lado a lado
+  (un tercio de `spacing` si no se da) y `width` de grosor. Con `stagger = true`,
+  una fila de cada dos va desplazada media cruz (al tresbolillo), para que no se
+  lea como una cuadrícula: la tesela mide entonces el doble de alto.
+
+`vintage` las pone verdes sobre verde pálido y `vintage-bw`, negras sobre blanco;
+las dos, al tresbolillo y cada 2 mm.
+
+## Añadido del 04/11/2026: color del margen
+
+`[page]` acepta `margin`, opcional: el color de la hoja fuera del mapa. Sin él,
+todo es `background`, como siempre. Con él, la capa `page` lleva dos formas: la
+hoja entera en `margin` y, encima, el mapa (rectángulo, cuadrado o círculo) en
+`background`. `vintage` lo usa para dejar el crema solo en el mapa y el margen en
+blanco, como una hoja antigua pegada sobre papel. La flecha del norte y los halos
+siguen usando `background`, porque van dentro del mapa.

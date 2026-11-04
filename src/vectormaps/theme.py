@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 THEMES_DIR = Path(__file__).parent / "themes"
-PATTERN_KINDS = ("lines", "dots")
+PATTERN_KINDS = ("lines", "dots", "crosses")
 PATTERN_PREFIX = "pattern:"
 RELIEF_STYLES = ("shade", "hatch")  # the hillshade: a shaded picture, or lines on the slopes
 

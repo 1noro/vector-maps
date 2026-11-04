@@ -1,14 +1,15 @@
 # Vintage for a black-and-white printer: the same 19th-century survey sheet, drawn
 # only in black on white paper. No greys and no opacity (a laser printer dithers
 # them into dots): what tells things apart is the pattern and the weight of the line.
-# Water in fine lines, meadows in sparse dots, buildings hatched, roads as black
+# Water in fine lines, meadows in staggered crosses, buildings hatched, roads as black
 # double lines (the main ones hatched inside), the railway in the classic black and
 # white dashes, italic serif lettering, and the hills hatched by slope.
 #
 # Lengths in mm. `casing-width` (mm on each side) and `casing-color` draw an outline
 # under a line. `fill` or `stroke = "pattern:<name>"` paints with one of the
 # [patterns.<name>]: kind = "lines" (parallel lines `spacing` mm apart, at `angle`
-# degrees, `width` thick, dashes `dash` mm long if given) or "dots" (`radius`), in
+# degrees, `width` thick, dashes `dash` mm long if given), "dots" (`radius`) or
+# "crosses" ("+" `size` mm across; `stagger` moves every other row half a step), in
 # `color`, over `background` (none if not given).
 
 [page]
@@ -23,9 +24,11 @@ width = 0.06
 color = "#000000"
 
 [patterns.meadow]
-kind = "dots"
-spacing = 0.9
-radius = 0.07
+kind = "crosses"
+spacing = 2.0
+size = 0.6
+width = 0.08
+stagger = true
 color = "#000000"
 
 [patterns.houses]

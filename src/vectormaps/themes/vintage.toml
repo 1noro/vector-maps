@@ -1,26 +1,30 @@
 # Vintage theme, in the manner of a 19th-century topographic survey sheet: cream
-# paper, pale water lined along its shores, meadows in short green dashes, hatched dark
+# paper, pale water lined along its shores, meadows in staggered green crosses, hatched dark
 # buildings, roads as fine black double lines, and italic serif lettering.
 # The hills come out in red hatching with the relief (INCLUDE_LAYERS=hillshade,contours).
 #
 # Lengths in mm. `casing-width` (mm on each side) and `casing-color` draw an outline
 # under a line. `fill = "pattern:<name>"` fills with one of the [patterns.<name>]:
 # kind = "lines" (parallel lines `spacing` mm apart, at `angle` degrees, `width`
-# thick, dashes `dash` mm long if given) or "dots" (`radius`), in `color`, over
+# thick, dashes `dash` mm long if given), "dots" (`radius`) or "crosses" ("+" `size` mm
+# across, `width` thick; `stagger` moves every other row half a step), in `color`, over
 # `background` (none if not given).
 
+# The cream paper is the map only; the margin around it is white (`margin`).
 [page]
 background = "#f4ecd2"
+margin = "#ffffff"
 ink = "#2b2622"
 frame-width = 0.5
 
 [patterns.meadow]
-kind = "lines"
-spacing = 0.9
-dash = 0.5
-width = 0.08
-color = "#5f9a86"
-background = "#ebeccf"
+kind = "crosses"
+spacing = 2.0
+size = 0.6
+width = 0.1
+stagger = true
+color = "#4f7a4a"
+background = "#e6e9c6"
 
 [patterns.houses]
 kind = "lines"

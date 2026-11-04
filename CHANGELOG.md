@@ -58,6 +58,8 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   grosor de las líneas (agua rayada, prados punteados, calles principales
   rayadas por dentro, tren en tramos blancos y negros, relieve rayado en negro).
   Una trama también puede ir en `stroke`, no solo en `fill`.
+- **Trama de cruces** (`kind = "crosses"`): una cruz «+» cada `spacing` mm, de
+  `size` mm y `width` de grosor; con `stagger = true`, al tresbolillo (ADR 0004).
 - **Relieve rayado**: con `style = "hatch"` en `[layers.hillshade.shade]`, el
   sombreado pasa a ser rayas vectoriales sobre las laderas, una tanda por cada
   banda de `bands` (las laderas de más de `slope` grados, rayas a `spacing` mm con
@@ -127,6 +129,15 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Cambiado
 
+- **El margen de `vintage`, en blanco**: el crema queda solo dentro del mapa. Lo
+  hace la clave nueva `margin` de `[page]`, opcional en cualquier tema (ADR 0004).
+- **El spinner de cada capa dice el paso del total y de dónde sale**
+  (`loading layer 3/7: buildings, from Overpass`): se ve cuánto queda sin
+  prometer un porcentaje que Overpass no da.
+- **`make list` separa las capas que salen por defecto de las que no**, en dos
+  bloques, y marca con «(default)» el papel y el tema por defecto.
+- **Los prados de `vintage` y `vintage-bw`, en cruces al tresbolillo**, en vez de
+  trazos verdes y de puntos.
 - **Los ríos entran en el embalse en `vintage` y `vintage-bw`**: antes eran una
   línea gruesa que cruzaba el lago por encima, cortada por su orilla. Ahora ríos y
   canales se unen al agua con el ancho al que se dibujan, en una sola masa con un

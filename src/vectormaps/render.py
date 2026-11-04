@@ -115,10 +115,24 @@ def _pattern_id(label: str, name: str) -> str:
 
 
 def _pattern(pid: str, p: dict[str, str | float]) -> str:
-    """A tile in mm, repeated over the fill: parallel lines (dashed or not) or dots."""
+    """A tile in mm, repeated over the fill: parallel lines (dashed or not), dots or
+    crosses ("+", `size` mm across; with `stagger`, every other row moved half a step)."""
     s = float(p["spacing"])
+    h = s
     colour = quoteattr(str(p.get("color", "#000000")))
-    if p["kind"] == "lines":
+    if p["kind"] == "crosses":
+        w = s
+        a = float(p.get("size", s / 3)) / 2
+        centres = [(s / 2, s / 2)]
+        if p.get("stagger"):
+            h = 2 * s
+            centres += [(0, 1.5 * s), (s, 1.5 * s)]
+        d = "".join(
+            f"M{_num(x - a)} {_num(y)}h{_num(2 * a)}M{_num(x)} {_num(y - a)}v{_num(2 * a)}"
+            for x, y in centres
+        )
+        mark = f'<path d="{d}" fill="none" stroke={colour} stroke-width="{p.get("width", 0.1)}"/>'
+    elif p["kind"] == "lines":
         dash = float(p.get("dash", 0))
         w = 2 * dash if dash else s
         mark = (
@@ -131,7 +145,7 @@ def _pattern(pid: str, p: dict[str, str | float]) -> str:
         mark = f'<circle cx="{_num(s / 2)}" cy="{_num(s / 2)}" r="{r}" fill={colour}/>'
     background = p.get("background")
     rect = (
-        f'<rect width="{_num(w)}" height="{_num(s)}" fill={quoteattr(str(background))}/>'
+        f'<rect width="{_num(w)}" height="{_num(h)}" fill={quoteattr(str(background))}/>'
         if background
         else ""
     )
@@ -139,7 +153,7 @@ def _pattern(pid: str, p: dict[str, str | float]) -> str:
     rotate = f' patternTransform="rotate({angle:g})"' if angle else ""
     return (
         f'<pattern id="{pid}" patternUnits="userSpaceOnUse" width="{_num(w)}" '
-        f'height="{_num(s)}"{rotate}>{rect}{mark}</pattern>'
+        f'height="{_num(h)}"{rotate}>{rect}{mark}</pattern>'
     )
 
 
@@ -617,6 +631,24 @@ def _outline(f: Frame, ink: str, width: float | str) -> str:
     )
 
 
+def _paper(f: Frame, page: dict) -> list[str]:
+    """The sheet in the page's `background`; with a `margin` colour, the sheet in that
+    one and only the map (rectangle, square or circle) in the background."""
+    sheet = f'<rect width="{_num(f.page_w)}" height="{_num(f.page_h)}" fill="{{}}"/>'
+    if "margin" not in page:
+        return [sheet.format(page["background"])]
+    fill = page["background"]
+    if f.shape == "circle":
+        cx, cy, r = _num(f.page_w / 2), _num(f.page_h / 2), _num(f.map_w / 2)
+        inner = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{fill}"/>'
+    else:
+        inner = (
+            f'<rect x="{_num(f.map_x)}" y="{_num(f.map_y)}" width="{_num(f.map_w)}" '
+            f'height="{_num(f.map_h)}" fill="{fill}"/>'
+        )
+    return [sheet.format(page["margin"]), inner]
+
+
 def render(jobs: list[Job], legend: str = "full", coords: str = "dd") -> str:
     first = jobs[0]
     f = first.frame
@@ -631,7 +663,7 @@ def render(jobs: list[Job], legend: str = "full", coords: str = "dd") -> str:
         f'viewBox="0 0 {_num(f.page_w)} {_num(f.page_h)}">',
         f"<title>{escape(' — '.join(legend_lines(jobs, legend, coords) + _credits(jobs)))}</title>",
         '<g id="page" inkscape:groupmode="layer" inkscape:label="page">',
-        f'<rect width="{_num(f.page_w)}" height="{_num(f.page_h)}" fill="{page["background"]}"/>',
+        *_paper(f, page),
         "</g>",
     ]
     parts += [_job_group(j) for j in jobs]
