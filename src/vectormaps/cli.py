@@ -110,6 +110,7 @@ def build_parser() -> argparse.ArgumentParser:
     o.add_argument("--over-opacity", type=float, default=1.0, metavar="0-1")
 
     sub.add_parser("list", help="list layers, papers and themes")
+    sub.add_parser("wizard", help="the same as `map`, asking for every option in the terminal")
 
     d = sub.add_parser("download", help="download a .osm.pbf extract (e.g. from Geofabrik)")
     d.add_argument("url")
@@ -249,13 +250,25 @@ def _download(a: argparse.Namespace) -> int:
     return 0
 
 
+def _wizard(a: argparse.Namespace) -> int:
+    from vectormaps import wizard  # only here: the other commands do not need questionary
+
+    return wizard.run()
+
+
 def main(argv: list[str] | None = None) -> int:
     handler = ProgressHandler(sys.stderr)
     handler.setFormatter(logging.Formatter("%(message)s"))
     logging.basicConfig(level=logging.INFO, handlers=[handler])
     args = build_parser().parse_args(argv)
     try:
-        return {"list": lambda _: _list(), "map": _map, "download": _download}[args.command](args)
+        commands = {
+            "list": lambda _: _list(),
+            "map": _map,
+            "download": _download,
+            "wizard": _wizard,
+        }
+        return commands[args.command](args)
     except (ValueError, RuntimeError, OSError) as err:
         print(f"error: {err}", file=sys.stderr)
         return 1

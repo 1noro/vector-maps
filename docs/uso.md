@@ -4,6 +4,29 @@ Todo se lanza con `make`; por debajo, `python -m vectormaps` dentro de Docker.
 La primera vez, `make` construye la imagen sola; `make docker` la reconstruye.
 `make` a secas (o `make help`) enseña los objetivos y las variables de `make map`.
 
+## `make wizard`
+
+Lo mismo que `make map`, pero guiado: pregunta cada opción (área, papel, capas,
+estilo, superposición, datos y salida), con listas para elegir y casillas para
+las capas, y antes de generar enseña el `make map …` equivalente.
+
+```bash
+make wizard
+```
+
+Recuerda las respuestas en `data/wizard.json`. La segunda vez va directo a un
+menú con el último mapa: **generar** otra vez, **cambiar una sección** (por
+ejemplo, solo el tema) o repasar todas las preguntas. Así, probar variantes es
+cambiar una cosa y volver a generar. La memoria solo se guarda cuando el mapa
+sale bien; para empezar de cero, borra `data/wizard.json`.
+
+- Ctrl-C en mitad de una sección la deja como estaba; en el menú, sale.
+- El nombre del fichero de salida se pregunta (se propone el último): si no
+  lo cambias, se sobrescribe.
+- Si el mapa falla (unas esquinas al revés, Overpass caído), sale el error y
+  vuelves al menú.
+- Necesita una terminal; desde un script, `make map`.
+
 ## `make map`
 
 ```bash

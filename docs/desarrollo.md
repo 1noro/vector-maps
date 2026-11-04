@@ -16,7 +16,7 @@ color y en blanco y negro, con nombres de calles y lugares en el idioma elegido,
 con Overpass o un PBF local, con la superposición de dos zonas, relieve opcional
 (curvas y sombreado, ADR 0008), PDF, mapa en rectángulo, cuadrado o círculo
 (ADR 0003) y fallback automático a un PBF local si Overpass falla (ADR 0002).
-130 tests, sin red.
+160 tests, sin red. Desde el 04/11, también `make wizard` (ADR 0009).
 
 Medido el 03/11, con el extracto de Galicia (112 MB) y Santiago de Compostela:
 
@@ -44,6 +44,10 @@ Medido el 03/11, con el extracto de Galicia (112 MB) y Santiago de Compostela:
    Fijarla recorta o amplía el área en torno al centro.
 6. **Más de dos zonas superpuestas**: hoy `a` y `b`; el renderizador ya acepta
    una lista de `Job`, falta la sintaxis.
+7. **Buscar el área por nombre en el wizard** («Santiago de Compostela»), con
+   Nominatim: elegir entre los resultados y sacar el área por centro y radio.
+   Es un servicio nuevo de red, y respeta lo mismo que Overpass: una petición
+   cada vez, caché, `User-Agent` propio y nada de claves (ADR 0002, 0009).
 
 ## Carencias menores
 

@@ -35,7 +35,8 @@ elegancia.** Todo corre en Docker; en el host solo hacen falta `make` y
 | `relief.py` | el relieve: teselas del DEM de Copernicus, curvas y sombreado con GDAL |
 | `progress.py` | el spinner de los pasos lentos, solo con terminal |
 | `render.py` | features → SVG; un `Job` por zona, apiladas |
-| `cli.py` | `map`, `list`, `download` |
+| `cli.py` | `map`, `list`, `download`, `wizard` |
+| `wizard.py` | las preguntas en la terminal → el `argv` de `map`, y su memoria |
 
 ## Decisiones cerradas — NO reabrir sin motivo nuevo
 
@@ -70,6 +71,9 @@ tocar código.
 10. **El relieve (`hillshade`, `contours`) sale del DEM Copernicus GLO-30 con
     GDAL, no está en las capas por defecto y, si se dibuja, lleva la atribución
     de Copernicus** (ADR 0008).
+11. **El wizard (`make wizard`) solo pregunta y llama a la CLI con el mismo
+    `argv`; no valida ni dibuja por su cuenta** (ADR 0009). Una opción nueva de
+    `make map` lleva también su pregunta.
 
 ## Reglas que no se saltan
 
@@ -114,6 +118,7 @@ make map CENTER=lat,lon RADIUS=km                               # el área por c
 make map … SHAPE=circle                                         # rect (defecto), square o circle
 make map … TL2=lat,lon BR2=lat,lon [THEME2=bw] [OPACITY2=0.7]   # superponer otra zona
 make map … PBF=data/pbf/galicia-latest.osm.pbf                  # datos locales
+make wizard                   # lo mismo, guiado; recuerda la última vez (data/wizard.json)
 make pbf URL=https://download.geofabrik.de/…-latest.osm.pbf     # bajar un extracto
 make list                     # capas, papeles y temas
                               # las recetas no se muestran (.SILENT); lo lento lleva un spinner

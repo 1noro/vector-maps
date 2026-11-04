@@ -18,6 +18,10 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Añadido
 
+- **`make wizard`**: un mapa respondiendo preguntas en la terminal, con listas y
+  casillas, en vez de recordar las variables. Enseña el `make map` equivalente,
+  recuerda las respuestas en `data/wizard.json` y, después de generar, deja
+  cambiar una sección y volver a generar. `make map` no cambia (ADR 0009).
 - **Fallback a un PBF local**: si Overpass falla y un extracto de `data/pbf/` ya
   cubre el área, `make map` sigue con él y lo avisa (ADR 0002). No descarga
   nada solo.

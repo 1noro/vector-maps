@@ -1,4 +1,4 @@
-.PHONY: help docker .image pbf check test lint fmt map list shell data-dir clean-cache clean-out
+.PHONY: help docker .image pbf check test lint fmt map wizard list shell data-dir clean-cache clean-out
 
 # Las recetas no se muestran: el log solo lleva lo que dicen los programas. Lo
 # que tarda (construir la imagen) va con un spinner (scripts/with-spinner.sh).
@@ -41,6 +41,8 @@ Uso: make <objetivo> [VARIABLE=valor …]
            nombres y relieve no salen por defecto; se añaden con INCLUDE_LAYERS:
              INCLUDE_LAYERS=street-names,places        nombres de calles y lugares
              INCLUDE_LAYERS=hillshade,contours         relieve (baja ~40 MB/grado² la 1.ª vez)
+  wizard   lo mismo que map, pero guiado: pregunta cada opción, enseña el make map
+           equivalente y recuerda las respuestas (data/wizard.json) para la siguiente prueba
   pbf      bajar un extracto:  make pbf URL=https://download.geofabrik.de/…-latest.osm.pbf
   list     capas, papeles y temas
 
@@ -165,6 +167,13 @@ map: .image data-dir
 		$(if $(THEME2),--over-theme $(THEME2)) \
 		$(if $(TINT2),--over-tint="$(TINT2)") \
 		$(if $(OPACITY2),--over-opacity $(OPACITY2))
+
+# make wizard: el mismo mapa que `make map`, respondiendo preguntas (ADR 0009). Necesita
+# una terminal de verdad: el contenedor lleva -it para poder leer el teclado.
+wizard: TTY := -it
+wizard: .image data-dir
+	test -t 0 -a -t 1 || { echo "make wizard necesita una terminal; sin ella, make map" >&2; exit 1; }
+	$(DOCKER_RUN) python -m vectormaps wizard
 
 # make pbf URL=https://download.geofabrik.de/europe/spain/galicia-latest.osm.pbf
 # Deja el extracto en ./data/pbf, y luego: make map … PBF=data/pbf/galicia-latest.osm.pbf
