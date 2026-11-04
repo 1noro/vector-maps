@@ -7,6 +7,8 @@ decided by the geometry that `osmium export` builds, not by us.
 
 from dataclasses import dataclass
 
+from vectormaps.boundaries import LEVELS
+
 
 @dataclass(frozen=True)
 class Tag:
@@ -50,6 +52,8 @@ class Layer:
     classes: tuple[str, ...]  # bottom to top
     text: bool = False  # a label layer: its features are drawn as text, not as shapes
     dem: bool = False  # relief: from the elevation model (relief.py), not from OSM
+    # Administrative boundaries (boundaries.py): admin_level -> class, instead of rules.
+    admin: tuple[tuple[int, str], ...] = ()
 
     def classify(self, geometry: str, tags: dict[str, str]) -> str | None:
         for rule in self.rules:
@@ -61,6 +65,8 @@ class Layer:
         """Overpass QL for this layer inside (south, west, north, east)."""
         s, w, n, e = (f"{v:.5f}" for v in bounds)
         box = f"({s},{w},{n},{e})"
+        if self.admin:
+            return _boundary_query(box, timeout)
         lines: list[str] = []
         for rule in self.rules:
             sel = rule.overpass()
@@ -75,6 +81,20 @@ class Layer:
 
 
 NAMED = (Tag("name"),)
+
+
+def _boundary_query(box: str, timeout: int) -> str:
+    """The boundary relations that touch the box, but only their ways inside it (with
+    their nodes): the relation itself goes without geometry. The same query for every
+    boundary layer, all levels, so the second and third come from the cache."""
+    levels = "|".join(str(n) for n in LEVELS)
+    return (
+        f"[out:xml][timeout:{timeout}];\n"
+        f'rel["boundary"="administrative"]["admin_level"~"^({levels})$"]{box}->.r;\n'
+        f"way(r.r){box}->.w;\n"
+        "(.r;.w;node(w.w););\n"
+        "out meta;\n"
+    )
 
 
 def _rules(
@@ -219,6 +239,23 @@ LAYERS: dict[str, Layer] = {
             ("suburb", "village", "town", "city"),
             text=True,
         ),
+        # Administrative boundaries (ADR 0010), from the most local up; each layer
+        # draws a shared edge only if no higher layer on the map does.
+        Layer("parishes", (), ("parish",), admin=((9, "parish"), (10, "parish"))),
+        Layer("municipalities", (), ("municipality",), admin=((8, "municipality"),)),
+        Layer(
+            "boundaries",
+            (),
+            ("district", "province", "region", "country"),
+            admin=(
+                (2, "country"),
+                (3, "region"),
+                (4, "region"),
+                (5, "province"),
+                (6, "province"),
+                (7, "district"),
+            ),
+        ),
         # Relief (ADR 0008): no OSM rules, the elevation model gives the shapes.
         Layer("hillshade", (), ("shade",), dem=True),
         Layer("contours", (), ("minor", "major"), dem=True),
@@ -226,8 +263,8 @@ LAYERS: dict[str, Layer] = {
 }
 
 # Drawing order, bottom to top: water over the ground cover (in OSM woods often overlap
-# rivers, Nov 4), the shade over both, the contours under the buildings, the labels over
-# everything.
+# rivers, Nov 4), the shade over both, the contours under the buildings, the boundaries
+# over the roads (a parish edge often runs along one), the labels over everything.
 ORDER = (
     "green",
     "water",
@@ -236,11 +273,16 @@ ORDER = (
     "buildings",
     "railways",
     "roads",
+    "parishes",
+    "municipalities",
+    "boundaries",
     "street-names",
     "places",
 )
-# What a map has when no layers are given: the shapes, without relief or names.
-DEFAULT = tuple(n for n in ORDER if not LAYERS[n].dem and not LAYERS[n].text)
+# What a map has when no layers are given: the shapes, without relief, boundaries or names.
+DEFAULT = tuple(
+    n for n in ORDER if not LAYERS[n].dem and not LAYERS[n].text and not LAYERS[n].admin
+)
 
 
 def _check(names: list[str]) -> None:

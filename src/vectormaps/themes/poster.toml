@@ -184,3 +184,42 @@ stroke-width = 0.06
 fill = "none"
 stroke = "#888888"
 stroke-width = 0.12
+
+# Administrative boundaries (only with INCLUDE_LAYERS=boundaries,municipalities,parishes),
+# in grey, quieter than the streets: dash and dots, longer and heavier the higher the level.
+
+[layers.parishes.parish]
+fill = "none"
+stroke = "#9a9a9a"
+stroke-width = 0.22
+stroke-dasharray = "0.4 0.4"
+
+[layers.municipalities.municipality]
+fill = "none"
+stroke = "#6f6f6f"
+stroke-width = 0.3
+stroke-dasharray = "1.2 0.5"
+
+[layers.boundaries.district]
+fill = "none"
+stroke = "#6f6f6f"
+stroke-width = 0.3
+stroke-dasharray = "1.2 0.5 0.3 0.5 0.3 0.5"
+
+[layers.boundaries.province]
+fill = "none"
+stroke = "#6f6f6f"
+stroke-width = 0.4
+stroke-dasharray = "1.8 0.5 0.35 0.5"
+
+[layers.boundaries.region]
+fill = "none"
+stroke = "#6f6f6f"
+stroke-width = 0.5
+stroke-dasharray = "2 0.6 0.4 0.6 0.4 0.6"
+
+[layers.boundaries.country]
+fill = "none"
+stroke = "#6f6f6f"
+stroke-width = 0.6
+stroke-dasharray = "2.4 0.6 0.4 0.6"

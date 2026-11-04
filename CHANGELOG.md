@@ -34,6 +34,16 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   línea más ancha (`a-roads-minor-casing`); los contornos de la capa van debajo
   de todas sus líneas, para que los cruces no se corten. El tema `color` lo
   estrena con uno fino (ADR 0004).
+- **Límites administrativos** (`INCLUDE_LAYERS=boundaries,municipalities,parishes`):
+  tres capas de líneas, ninguna por defecto. `parishes` (parroquias),
+  `municipalities` (concellos) y `boundaries` (país, comunidad, provincia y
+  comarca). Una sola consulta a Overpass para las tres, que trae solo los tramos
+  del mapa; un tramo compartido lo dibuja la capa más alta presente, y cada capa
+  sale cerrada sola. Todos los temas las pintan en raya y punto. La caché de
+  GeoJSON se rehace una vez (`osmexport` v3) (ADR 0010). En `vintage` llevan
+  debajo una banda violeta translúcida y las parroquias van en puntos redondos.
+- **`casing-opacity`**: el contorno de una línea puede ser translúcido sin que lo
+  sea la línea (ADR 0004).
 - **Tema `vintage-bw`**: el `vintage` para imprimir en blanco y negro, solo
   negro sobre blanco y sin grises ni opacidades; lo distinguen las tramas y el
   grosor de las líneas (agua rayada, prados punteados, calles principales

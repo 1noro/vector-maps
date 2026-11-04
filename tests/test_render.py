@@ -1,3 +1,4 @@
+import dataclasses
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -249,6 +250,16 @@ def test_a_casing_is_a_wider_line_under_every_line_of_the_layer():
     assert casing.get("stroke") == style["casing-color"] and casing.get("fill") == "none"
     # The casing keys are not SVG attributes: they stay out of the drawing.
     assert line.get("casing-width") is None and line.get("casing-color") is None
+
+
+def test_a_see_through_casing_is_a_band_under_a_solid_line():
+    job = make_job("a", TL, BR, "street")
+    minor = {**job.theme.style("roads", "minor"), "casing-opacity": 0.3}
+    layers = {**job.theme.layers, "roads": {**job.theme.layers["roads"], "minor": minor}}
+    job = dataclasses.replace(job, theme=dataclasses.replace(job.theme, layers=layers))
+    casing, line = ET.fromstring(render([job])).find(".//svg:g[@id='a-roads']", NS)
+    assert casing.get("stroke-opacity") == "0.3"
+    assert line.get("stroke-opacity") is None and line.get("casing-opacity") is None
 
 
 def test_no_casing_where_the_theme_has_none():

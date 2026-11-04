@@ -167,3 +167,12 @@ temas usen el mismo nombre. Solo se escriben las tramas que usan las capas de la
 zona. Inkscape las edita y las pasa al PDF. Una trama desconocida, sin `kind`
 válido o sin `spacing` es un error al cargar el tema. `monochrome` tiñe sus
 colores como los demás.
+
+## Añadido del 04/11/2026: contorno translúcido
+
+`casing-opacity` hace el contorno translúcido sin tocar la línea de encima. Sirve
+para la banda de color de los límites administrativos de `vintage`, como el
+iluminado a mano de las hojas antiguas (ADR 0010). La banda va sobre las calles,
+así que opaca las taparía. Pasa al SVG como `stroke-opacity` del contorno. Como
+cada clase es un solo `<path>`, la banda se pinta igual donde se juntan dos
+tramos y no se oscurece.

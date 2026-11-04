@@ -229,3 +229,63 @@ stroke-opacity = 0.9
 fill = "none"
 stroke = "#c8643c"
 stroke-width = 0.14
+
+# Administrative boundaries (only with INCLUDE_LAYERS=boundaries,municipalities,parishes),
+# as on the hand-coloured survey sheets: an ink line over a see-through band of violet
+# (`casing-opacity`), wider and longer-dashed the higher the level. The parishes are a
+# row of round dots (dashes of length 0 with round ends), not dashes like the paths.
+
+[layers.parishes.parish]
+fill = "none"
+stroke = "#2b2622"
+stroke-width = 0.3
+stroke-dasharray = "0 0.7"
+stroke-linecap = "round"
+casing-width = 0.3
+casing-color = "#8e5ea2"
+casing-opacity = 0.25
+
+[layers.municipalities.municipality]
+fill = "none"
+stroke = "#2b2622"
+stroke-width = 0.3
+stroke-dasharray = "1.2 0.5"
+casing-width = 0.5
+casing-color = "#8e5ea2"
+casing-opacity = 0.3
+
+[layers.boundaries.district]
+fill = "none"
+stroke = "#2b2622"
+stroke-width = 0.3
+stroke-dasharray = "1.2 0.5 0.3 0.5 0.3 0.5"
+casing-width = 0.6
+casing-color = "#8e5ea2"
+casing-opacity = 0.3
+
+[layers.boundaries.province]
+fill = "none"
+stroke = "#2b2622"
+stroke-width = 0.4
+stroke-dasharray = "1.8 0.5 0.35 0.5"
+casing-width = 0.75
+casing-color = "#8e5ea2"
+casing-opacity = 0.35
+
+[layers.boundaries.region]
+fill = "none"
+stroke = "#2b2622"
+stroke-width = 0.5
+stroke-dasharray = "2 0.6 0.4 0.6 0.4 0.6"
+casing-width = 0.9
+casing-color = "#8e5ea2"
+casing-opacity = 0.35
+
+[layers.boundaries.country]
+fill = "none"
+stroke = "#2b2622"
+stroke-width = 0.6
+stroke-dasharray = "2.4 0.6 0.4 0.6"
+casing-width = 1.0
+casing-color = "#8e5ea2"
+casing-opacity = 0.4

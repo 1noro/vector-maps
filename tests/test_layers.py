@@ -1,5 +1,6 @@
 import pytest
 
+from vectormaps import layers
 from vectormaps.layers import LAYERS, select
 from vectormaps.theme import available, load
 
@@ -113,3 +114,18 @@ def test_overpass_queries_for_labels():
     assert "way[" not in places and "relation" not in places
     streets = LAYERS["street-names"].overpass_query((1, 2, 3, 4))
     assert '["highway"~"^(motorway|trunk|primary)$"]["name"]' in streets
+
+
+def test_boundaries_are_optional_and_share_one_overpass_query():
+    names = ("boundaries", "municipalities", "parishes")
+    assert not set(names) & set(layers.DEFAULT)
+    bounds = (42.87, -8.56, 42.89, -8.53)
+    queries = {layers.LAYERS[n].overpass_query(bounds) for n in names}
+    assert len(queries) == 1  # one request; the other two layers hit the cache
+    (query,) = queries
+    assert "way(r.r)(42.87000,-8.56000,42.89000,-8.53000)" in query  # only the ways inside
+
+
+def test_every_admin_level_has_one_class():
+    levels = [lvl for layer in layers.LAYERS.values() for lvl, _cls in layer.admin]
+    assert sorted(levels) == list(range(2, 11))

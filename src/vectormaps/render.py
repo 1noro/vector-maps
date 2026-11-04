@@ -179,15 +179,20 @@ def _shape_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
 def _casing(style: dict[str, str | float]) -> dict[str, str | float] | None:
     """The outline under a line: the same line, `casing-width` mm wider on each side.
 
-    Takes the casing keys out of `style`, which are not SVG attributes.
+    Takes the casing keys out of `style`, which are not SVG attributes. With
+    `casing-opacity` the outline is see-through (a band of colour along a boundary,
+    Nov 4) while the line over it stays solid.
     """
     width = style.pop("casing-width", None)
     colour = style.pop("casing-color", None)
+    see_through = style.pop("casing-opacity", None)
     if not width or not colour:
         return None
     casing = {
         k: v for k, v in style.items() if k in ("stroke-linecap", "stroke-linejoin", "opacity")
     }
+    if see_through is not None:
+        casing["stroke-opacity"] = see_through
     return {
         "fill": "none",
         "stroke": colour,

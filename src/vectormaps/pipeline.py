@@ -4,10 +4,13 @@ import logging
 from pathlib import Path
 from typing import NamedTuple
 
+import shapely
+from shapely.geometry import MultiLineString
 from shapely.geometry.base import BaseGeometry
 
 from vectormaps import relief
 from vectormaps.area import Frame
+from vectormaps.boundaries import LEVELS_TAG
 from vectormaps.labels import pick_name
 from vectormaps.layers import Layer
 from vectormaps.overpass import OverpassError
@@ -45,6 +48,23 @@ def _osm(layer: Layer, features: list, langs: list[str]) -> list[Item]:
     return items
 
 
+def _boundaries(layer: Layer, features: list, drawn: set[int]) -> list[Item]:
+    """The boundary lines this layer draws: each edge as the highest level (the lowest
+    admin_level) it bounds among those on the map, so a shared edge is drawn once, by
+    the most important layer present, and every layer stays closed without the others."""
+    classes = dict(layer.admin)
+    lines: dict[str, list] = {}
+    for kind, tags, geom in features:
+        if kind != "line" or LEVELS_TAG not in tags:
+            continue
+        levels = {int(n) for n in tags[LEVELS_TAG].split(";")} & drawn
+        cls = classes.get(min(levels)) if levels else None
+        if cls is not None:
+            lines.setdefault(cls, []).append(geom)
+    # The ways of a class joined end to end: the dashes run on from one to the next.
+    return [Item(cls, shapely.line_merge(MultiLineString(ls))) for cls, ls in lines.items()]
+
+
 def _relief(frame: Frame, layer: Layer, cache: Path) -> list[Item]:
     dem = relief.frame_dem(frame, cache / "dem")
     if dem is None:
@@ -67,6 +87,7 @@ def load_features(
     if (north - south) * (east - west) > LARGE_AREA_DEG2:
         log.warning("large area: the public Overpass may time out; a local PBF copes better")
 
+    drawn = {level for layer in layers for level, _cls in layer.admin}
     out: Features = {}
     for layer in layers:
         with Spinner(f"layer {layer.name}"):
@@ -74,7 +95,11 @@ def load_features(
                 items = _relief(frame, layer, cache)
             else:
                 try:
-                    items = _osm(layer, source.features(layer, bounds), langs)
+                    feats = source.features(layer, bounds)
+                    if layer.admin:
+                        items = _boundaries(layer, feats, drawn)
+                    else:
+                        items = _osm(layer, feats, langs)
                 except OverpassError as err:
                     raise OverpassError(f"layer {layer.name}: {err}") from err
         origin = "Copernicus DEM" if layer.dem else source.name

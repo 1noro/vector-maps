@@ -30,7 +30,8 @@ del papel (`santiago.pdf`), los dos con tu usuario (no de root). Con `PDF=0`,
 solo el SVG. Por defecto el mapa sale apaisado, en blanco y negro (`THEME=bw`;
 `THEME=color` para el de color, `THEME=street` para uno como el de los callejeros web; también `dark`, `blueprint`, `vintage`, `vintage-bw` (el `vintage` para imprimir en blanco y negro) y `poster`), con margen de 6 mm y la leyenda mínima. `THEME=monochrome TINT=#7a2e1f` lo deja en tonos de un solo color,
 `INCLUDE_LAYERS=street-names,places` le añade los nombres e
-`INCLUDE_LAYERS=hillshade,contours` el relieve (ninguno de los dos sale por defecto).
+`INCLUDE_LAYERS=hillshade,contours` el relieve e `INCLUDE_LAYERS=boundaries,municipalities,parishes`
+los límites administrativos (ninguno sale por defecto).
 
 El servidor público de Overpass se cae con frecuencia. Para no depender de él,
 baja un extracto una vez y úsalo siempre (si Overpass falla y ya tienes uno que

@@ -28,6 +28,7 @@ elegancia.** Todo corre en Docker; en el host solo hacen falta `make` y
 | `labels.py` | el idioma de los nombres y dónde se escribe el de cada calle |
 | `sources.py` | de dónde salen los datos: `OverpassSource` o `PbfSource` |
 | `overpass.py`, `osmexport.py`, `download.py` | cliente con caché, `osmium export`, descarga de PBF |
+| `boundaries.py` | los límites administrativos: de las relaciones a líneas con sus niveles |
 | `geofabrik.py` | qué extracto cubre un área, para la pista cuando Overpass falla |
 | `pipeline.py` | `Frame` + capas + fuente → features por capa |
 | `theme.py`, `themes/*.toml` | los estilos (bw, color, street, dark, blueprint, vintage, vintage-bw, poster, y monochrome: el bw tintado) |
@@ -72,7 +73,11 @@ tocar código.
 10. **El relieve (`hillshade`, `contours`) sale del DEM Copernicus GLO-30 con
     GDAL, no está en las capas por defecto y, si se dibuja, lleva la atribución
     de Copernicus** (ADR 0008).
-11. **El wizard (`make wizard`) solo pregunta y llama a la CLI con el mismo
+11. **Los límites administrativos son tres capas de líneas, `parishes`,
+    `municipalities` y `boundaries`, que no salen por defecto; una consulta trae
+    solo los tramos del mapa y un tramo compartido lo dibuja la capa más alta
+    presente** (ADR 0010).
+12. **El wizard (`make wizard`) solo pregunta y llama a la CLI con el mismo
     `argv`; no valida ni dibuja por su cuenta** (ADR 0009). Una opción nueva de
     `make map` lleva también su pregunta.
 

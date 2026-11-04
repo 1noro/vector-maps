@@ -276,6 +276,8 @@ def _ask_layers(message: str, chosen: list[str]) -> list[str]:
             notes[name] = "  (relief: downloads ~40 MB per square degree the first time)"
         elif layer.text:
             notes[name] = "  (names)"
+        elif layer.admin:
+            notes[name] = "  (administrative boundaries)"
     choices = [Choice(n + notes.get(n, ""), n, checked=n in chosen) for n in layer_defs.ORDER]
     return questionary.checkbox(
         message, choices=choices, validate=lambda sel: bool(sel) or "pick at least one layer"

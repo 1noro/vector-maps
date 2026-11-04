@@ -192,3 +192,42 @@ stroke-opacity = 0.8
 fill = "none"
 stroke = "#4f6178"
 stroke-width = 0.16
+
+# Administrative boundaries (only with INCLUDE_LAYERS=boundaries,municipalities,parishes),
+# in pale violet: dash and dots, longer and heavier the higher the level.
+
+[layers.parishes.parish]
+fill = "none"
+stroke = "#8f76a0"
+stroke-width = 0.22
+stroke-dasharray = "0.4 0.4"
+
+[layers.municipalities.municipality]
+fill = "none"
+stroke = "#c49bd8"
+stroke-width = 0.3
+stroke-dasharray = "1.2 0.5"
+
+[layers.boundaries.district]
+fill = "none"
+stroke = "#c49bd8"
+stroke-width = 0.3
+stroke-dasharray = "1.2 0.5 0.3 0.5 0.3 0.5"
+
+[layers.boundaries.province]
+fill = "none"
+stroke = "#c49bd8"
+stroke-width = 0.4
+stroke-dasharray = "1.8 0.5 0.35 0.5"
+
+[layers.boundaries.region]
+fill = "none"
+stroke = "#c49bd8"
+stroke-width = 0.5
+stroke-dasharray = "2 0.6 0.4 0.6 0.4 0.6"
+
+[layers.boundaries.country]
+fill = "none"
+stroke = "#c49bd8"
+stroke-width = 0.6
+stroke-dasharray = "2.4 0.6 0.4 0.6"

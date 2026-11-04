@@ -156,10 +156,11 @@ def offline_hint(areas: list[Bounds], cache: Path) -> str:
 
 def _list() -> int:
     print("layers:")
+    width = max(map(len, layer_defs.ORDER))
     for name in layer_defs.ORDER:
         layer = layer_defs.LAYERS[name]
         extra = "   (not by default)" if name not in layer_defs.DEFAULT else ""
-        print(f"  {name:<12} classes (bottom to top): {', '.join(layer.classes)}{extra}")
+        print(f"  {name:<{width}} classes (bottom to top): {', '.join(layer.classes)}{extra}")
     print("papers:  ", ", ".join(PAPERS))
     print("themes:  ", ", ".join(themes.available()))
     return 0

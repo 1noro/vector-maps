@@ -40,9 +40,10 @@ Uso: make <objetivo> [VARIABLE=valor …]
              TL2=lat,lon BR2=lat,lon (o CENTER2=lat,lon RADIUS2=km)
              [LAYERS2=…] [INCLUDE_LAYERS2=…]
              [EXCLUDE_LAYERS2=…] [THEME2=…] [TINT2=…] [OPACITY2=0.7]
-           nombres y relieve no salen por defecto; se añaden con INCLUDE_LAYERS:
+           nombres, relieve y límites no salen por defecto; se añaden con INCLUDE_LAYERS:
              INCLUDE_LAYERS=street-names,places        nombres de calles y lugares
              INCLUDE_LAYERS=hillshade,contours         relieve (baja ~40 MB/grado² la 1.ª vez)
+             INCLUDE_LAYERS=boundaries,municipalities,parishes   límites administrativos
   wizard   lo mismo que map, pero guiado: pregunta cada opción, enseña el make map
            equivalente y recuerda las respuestas (data/wizard.json) para la siguiente prueba
   pbf      bajar un extracto:  make pbf URL=https://download.geofabrik.de/…-latest.osm.pbf
@@ -136,8 +137,9 @@ list: .image
 # Y, para superponer una segunda área encima (mismo papel, otro zoom):
 #          [TL2=lat,lon BR2=lat,lon | CENTER2=lat,lon RADIUS2=km] [LAYERS2=…] [INCLUDE_LAYERS2=…] [EXCLUDE_LAYERS2=…]
 #          [THEME2=…] [TINT2=…] [OPACITY2=0.6]
-# El relieve (hillshade, contours) y los nombres (street-names, places) no salen por
-# defecto: se añaden con INCLUDE_LAYERS o se piden en LAYERS (ADR 0006 y 0008).
+# El relieve (hillshade, contours), los límites (boundaries, municipalities, parishes)
+# y los nombres (street-names, places) no salen por defecto: se añaden con
+# INCLUDE_LAYERS o se piden en LAYERS (ADR 0006, 0008 y 0010).
 # Se pasa con `--tl=` (con el igual) para que una latitud negativa no se lea como flag.
 map: .image data-dir
 	test \( -n "$(TL)" -a -n "$(BR)" \) -o \( -n "$(CENTER)" -a -n "$(RADIUS)" \) || { echo "falta el área: TL=lat,lon BR=lat,lon, o CENTER=lat,lon RADIUS=km" >&2; exit 1; }

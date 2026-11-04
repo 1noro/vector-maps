@@ -1,7 +1,8 @@
 """OSM data (XML or PBF) to shapely features, through `osmium export`.
 
 osmium assembles the multipolygons for us, which is the hard part of OSM
-geometry. Both sources of data (Overpass, local PBF) go through here.
+geometry. Both sources of data (Overpass, local PBF) go through here. The
+administrative boundaries are added after, as lines (boundaries.py).
 """
 
 import json
@@ -12,10 +13,11 @@ from pathlib import Path
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 
+from vectormaps import boundaries
 from vectormaps.tmpfile import tmp_beside
 
 # Bump when `export` changes what it writes: the cached files are named after it.
-VERSION = "v2"  # v2: also points (place names)
+VERSION = "v3"  # v2: also points (place names); v3: boundary lines
 
 KIND = {
     "Point": "point",
@@ -50,6 +52,9 @@ def export(osm_path: Path, out_path: Path) -> Path:
         done = subprocess.run(cmd, capture_output=True, text=True)
         if done.returncode != 0:
             raise RuntimeError(f"osmium export failed: {done.stderr.strip()}")
+        with tmp.open("a", encoding="utf-8") as fh:
+            for feat in boundaries.features(osm_path):
+                fh.write("\x1e" + json.dumps(feat) + "\n")
         tmp.replace(out_path)
     finally:
         tmp.unlink(missing_ok=True)

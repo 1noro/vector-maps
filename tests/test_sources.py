@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from vectormaps import osmexport
+from vectormaps import boundaries, osmexport
 from vectormaps.area import fit
 from vectormaps.layers import select
 from vectormaps.overpass import OverpassError
@@ -187,3 +187,90 @@ def test_an_overpass_failure_names_the_layer(tmp_path, monkeypatch):
     monkeypatch.setattr("vectormaps.overpass.fetch", fail)
     with pytest.raises(OverpassError, match="layer water: Overpass answered HTTP 504"):
         load_features(fit(TL, BR, "A4"), select(["water"]), OverpassSource(tmp_path))
+
+
+# Boundaries as the Overpass query gives them: the relations whole but only some of
+# their ways. Way 300 is both a province (6) and a municipality (8) edge, 301 only a
+# municipality's, 302 a parish's, 303 a municipality's along the coast; the country
+# (2) has no way in the data at all.
+BOUNDARY_OSM = """<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' generator='test'>
+  <node id='40' lat='42.8800' lon='-8.5460' version='1'/>
+  <node id='41' lat='42.8810' lon='-8.5450' version='1'/>
+  <node id='42' lat='42.8815' lon='-8.5440' version='1'/>
+  <node id='43' lat='42.8820' lon='-8.5445' version='1'/>
+  <node id='44' lat='42.8795' lon='-8.5440' version='1'/>
+  <way id='300' version='1'><nd ref='40'/><nd ref='41'/></way>
+  <way id='301' version='1'><nd ref='41'/><nd ref='42'/></way>
+  <way id='302' version='1'><nd ref='42'/><nd ref='43'/></way>
+  <way id='303' version='1'>
+    <nd ref='42'/><nd ref='44'/><tag k='natural' v='coastline'/>
+  </way>
+  <relation id='400' version='1'>
+    <member type='way' ref='300' role='outer'/>
+    <member type='way' ref='900' role='outer'/>
+    <tag k='type' v='boundary'/><tag k='boundary' v='administrative'/>
+    <tag k='admin_level' v='6'/><tag k='name' v='A Coruña'/>
+  </relation>
+  <relation id='401' version='1'>
+    <member type='way' ref='300' role='outer'/>
+    <member type='way' ref='301' role='outer'/>
+    <member type='way' ref='303' role='outer'/>
+    <member type='node' ref='41' role='admin_centre'/>
+    <tag k='type' v='boundary'/><tag k='boundary' v='administrative'/>
+    <tag k='admin_level' v='8'/>
+  </relation>
+  <relation id='402' version='1'>
+    <member type='way' ref='302' role='outer'/>
+    <tag k='type' v='boundary'/><tag k='boundary' v='administrative'/>
+    <tag k='admin_level' v='9'/>
+  </relation>
+  <relation id='403' version='1'>
+    <member type='way' ref='901' role='outer'/>
+    <tag k='type' v='boundary'/><tag k='boundary' v='administrative'/>
+    <tag k='admin_level' v='2'/>
+  </relation>
+</osm>
+"""
+
+
+@pytest.fixture
+def boundary_file(tmp_path: Path) -> Path:
+    path = tmp_path / "limits.osm"
+    path.write_text(BOUNDARY_OSM)
+    return path
+
+
+def test_boundary_ways_come_out_once_with_every_level_they_bound(boundary_file, tmp_path):
+    out = osmexport.export(boundary_file, tmp_path / "limits.geojsonseq")
+    levels = sorted(
+        (t[boundaries.LEVELS_TAG], len(g.coords))
+        for k, t, g in osmexport.read_features(out)
+        if boundaries.LEVELS_TAG in t
+    )
+    # Not the coast (303), nor the country: none of its ways is in the data.
+    assert levels == [("6;8", 2), ("8", 2), ("9", 2)]
+
+
+def _classes(feats):
+    """Class and length in degrees×1000 of each layer's lines."""
+    return {
+        name: sorted((i.cls, round(i.geom.length * 1000, 2)) for i in items)
+        for name, items in feats.items()
+    }
+
+
+def test_a_shared_edge_is_drawn_by_the_highest_layer_on_the_map(boundary_file, tmp_path):
+    frame = fit(TL, BR, "A4")
+    source = PbfSource(boundary_file, tmp_path / "cache")
+    every = load_features(frame, select(["boundaries", "municipalities", "parishes"]), source)
+    assert _classes(every) == {
+        "parishes": [("parish", 0.71)],
+        "municipalities": [("municipality", 1.12)],  # 301; 300 goes with the province
+        "boundaries": [("province", 1.41)],
+    }
+    # Without the province layer, the municipality keeps that edge: it stays closed,
+    # one line from 300 on into 301.
+    (alone,) = load_features(frame, select(["municipalities"]), source)["municipalities"]
+    assert alone.geom.geom_type == "LineString"
+    assert round(alone.geom.length * 1000, 2) == 2.53

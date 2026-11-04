@@ -46,7 +46,7 @@ make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
 | `SHAPE` | `rect` | Cómo se imprime el mapa en el papel (aparte del papel): `rect` llena la hoja; `square` es un cuadrado centrado y `circle` un círculo centrado, los dos tan anchos como el lado corto de la hoja. El círculo lleva un borde fino y lo de fuera queda en blanco. Con `circle` y `TL`/`BR` el círculo contiene todo el rectángulo (su diámetro es la diagonal); con `CENTER`/`RADIUS` es exactamente el de radio R |
 | `ORIENTATION` | `landscape` | `landscape`, `portrait`, o `auto`: la que más se parezca al área |
 | `MARGIN` | `6` | Mm de margen. Mínimo 6: ahí va la atribución |
-| `LAYERS` | todas menos el relieve y los nombres | `water,green,buildings,railways,roads,street-names,places`, y `hillshade,contours` (relieve), separadas por comas |
+| `LAYERS` | todas menos el relieve, los límites y los nombres | `water,green,buildings,railways,roads,street-names,places`, `hillshade,contours` (relieve) y `parishes,municipalities,boundaries` (límites), separadas por comas |
 | `INCLUDE_LAYERS` | — | Capas que añadir a `LAYERS` (o a las de por defecto): `INCLUDE_LAYERS=street-names,places` |
 | `EXCLUDE_LAYERS` | — | Capas que quitar de `LAYERS` (o de las de por defecto): `EXCLUDE_LAYERS=railways` |
 | `LABEL_LANG` | `es` | Idioma de los nombres de calles y lugares, por código de OSM: `es`, `gl`, `en`, `ja`… Varios, `gl,es`: gana el primero que tenga traducción; `local` = como está mapeado |
@@ -75,6 +75,9 @@ abajo arriba, y dentro de cada una, de la clase menos a la más importante:
 | `buildings` | `building` |
 | `railways` | `tram`, `rail` |
 | `roads` | `path`, `service`, `minor`, `secondary`, `major` |
+| `parishes` | `parish` (límites; no sale por defecto) |
+| `municipalities` | `municipality` (límites; no sale por defecto) |
+| `boundaries` | `district`, `province`, `region`, `country` (límites; no sale por defecto) |
 | `street-names` | `minor`, `secondary`, `major` (texto; no sale por defecto) |
 | `places` | `suburb`, `village`, `town`, `city` (texto; no sale por defecto) |
 
@@ -89,6 +92,25 @@ Las tres se combinan: las de `LAYERS` (o las de por defecto), más las de
 Añadir una que ya está o quitar una que no está no hace nada; un nombre que no
 existe, la misma capa en `INCLUDE_LAYERS` y en `EXCLUDE_LAYERS`, o no dejar
 ninguna, es un error.
+
+### Límites administrativos
+
+Tres capas, **ninguna por defecto**, de lo más local a lo más general:
+
+- `parishes`: las parroquias (`admin_level` 9–10).
+- `municipalities`: los concellos o municipios (8).
+- `boundaries`: países (2), comunidades (3–4), provincias (5–6) y comarcas (7).
+
+```bash
+make map TL=… BR=… INCLUDE_LAYERS=boundaries,municipalities,parishes
+```
+
+Las tres usan **una sola consulta a Overpass**, que trae solo los tramos que se
+ven, no la frontera entera. Un tramo que es a la vez de varias (el borde de un
+concello que es también de provincia) se dibuja una vez, en la capa más alta de
+las que pidas; si quitas esa, pasa a la siguiente, así que cada capa sale
+cerrada sola. Los límites por el mar y por la costa no se dibujan. Los temas las
+pintan en raya y punto, más gruesas cuanto más alto el nivel (ADR 0010).
 
 ### Relieve
 
@@ -135,7 +157,8 @@ Un tema es un `.toml` en `src/vectormaps/themes/` (o cualquiera por ruta, con
 `THEME=ruta.toml`). Cada `[layers.<capa>.<clase>]` lleva atributos SVG tal cual
 (`fill`, `stroke`, `stroke-width` en mm…). Una línea puede llevar además
 `casing-width` (mm a cada lado) y `casing-color`: un contorno, la misma línea más
-ancha por debajo. Un relleno puede ser una trama: `fill = "pattern:<nombre>"`, con
+ancha por debajo; con `casing-opacity`, translúcido (la banda de los límites de
+`vintage`). Un relleno puede ser una trama: `fill = "pattern:<nombre>"`, con
 la trama definida en `[patterns.<nombre>]` (`kind = "lines"`, rayas a `spacing` mm
 con `angle`, `width`, `color`, `background` y, si se quiere, trazos de `dash` mm;
 o `kind = "dots"`, puntos de `radius`); `vintage.toml` trae tres de ejemplo.
