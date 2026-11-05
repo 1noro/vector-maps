@@ -30,11 +30,11 @@ Medido el 03/11, con el extracto de Galicia (112 MB) y Santiago de Compostela:
 
 ## TODO
 
-1. **Etiquetas sin pisarse** y más nombres. Desde el 03/11 hay nombres de calles
-   (`textPath`) y de lugares (ADR 0006), pero sin antichoque: dos nombres pueden
-   solaparse. Falta además el nombre de parques, ríos y edificios y los puntos de
-   interés. Lo difícil: decidir qué etiqueta gana (por clase y tamaño) y mover
-   o quitar la otra.
+1. **Más nombres.** Desde el 05/11 los nombres no se pisan (por prioridad, y el
+   que pierde prueba otro sitio o no sale) y hay nombres de ríos, lagos y parques
+   (`water-names`, `green-names`; ADR 0006). Faltan los de edificios y los puntos
+   de interés, y que en la superposición los nombres de una zona eviten los de
+   la otra.
 3. **Puentes, túneles y más clases**: `tunnel=yes` discontinuo, `bridge=yes`
    con contorno, más tipos de `highway`/`railway`, `waterway=riverbank`.
 4. **Recorte a un polígono** (GeoJSON), además del rectángulo. El

@@ -25,7 +25,7 @@ elegancia.** Todo corre en Docker; en el host solo hacen falta `make` y
 | `paper.py` | los tamaños ISO A0–A5 |
 | `area.py` | dos esquinas (o centro + radio) + papel + forma → `Frame` (UTM, escala) |
 | `layers.py` | las capas: qué etiquetas de OSM entran en cada una y la consulta Overpass |
-| `labels.py` | el idioma de los nombres y dónde se escribe el de cada calle |
+| `labels.py` | el idioma de los nombres, dónde se escribe el de cada calle y el antichoque |
 | `sources.py` | de dónde salen los datos: `OverpassSource` o `PbfSource` |
 | `overpass.py`, `osmexport.py`, `download.py` | cliente con caché, `osmium export`, descarga de PBF |
 | `boundaries.py` | los límites administrativos: de las relaciones a líneas con sus niveles |
@@ -62,10 +62,12 @@ tocar código.
    tiene opción para quitarla (ODbL). Por eso el margen mínimo es de 6 mm.
 6. **La superposición apila zonas con el mismo papel, orientación y margen, y
    cada una con su escala, tema, capas y opacidad** (ADR 0005).
-7. **Las etiquetas son dos capas de texto, `street-names` y `places`; el idioma
-   es un código de OSM (`es` por defecto) y, si no hay traducción, se muestra el
-   `name` tal cual** (ADR 0006). No se inventan traducciones. No están en las
-   capas por defecto (añadido del 03/11).
+7. **Las etiquetas son capas de texto (`street-names`, `places` y, desde el
+   05/11, `water-names` y `green-names`); el idioma es un código de OSM (`es`
+   por defecto) y, si no hay traducción, se muestra el `name` tal cual** (ADR
+   0006). No se inventan traducciones. No están en las capas por defecto
+   (añadido del 03/11). **No se pisan**: se colocan por `LABEL_PRIORITY` y el que
+   no encuentra sitio no sale (añadido del 05/11).
 8. **La leyenda lleva las esquinas del mapa tal como está en el papel y la marca
    «Generated with vector-maps by 1noro»** (ADR 0004, añadido del 03/11), y todo
    mapa, **una flecha al norte geográfico** (añadido del 04/11).
@@ -184,7 +186,7 @@ herramienta**, y **que siga siendo corto**.
 
 El orden y el porqué, en `docs/desarrollo.md`. Abiertos:
 
-- **1** — etiquetas sin pisarse (antichoque) y los nombres de parques y ríos.
+- **1** — nombres de edificios y puntos de interés; antichoque entre zonas.
 - **3** — puentes y túneles (trazo distinto) y más clases de calle.
 - **4** — recorte de la hoja a un polígono (GeoJSON).
 - **5** — escala redonda opcional (`--scale 1:5000`) en vez de la que salga.

@@ -136,7 +136,20 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   del tema; el mapa queda más bajo y la zona crece a la forma nueva (ADR 0003 y
   0004).
 
+- **Nombres de ríos, lagos y parques**: capas `water-names` (`lake`, `river`,
+  `stream`) y `green-names` (`park`, `reserve`), que no salen por defecto
+  (`INCLUDE_LAYERS=water-names,green-names`). Un río, a lo largo del cauce; un
+  lago o un parque, dentro, y solo si cabe (ADR 0006, añadido del 05/11).
+- **Clase `hamlet` en `places`**: el lugar (`place=hamlet`), con letra entre la
+  del barrio y la del pueblo.
+
 ### Cambiado
+
+- **Los nombres ya no se pisan** (TODO 1): se colocan por importancia (lugares >
+  lagos > ríos > parques > calles > arroyos; dentro de `suburb`, el barrio antes
+  que el `neighbourhood`) y el que encuentra su sitio ocupado prueba otro, encima
+  o debajo de su punto o más allá en su calle, o no sale. Tampoco pisan la flecha
+  del norte. Las rutas de los nombres de calle pasan al `<defs>` de la zona.
 
 - **La atribución de Copernicus, abajo**: con relieve, es una segunda línea bajo
   la de la leyenda, con su misma letra y color (ya no va pequeña y gris en la

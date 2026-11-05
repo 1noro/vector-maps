@@ -24,12 +24,14 @@ LARGE_AREA_DEG2 = 0.04  # ~ 20 x 20 km at mid latitudes: too much for the public
 
 class Item(NamedTuple):
     """One thing to draw: its class (what a theme styles), its lon/lat geometry and, for
-    the label layers, the text to write; for the hillshade, the map's DEM instead."""
+    the label layers, the text to write and its rank in the class (lower first, see
+    `Layer.match`); for the hillshade, the map's DEM instead."""
 
     cls: str
     geom: BaseGeometry | None
     text: str | None = None
     raster: Path | None = None
+    rank: int = 0
 
 
 Features = dict[str, list[Item]]  # layer name -> items
@@ -38,13 +40,14 @@ Features = dict[str, list[Item]]  # layer name -> items
 def _osm(layer: Layer, features: list, langs: list[str]) -> list[Item]:
     items = []
     for kind, tags, geom in features:
-        cls = layer.classify(kind, tags)
-        if cls is None:
+        found = layer.match(kind, tags)
+        if found is None:
             continue
+        cls, rank = found
         text = pick_name(tags, langs) if layer.text else None
         if layer.text and text is None:
             continue
-        items.append(Item(cls, geom, text))
+        items.append(Item(cls, geom, text, rank=rank))
     return items
 
 

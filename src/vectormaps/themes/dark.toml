@@ -231,3 +231,68 @@ fill = "none"
 stroke = "#c49bd8"
 stroke-width = 0.6
 stroke-dasharray = "2.4 0.6 0.4 0.6"
+
+# Nov 5: a hamlet (a "lugar") between a neighbourhood and a village; the names
+# of rivers, lakes and parks, in italics, in the colour of the water and the green.
+[layers.places.hamlet]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 2.7
+fill = "#8692a3"
+stroke = "#141b26"
+stroke-width = 0.6
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.water-names.stream]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 1.7
+font-style = "italic"
+fill = "#6f9bc9"
+stroke = "#141b26"
+stroke-width = 0.6
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.water-names.river]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 2.2
+font-style = "italic"
+fill = "#6f9bc9"
+stroke = "#141b26"
+stroke-width = 0.6
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.water-names.lake]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 2.5
+font-style = "italic"
+fill = "#6f9bc9"
+stroke = "#0b1119"
+stroke-width = 0.6
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.green-names.reserve]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 2.3
+font-style = "italic"
+fill = "#7fa088"
+stroke = "#141b26"
+stroke-width = 0.6
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.green-names.park]
+font-family = "DejaVu Sans, sans-serif"
+font-size = 2.0
+font-style = "italic"
+fill = "#7fa088"
+stroke = "#141b26"
+stroke-width = 0.6
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"

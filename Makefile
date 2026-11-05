@@ -45,6 +45,7 @@ Uso: make <objetivo> [VARIABLE=valor …]
              [EXCLUDE_LAYERS2=…] [THEME2=…] [TINT2=…] [OPACITY2=0.7]
            nombres, relieve y límites no salen por defecto; se añaden con INCLUDE_LAYERS:
              INCLUDE_LAYERS=street-names,places        nombres de calles y lugares
+             INCLUDE_LAYERS=water-names,green-names    nombres de ríos, lagos y parques
              INCLUDE_LAYERS=hillshade,contours         relieve (baja ~40 MB/grado² la 1.ª vez)
              INCLUDE_LAYERS=boundaries,municipalities,parishes   límites administrativos
   wizard   lo mismo que map, pero guiado: pregunta cada opción, enseña el make map
@@ -142,7 +143,7 @@ list: .image
 #          [TL2=lat,lon BR2=lat,lon | CENTER2=lat,lon RADIUS2=km] [LAYERS2=…] [INCLUDE_LAYERS2=…] [EXCLUDE_LAYERS2=…]
 #          [THEME2=…] [TINT2=…] [OPACITY2=0.6]
 # El relieve (hillshade, contours), los límites (boundaries, municipalities, parishes)
-# y los nombres (street-names, places) no salen por defecto: se añaden con
+# y los nombres (street-names, places, water-names, green-names) no salen por defecto: se añaden con
 # INCLUDE_LAYERS o se piden en LAYERS (ADR 0006, 0008 y 0010).
 # Se pasa con `--tl=` (con el igual) para que una latitud negativa no se lea como flag.
 # Las esquinas, los centros y el título se leen del entorno ("$$TL", no "$(TL)"): make

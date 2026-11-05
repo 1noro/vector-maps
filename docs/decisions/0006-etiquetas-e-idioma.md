@@ -85,3 +85,43 @@ cruzaba el marco y acababa en el margen. Ahora:
   borde se queda sin nombre.
 
 Elegir entre etiquetas que se pisan sigue pendiente (TODO 1).
+
+## Añadido del 05/11/2026: sin pisarse, el caserío y los nombres de ríos y parques
+
+En el mapa de O Couto, el nombre del lugar («O Couto», `place=hamlet`) salía
+por debajo del de un barrio suyo («O Lugar da Fonte», `place=neighbourhood`):
+los dos caían en la clase `suburb` y se escribían en el orden en que llegaban de
+OSM. A petición del usuario, cambian tres cosas (TODO 1):
+
+- **`hamlet` es una clase propia de `places`**, entre `suburb` y `village`, con
+  una letra de tamaño intermedio en todos los temas. Dentro de una clase, las
+  reglas tienen **rango** (su orden en `layers.py`): `suburb` antes que
+  `quarter` antes que `neighbourhood`. `Layer.match()` da la clase y el rango, y
+  el `Item` lo lleva.
+- **Los nombres no se pisan.** Se colocan de uno en uno, del más importante al
+  menos (`layers.LABEL_PRIORITY`), y cada uno se queda con su sitio si está
+  libre (`labels.Placer`):
+  lugares (`city` > `town` > `village` > `hamlet` > `suburb`) > lagos y
+  embalses > ríos > parques > reservas > calles (`major` > `secondary` >
+  `minor`) > arroyos. Dentro de una clase, por rango y luego en el orden de OSM.
+  El que encuentra su sitio ocupado prueba otros: un lugar, justo encima y
+  justo debajo de su punto (`POINT_SHIFTS`, con un hueco de 0,3 em); un nombre a
+  lo largo de una línea, otros puntos de su tramo (`SLOT_SHIFTS`). Si ninguno
+  está libre, **no se escribe**. La flecha del norte cuenta como ocupada. El
+  antichoque es por zona: en la superposición, los nombres de una zona no miran
+  los de la otra.
+- **Dos capas de texto nuevas, que no salen por defecto**: `water-names`
+  (`lake`: `natural=water` sin `water=river|canal|stream|riverbank`, que se
+  nombra en su línea, y `landuse=reservoir`; `river`: `waterway=river|canal`;
+  `stream`: `waterway=stream`) y `green-names` (`park`:
+  `leisure=park|garden`; `reserve`: `leisure=nature_reserve`). Un río se
+  escribe a lo largo del cauce, como una calle; un lago o un parque, en el
+  polo de inaccesibilidad (`polylabel`) de su mayor trozo en el mapa, y solo
+  si el nombre cabe dentro (con media letra de holgura). Van en cursiva, del
+  color del agua o del verde de cada tema.
+
+Las rutas de los `textPath` pasan del grupo de la capa al `<defs>` de la zona:
+se colocan todas las etiquetas antes de escribir ninguna capa. Lo demás de este
+ADR (el idioma, el halo, que un nombre sin traducción sale tal cual) no cambia.
+
+Siguen fuera los nombres de edificios y los puntos de interés.

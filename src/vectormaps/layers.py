@@ -16,14 +16,19 @@ class Tag:
     key: str
     values: tuple[str, ...] | None = None  # None: any value
     exclude: tuple[str, ...] = ()
+    optional: bool = False  # the key may be missing: then only `exclude` is checked
 
     def matches(self, tags: dict[str, str]) -> bool:
         v = tags.get(self.key)
-        if v is None or v in self.exclude:
+        if v is None:
+            return self.optional
+        if v in self.exclude:
             return False
         return self.values is None or v in self.values
 
     def overpass(self) -> str:
+        if self.optional:  # Overpass's "!~" also lets through what lacks the key
+            return f'["{self.key}"!~"^({"|".join(self.exclude)})$"]'
         sel = f'["{self.key}"]'
         if self.values is not None:
             sel = f'["{self.key}"~"^({"|".join(self.values)})$"]'
@@ -57,9 +62,16 @@ class Layer:
     admin: tuple[tuple[int, str], ...] = ()
 
     def classify(self, geometry: str, tags: dict[str, str]) -> str | None:
-        for rule in self.rules:
+        found = self.match(geometry, tags)
+        return found[0] if found else None
+
+    def match(self, geometry: str, tags: dict[str, str]) -> tuple[str, int] | None:
+        """(class, rank) of the first rule that matches: the rank is the rule's place in
+        the layer, so in a class of several rules the earlier ones come first (a label
+        layer places a hamlet before a neighbourhood)."""
+        for rank, rule in enumerate(self.rules):
             if rule.geometry == geometry and rule.matches(tags):
-                return rule.cls
+                return rule.cls, rank
         return None
 
     def overpass_query(self, bounds: tuple[float, float, float, float], timeout: int = 180) -> str:
@@ -85,6 +97,7 @@ class Layer:
 
 
 NAMED = (Tag("name"),)
+RIVER_BEDS = ("river", "canal", "stream", "riverbank")  # water=…: the river's line names it
 
 
 def _boundary_query(box: str, timeout: int) -> str:
@@ -229,18 +242,43 @@ LAYERS: dict[str, Layer] = {
                 _rules("city", "point", "place", "city", also=NAMED),
                 _rules("town", "point", "place", "town", also=NAMED),
                 _rules("village", "point", "place", "village", also=NAMED),
-                _rules(
-                    "suburb",
-                    "point",
-                    "place",
-                    "suburb",
-                    "quarter",
-                    "neighbourhood",
-                    "hamlet",
-                    also=NAMED,
-                ),
+                # A hamlet is a "lugar" (in Spain, a town of the INE census): over a
+                # neighbourhood, which is a part of one. Nov 5.
+                _rules("hamlet", "point", "place", "hamlet", also=NAMED),
+                # One class, in this order: a suburb before a quarter, before a neighbourhood.
+                _rules("suburb", "point", "place", "suburb", also=NAMED),
+                _rules("suburb", "point", "place", "quarter", also=NAMED),
+                _rules("suburb", "point", "place", "neighbourhood", also=NAMED),
             ),
-            ("suburb", "village", "town", "city"),
+            ("suburb", "hamlet", "village", "town", "city"),
+            text=True,
+        ),
+        # Names of rivers and lakes, and of parks (Nov 5): along the river, inside the
+        # lake or the park. A natural=water that is a river's bed is named by its line.
+        Layer(
+            "water-names",
+            (
+                _rules(
+                    "lake",
+                    "polygon",
+                    "natural",
+                    "water",
+                    also=(*NAMED, Tag("water", exclude=RIVER_BEDS, optional=True)),
+                ),
+                _rules("lake", "polygon", "landuse", "reservoir", also=NAMED),
+                _rules("river", "line", "waterway", "river", "canal", also=NAMED),
+                _rules("stream", "line", "waterway", "stream", also=NAMED),
+            ),
+            ("stream", "river", "lake"),
+            text=True,
+        ),
+        Layer(
+            "green-names",
+            (
+                _rules("park", "polygon", "leisure", "park", "garden", also=NAMED),
+                _rules("reserve", "polygon", "leisure", "nature_reserve", also=NAMED),
+            ),
+            ("reserve", "park"),
             text=True,
         ),
         # Administrative boundaries (ADR 0010), from the most local up; each layer
@@ -280,8 +318,27 @@ ORDER = (
     "parishes",
     "municipalities",
     "boundaries",
+    "green-names",
+    "water-names",
     "street-names",
     "places",
+)
+# Which names win where two would overlap (labels.py), most important first: places,
+# then water and parks, then streets, then streams. The winner is drawn on top.
+LABEL_PRIORITY = (
+    ("places", "city"),
+    ("places", "town"),
+    ("places", "village"),
+    ("places", "hamlet"),
+    ("places", "suburb"),
+    ("water-names", "lake"),
+    ("water-names", "river"),
+    ("green-names", "park"),
+    ("green-names", "reserve"),
+    ("street-names", "major"),
+    ("street-names", "secondary"),
+    ("street-names", "minor"),
+    ("water-names", "stream"),
 )
 # What a map has when no layers are given: the shapes, without relief, boundaries or names.
 DEFAULT = tuple(

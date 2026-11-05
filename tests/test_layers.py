@@ -129,3 +129,41 @@ def test_boundaries_are_optional_and_share_one_overpass_query():
 def test_every_admin_level_has_one_class():
     levels = [lvl for layer in layers.LAYERS.values() for lvl, _cls in layer.admin]
     assert sorted(levels) == list(range(2, 11))
+
+
+def test_water_and_park_names_are_their_own_optional_layers():
+    water, green = LAYERS["water-names"], LAYERS["green-names"]
+    assert water.text and green.text
+    assert water.classify("polygon", {"natural": "water", "name": "Lagoa"}) == "lake"
+    assert water.classify("polygon", {"landuse": "reservoir", "name": "Encoro"}) == "lake"
+    assert water.classify("line", {"waterway": "river", "name": "Mero"}) == "river"
+    assert water.classify("line", {"waterway": "canal", "name": "Canal"}) == "river"
+    assert water.classify("line", {"waterway": "stream", "name": "Rego"}) == "stream"
+    assert water.classify("line", {"waterway": "river"}) is None  # no name, no label
+    assert green.classify("polygon", {"leisure": "park", "name": "Alameda"}) == "park"
+    assert green.classify("polygon", {"leisure": "garden", "name": "Xardín"}) == "park"
+    assert green.classify("polygon", {"leisure": "nature_reserve", "name": "Fragas"}) == "reserve"
+    default = [layer.name for layer in select(None)]
+    assert "water-names" not in default and "green-names" not in default
+    order = [layer.name for layer in select(["places", "water-names", "green-names", "water"])]
+    assert order == ["water", "green-names", "water-names", "places"]
+
+
+def test_a_river_drawn_as_an_area_is_not_named_as_a_lake():
+    # A wide river is also mapped as natural=water + water=river: its name goes on the line.
+    water = LAYERS["water-names"]
+    tags = {"natural": "water", "name": "Mero"}
+    assert water.classify("polygon", {**tags, "water": "river"}) is None
+    assert water.classify("polygon", {**tags, "water": "riverbank"}) is None
+    assert water.classify("polygon", {**tags, "water": "lake"}) == "lake"
+    query = water.overpass_query((1, 2, 3, 4))
+    assert '["water"!~"^(river|canal|stream|riverbank)$"]' in query
+
+
+def test_a_hamlet_is_its_own_class_and_neighbourhoods_rank_after_suburbs():
+    places = LAYERS["places"]
+    assert places.match("point", {"place": "hamlet", "name": "O Couto"})[0] == "hamlet"
+    kinds = ("suburb", "quarter", "neighbourhood")
+    suburb, quarter, hood = (places.match("point", {"place": p, "name": "X"}) for p in kinds)
+    assert suburb[0] == quarter[0] == hood[0] == "suburb"
+    assert suburb[1] < quarter[1] < hood[1]

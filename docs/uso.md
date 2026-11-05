@@ -105,12 +105,15 @@ abajo arriba, y dentro de cada una, de la clase menos a la más importante:
 | `parishes` | `parish` (límites; no sale por defecto) |
 | `municipalities` | `municipality` (límites; no sale por defecto) |
 | `boundaries` | `district`, `province`, `region`, `country` (límites; no sale por defecto) |
+| `green-names` | `reserve`, `park` (texto; no sale por defecto) |
+| `water-names` | `stream`, `river`, `lake` (texto; no sale por defecto) |
 | `street-names` | `minor`, `secondary`, `major` (texto; no sale por defecto) |
-| `places` | `suburb`, `village`, `town`, `city` (texto; no sale por defecto) |
+| `places` | `suburb`, `hamlet`, `village`, `town`, `city` (texto; no sale por defecto) |
 
-Las dos últimas son **etiquetas**: se dibujan encima de todo y salen en el idioma
+Las cuatro últimas son **etiquetas**: se dibujan encima de todo y salen en el idioma
 de `LABEL_LANG`. **No salen por defecto**; para un mapa con nombres,
-`INCLUDE_LAYERS=street-names,places`. Para un mapa sin el tren,
+`INCLUDE_LAYERS=street-names,places`, y con los de ríos, lagos y parques,
+`INCLUDE_LAYERS=street-names,places,water-names,green-names`. Para un mapa sin el tren,
 `EXCLUDE_LAYERS=railways`; para un cartel minimalista, `LAYERS=roads`; para un
 plano de situación, `LAYERS=water,green,roads`.
 
@@ -244,8 +247,16 @@ gallego, así que muchas calles salen como "Rúa do Pombal" aunque pidas `es`;
 `LABEL_LANG=local` es siempre el nombre mapeado.
 
 Los nombres de las calles se escriben a lo largo de la calle (`textPath`), en
-tramos que quepan: una calle corta o muy curva se queda sin nombre. Dos nombres
-pueden pisarse: no hay antichoque todavía (TODO 1).
+tramos que quepan: una calle corta o muy curva se queda sin nombre. Los ríos,
+igual, a lo largo del cauce; un lago o un parque, en su sitio más ancho, y solo si
+el nombre cabe dentro.
+
+**Los nombres no se pisan.** Se colocan del más importante al menos: los lugares
+(ciudad, villa, pueblo, lugar, barrio), los lagos y embalses, los ríos, los parques,
+las calles (de las principales a las menores) y, al final, los arroyos. El que
+encuentra su sitio ocupado prueba otro (un lugar, justo encima o debajo de su punto;
+una calle o un río, más allá en su tramo) y, si no queda ninguno, no se escribe. La
+flecha del norte también cuenta como ocupada (ADR 0006, añadido del 05/11).
 
 > **Para ver el SVG, Inkscape o un navegador.** `rsvg-convert` (librsvg) no pinta
 > los `textPath`: con él las calles salen sin nombre.

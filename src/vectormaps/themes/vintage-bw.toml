@@ -302,3 +302,69 @@ stroke = "#000000"
 stroke-width = 0.6
 stroke-dasharray = "2.6 0.8 0.01 0.8"
 stroke-linecap = "round"
+
+# Nov 5: a hamlet (a "lugar") between a neighbourhood and a village; the names
+# of rivers, lakes and parks, in italics, in the colour of the water and the green.
+[layers.places.hamlet]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 2.9
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.55
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.water-names.stream]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 1.8
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.55
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.water-names.river]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 2.3
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.55
+stroke-linejoin = "round"
+paint-order = "stroke"
+
+[layers.water-names.lake]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 2.7
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.55
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.green-names.reserve]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 2.5
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.55
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"
+
+[layers.green-names.park]
+font-family = "EB Garamond, DejaVu Serif, serif"
+font-size = 2.2
+font-style = "italic"
+fill = "#000000"
+stroke = "#ffffff"
+stroke-width = 0.55
+stroke-linejoin = "round"
+paint-order = "stroke"
+text-anchor = "middle"

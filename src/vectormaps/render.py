@@ -16,11 +16,12 @@ from pyproj import Transformer
 from shapely.affinity import affine_transform
 from shapely.geometry import LineString, Point, box
 from shapely.geometry.base import BaseGeometry
+from shapely.ops import polylabel
 
 from vectormaps import relief
 from vectormaps.area import Frame
-from vectormaps.labels import CHAR_WIDTH, street_pieces, text_width
-from vectormaps.layers import Layer
+from vectormaps.labels import CHAR_WIDTH, Placer, street_slots, text_width
+from vectormaps.layers import LABEL_PRIORITY, Layer
 from vectormaps.pipeline import Features
 from vectormaps.theme import PATTERN_PREFIX, Theme
 
@@ -377,56 +378,129 @@ def _place_box(x: float, y: float, text: str, style: dict) -> BaseGeometry:
     return box(x0 - halo, y - 0.8 * size - halo, x0 + w + halo, y + 0.25 * size + halo)
 
 
-def _text_layer(job: Job, layer: Layer, tr: Transformer) -> list[str]:
-    """Labels: names of places at their point, names of streets written along the street.
+# A place's name that is taken tries these spots, in steps of its box's height (halo
+# included) and POINT_GAP em more, from its point: on it, then just over it, then just
+# under it. Further, it would no longer point at its place. The gap clears a bigger
+# name beside it (a hamlet's, next to a neighbourhood's).
+POINT_SHIFTS = (0.0, -1.0, 1.0)
+POINT_GAP = 0.3
+LINE_HALF_HEIGHT = 0.6  # em each side of the line a textPath name takes (dy = 0.35 em)
 
-    No letter goes past the edge of the map: a place name that does not fit is left out
-    (moved, it would no longer point at its place), and a street name is only written on
-    the stretch that is half a letter and the halo away from the edge.
+Labels = dict[tuple[str, str], list[str]]  # (layer, class) -> its <text> elements
+
+
+def _halo(style: dict) -> float:
+    return float(style.get("stroke-width", 0)) / 2
+
+
+def _point_label(xy, text: str, style: dict, whole, placer: Placer) -> str | None:
+    """A place's name at its point, or a little over or under it if that is taken."""
+    bounds = _place_box(0, 0, text, style).bounds
+    step = bounds[3] - bounds[1] + POINT_GAP * float(style["font-size"])
+    for shift in POINT_SHIFTS:
+        x, y = xy[0], xy[1] + shift * step
+        b = _place_box(x, y, text, style)
+        if b.within(whole) and placer.take(b):
+            return f'<text x="{_num(x)}" y="{_num(y)}">{escape(text)}</text>'
+    return None
+
+
+def _area_label(geom: BaseGeometry, text: str, style: dict, whole, placer: Placer) -> str | None:
+    """A lake's or a park's name, centred where its biggest part on the map is widest
+    (its pole of inaccessibility), and only if it fits inside it (half a letter over
+    the shore at most)."""
+    size = float(style["font-size"])
+    parts = [p for p in _parts(geom.intersection(whole)) if p.geom_type == "Polygon"]
+    if not parts:
+        return None
+    part = max(parts, key=lambda p: p.area)
+    centre = polylabel(part, tolerance=size / 4)
+    x, y = centre.x, centre.y + 0.275 * size  # the baseline, for the box to sit on the centre
+    b = _place_box(x, y, text, style)
+    if b.within(whole) and part.buffer(size / 2).contains(b) and placer.take(b):
+        return f'<text x="{_num(x)}" y="{_num(y)}">{escape(text)}</text>'
+    return None
+
+
+def _place_labels(job: Job, tr: Transformer) -> tuple[list[str], Labels]:
+    """Every name of the zone, placed most important first (`LABEL_PRIORITY`) so that
+    none overlaps another or the north arrow: one that finds its place taken tries the
+    others it has (`POINT_SHIFTS`, a line's `street_slots`) and, if none is free, is
+    left out. Gives the <path>s the names along lines are written on, and the names.
+
+    No letter goes past the edge of the map: a place name that does not fit is left
+    out, and a name along a line is only written on the stretch that is half a letter
+    and the halo away from the edge.
     """
+    f = job.frame
+    whole = _map_area(f)
+    placer = Placer([_north_box(f)])
+    present = {layer.name for layer in job.layers if layer.text}
     defs: list[str] = []
-    groups: list[str] = []
-    whole = _map_area(job.frame)
-    for cls in layer.classes:
-        style = job.theme.style(layer.name, cls)
+    labels: Labels = {}
+    for name, cls in LABEL_PRIORITY:
+        if name not in present:
+            continue
+        style = job.theme.style(name, cls)
         size = float(style["font-size"])
-        inner = _map_area(job.frame, size / 2 + float(style.get("stroke-width", 0)) / 2)
-        lines: dict[str, list[LineString]] = {}
+        inner = _map_area(f, size / 2 + _halo(style))
+        items = [i for i in job.features.get(name, []) if i.cls == cls and i.text]
         texts: list[str] = []
-        for item in job.features.get(layer.name, []):
-            if item.cls != cls or not item.text:
-                continue
-            if item.geom.geom_type == "Point":
-                xy = _page_xy(item.geom, tr, job.frame)
-                if xy is not None and _place_box(*xy, item.text, style).within(whole):
-                    texts.append(
-                        f'<text x="{_num(xy[0])}" y="{_num(xy[1])}">{escape(item.text)}</text>'
+        lines: dict[str, list[LineString]] = {}
+        for item in sorted(items, key=lambda i: i.rank):  # stable: OSM's order in a rank
+            kind = item.geom.geom_type
+            text = None
+            if kind == "Point":
+                xy = _page_xy(item.geom, tr, f)
+                if xy is not None:
+                    text = _point_label(xy, item.text, style, whole, placer)
+            elif kind in ("Polygon", "MultiPolygon"):
+                page = _to_page(item.geom, tr, f)
+                if page is not None:
+                    text = _area_label(page, item.text, style, whole, placer)
+            else:
+                page = _to_page(item.geom, tr, f)
+                if page is not None:
+                    lines.setdefault(item.text, []).extend(
+                        p
+                        for p in _parts(page.intersection(inner))
+                        if p.geom_type == "LineString" and not p.is_empty
                     )
                 continue
-            page_geom = _to_page(item.geom, tr, job.frame)
-            if page_geom is not None:
-                lines.setdefault(item.text, []).extend(
-                    p
-                    for p in _parts(page_geom.intersection(inner))
-                    if p.geom_type == "LineString" and not p.is_empty
-                )
+            if text:
+                texts.append(text)
         n = 0
+        room = (LINE_HALF_HEIGHT * size + _halo(style)) if lines else 0
         for text, parts in sorted(lines.items()):
-            for piece in street_pieces(parts, text, size) if parts else []:
+            for pieces in street_slots(parts, text, size) if parts else []:
+                taken = (p for p in pieces if placer.take(p.buffer(room, cap_style="flat")))
+                piece = next(taken, None)
+                if piece is None:
+                    continue
                 n += 1
-                pid = f"{job.label}-{layer.name}-{cls}-{n}"
+                pid = f"{job.label}-{name}-{cls}-{n}"
                 defs.append(f'<path id="{pid}" d="M{_coords(piece.coords)}"/>')
                 texts.append(
                     f'<text dy="0.35em"><textPath xlink:href="#{pid}" startOffset="50%" '
                     f'text-anchor="middle">{escape(text)}</textPath></text>'
                 )
+        labels[(name, cls)] = texts
+    return defs, labels
+
+
+def _text_layer(job: Job, layer: Layer, labels: Labels) -> list[str]:
+    """A label layer: a group per class, bottom to top, with the names that were placed."""
+    groups = []
+    for cls in layer.classes:
+        texts = labels.get((layer.name, cls))
         if texts:
+            style = job.theme.style(layer.name, cls)
             groups.append(
                 f'<g id="{job.label}-{layer.name}-{cls}" class="{cls}" {_attrs(style)}>'
                 + "".join(texts)
                 + "</g>"
             )
-    return (["<defs>" + "".join(defs) + "</defs>"] if defs else []) + groups
+    return groups
 
 
 def _job_group(job: Job) -> str:
@@ -443,10 +517,12 @@ def _job_group(job: Job) -> str:
             f'<rect x="{_num(f.map_x)}" y="{_num(f.map_y)}" '
             f'width="{_num(f.map_w)}" height="{_num(f.map_h)}"/>'
         )
+    paths, labels = _place_labels(job, tr)
     out = [
         f'<g id="area-{job.label}" inkscape:groupmode="layer" '
         f'inkscape:label={quoteattr(label)}{opacity} clip-path="url(#clip-{job.label})">',
-        f'<defs><clipPath id="clip-{job.label}">{shape}</clipPath>{_pattern_defs(job)}</defs>',
+        f'<defs><clipPath id="clip-{job.label}">{shape}</clipPath>{_pattern_defs(job)}'
+        f"{''.join(paths)}</defs>",
     ]
     for layer in job.layers:
         out.append(
@@ -454,7 +530,7 @@ def _job_group(job: Job) -> str:
             f'inkscape:label="{layer.name}">'
         )
         if layer.text:
-            out += _text_layer(job, layer, tr)
+            out += _text_layer(job, layer, labels)
         elif layer.name == "hillshade":
             out += _hillshade_layer(job, layer)
         else:
@@ -600,22 +676,37 @@ def _title(f: Frame, theme: Theme, title: str, size: float, baseline: float) -> 
     ]
 
 
+def _north_place(f: Frame) -> tuple[float, float, float]:
+    """(x, y, h): where the north arrow goes, in the top right corner of the map, and
+    its height."""
+    h = min(NORTH_MAX, NORTH_SHARE * min(f.map_w, f.map_h))
+    half, tip = h * 0.25, -h / 2
+    letter_y = tip - h * 0.12  # the N's baseline, just over the tip
+    inset = h * 0.5
+    x = f.map_x + f.map_w - inset - half
+    y = f.map_y + inset - letter_y + h * 0.4 * 0.75  # the top of the N, `inset` under the edge
+    return x, y, h
+
+
+def _north_box(f: Frame) -> BaseGeometry:
+    """The room the north arrow and its N take, halo included: no name goes there."""
+    x, y, h = _north_place(f)
+    return box(x - 0.35 * h, y - h, x + 0.35 * h, y + 0.6 * h)
+
+
 def _north(f: Frame, theme: Theme) -> str:
     """The north arrow, in the top right corner of the map: half ink, half paper, an N
     over it, all with a halo of paper so it reads over anything. Always drawn. The N
     in the theme's lettering."""
     ink, paper = theme.page["ink"], theme.page["background"]
     family, slant = _lettering(theme)
-    h = min(NORTH_MAX, NORTH_SHARE * min(f.map_w, f.map_h))
+    x, y, h = _north_place(f)
     half, notch = h * 0.25, h * 0.2  # half the width; how far the base's notch goes in
     tip, base = -h / 2, h / 2
     left = f"M0 {_num(tip)}L{_num(-half)} {_num(base)}L0 {_num(base - notch)}Z"
     right = f"M0 {_num(tip)}L{_num(half)} {_num(base)}L0 {_num(base - notch)}Z"
     size = h * 0.4
     letter_y = tip - h * 0.12  # the N's baseline, just over the tip
-    inset = h * 0.5
-    x = f.map_x + f.map_w - inset - half
-    y = f.map_y + inset - letter_y + size * 0.75  # the top of the N, `inset` under the edge
     outline = f'fill="none" stroke-linejoin="round" d="{left}{right}"'
     halo = _num(h * 0.1)
     return "\n".join(
