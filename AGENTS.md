@@ -190,3 +190,4 @@ El orden y el porqué, en `docs/desarrollo.md`. Abiertos:
 - **5** — escala redonda opcional (`--scale 1:5000`) en vez de la que salga.
 - **6** — más de dos zonas superpuestas.
 - **7** — buscar el área por nombre en el wizard (Nominatim).
+- **8** — plus codes en las esquinas (el corto de Google Maps pide geocodificar).

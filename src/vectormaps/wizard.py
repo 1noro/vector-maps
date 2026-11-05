@@ -261,7 +261,7 @@ def _ask_area(area: Area, title: str) -> Area:
         area.mode,
     )
     corner = _check(parse_corner)
-    hint = "LAT,LON, e.g. 42.8845,-8.5510"
+    hint = "LAT,LON, e.g. 42.8845,-8.5510, or as Google Maps copies it: 43°14'44.6\"N 8°54'12.1\"W"
     if mode == "center":
         center = _text("Centre", area.center, corner, hint)
         radius = _text("Radius in km", area.radius, _check(_positive))

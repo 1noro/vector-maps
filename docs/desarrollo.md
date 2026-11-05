@@ -47,6 +47,20 @@ Medido el 03/11, con el extracto de Galicia (112 MB) y Santiago de Compostela:
    Nominatim: elegir entre los resultados y sacar el área por centro y radio.
    Es un servicio nuevo de red, y respeta lo mismo que Overpass: una petición
    cada vez, caché, `User-Agent` propio y nada de claves (ADR 0002, 0009).
+8. **Plus codes** (Open Location Code) en `TL`, `BR` y `CENTER`. Es un estándar
+   abierto (Apache 2.0) y vale para OSM: un código se convierte en una latitud y
+   una longitud sin servicio alguno. La complicación está en lo que copia Google
+   Maps: no el código completo (`8CMH63WW+7MR`), sino el **corto con un lugar**
+   (`63WW+7MR Ponteceso`), al que le faltan los cuatro primeros caracteres, la
+   celda de 1° × 1°. Se recuperan con un punto de referencia a menos de unos 50 km,
+   y para sacarlo del nombre hay que geocodificarlo: Nominatim, como el TODO 7.
+   Galicia ocupa varias celdas (`8CJH`, `8CMH`, `8CMJ`…), así que no vale un
+   prefijo fijo. Por partes: (1) el código completo, sin red (la decodificación
+   son unas 40 líneas; o la librería `openlocationcode`); (2) el corto con la
+   otra esquina de referencia, sin red; (3) el corto con lugar, con Nominatim,
+   junto con el TODO 7. Mientras, de Google Maps vale copiar la coordenada (clic
+   derecho, primera línea del menú) o los grados, minutos y segundos de la ficha
+   del punto (ADR 0003, añadido del 05/11).
 
 ## Carencias menores
 

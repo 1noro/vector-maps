@@ -112,3 +112,23 @@ A petición del usuario, la banda del título pasa del 7 % al **5,5 % del lado c
 del papel**, con un tope de **31,5 mm** (antes 40), para dejar menos hueco por
 encima y por debajo del título. El título mide lo mismo que antes, porque ocupa
 más parte de la banda (ADR 0004): en A4, 8,1 mm de letra en 11,6 mm de banda.
+
+## Añadido del 05/11/2026: grados, minutos y segundos
+
+Además de `LAT,LON` en grados decimales, `parse_corner` lee **grados, minutos y
+segundos con la letra del hemisferio detrás**, como los copia Google Maps
+(`43°14'44.6"N 8°54'12.1"W`) y como los escribe la leyenda con `COORDS=dms` o
+`dm`: así las esquinas del pie se pueden volver a pegar. La letra es la que
+distingue esta forma de la decimal: sin ella, el número tiene que ser `LAT,LON`.
+Se aceptan los signos tipográficos (`′ ″ ’ ”`), la coma entre las dos y la
+longitud primero. Los minutos o segundos de 60 o más, los decimales en algo que no
+sea lo último o dos latitudes son un `ValueError` que dice qué falla. La letra
+delante (`N 43°…`) no se admite: con espacios es ambigua y nadie la usa.
+
+Como el valor lleva `'` y `"`, el `Makefile` pasa las esquinas, los centros y el
+título leyéndolos del entorno (`"$$TL"`; `make` exporta las variables de la línea
+de comandos), sin meterlos en la receta, donde las comillas la rompían.
+
+Los **plus codes** (Open Location Code) quedan para más adelante (TODO 8 de
+`docs/desarrollo.md`): el código completo se descifra sin red, pero el que copia
+Google Maps es el corto con un lugar, que necesita geocodificar ese lugar.

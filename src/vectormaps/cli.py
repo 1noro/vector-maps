@@ -33,8 +33,10 @@ def build_parser() -> argparse.ArgumentParser:
     m = sub.add_parser(
         "map",
         help="draw an area as SVG, optionally with a second area stacked on top",
-        description="Corners and centres are LAT,LON. Use --tl=LAT,LON (with '=') so negative "
-        "values parse. The area is either --tl and --br, or --center and --radius.",
+        description="Corners and centres are LAT,LON in decimal degrees, or degrees, minutes "
+        "and seconds as Google Maps copies them: '43°14'44.6\"N 8°54'12.1\"W'. Use "
+        "--tl=LAT,LON (with '=') so negative values parse. The area is either --tl and --br, "
+        "or --center and --radius.",
     )
     m.add_argument("--tl", metavar="LAT,LON", help="top-left corner")
     m.add_argument("--br", metavar="LAT,LON", help="bottom-right corner")

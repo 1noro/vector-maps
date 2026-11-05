@@ -126,6 +126,11 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   `© OpenStreetMap`, y la marca arriba (ADR 0004).
 - **Tema `monochrome`**: el `bw` tintado del color de `TINT=#rrggbb` (`TINT2`
   para la zona de encima; ADR 0004).
+- **Coordenadas en grados, minutos y segundos**, como las copia Google Maps:
+  `TL="43°14'44.6\"N 8°54'12.1\"W"` (también `dm`, `°N` decimal, `′ ″` y la
+  longitud primero), así que las esquinas de la leyenda se pueden volver a pegar.
+  El `Makefile` pasa las esquinas y el título sin volver a interpretar sus
+  comillas (ADR 0003).
 - **Título opcional** (`TITLE="…"`, `--title`, y su pregunta en el wizard):
   centrado en una banda propia entre el margen de arriba y el mapa, en la letra
   del tema; el mapa queda más bajo y la zona crece a la forma nueva (ADR 0003 y

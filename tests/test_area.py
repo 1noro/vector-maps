@@ -22,6 +22,58 @@ def test_parse_corner_rejects(bad):
         parse_corner(bad)
 
 
+PONTECESO = (43 + 14 / 60 + 44.6 / 3600, -(8 + 54 / 60 + 12.1 / 3600))
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "43°14'44.6\"N 8°54'12.1\"W",  # as Google Maps copies it
+        "  43°14'44.6\"N,  8°54'12.1\"W ",
+        "43°14′44.6″N 8°54′12.1″W",  # primes
+        "43°14’44.6”N 8°54’12.1”W",  # what a word processor makes of the quotes
+        "43°14'44.6''N 8°54'12.1''W",
+        "43° 14' 44.6\" N 8° 54' 12.1\" W",
+        "43°14'44.6\"n 8°54'12.1\"w",
+        "8°54'12.1\"W 43°14'44.6\"N",  # longitude first
+    ],
+)
+def test_parse_corner_reads_degrees_minutes_and_seconds(text):
+    assert parse_corner(text) == pytest.approx(PONTECESO)
+
+
+def test_parse_corner_reads_minutes_and_degrees_with_hemispheres():
+    assert parse_corner("43°14.7433'N 8°54.2017'W") == pytest.approx(PONTECESO, abs=1e-6)
+    assert parse_corner("43.24572°N 8.90336°W") == pytest.approx(PONTECESO, abs=1e-5)
+    assert parse_corner("43.24572N 8.90336W") == pytest.approx(PONTECESO, abs=1e-5)
+    assert parse_corner("33°51'S 151°12'E") == pytest.approx((-33.85, 151.2))
+
+
+@pytest.mark.parametrize("coords", ["dm", "dms"])
+def test_the_corners_of_the_legend_can_be_given_back(coords):
+    from vectormaps.render import _corner
+
+    for point in [(42.8845, -8.551), (-33.8568, 151.2153), (0.5, 0.25)]:
+        assert parse_corner(_corner(point, coords)) == pytest.approx(point, abs=2e-5)
+
+
+@pytest.mark.parametrize(
+    "bad, message",
+    [
+        ("43°14'44.6\"N 8°54'12.1\"N", "a latitude"),
+        ("8°W 43°E", "a latitude"),
+        ("43°61'N 8°W", "up to 59"),
+        ("43°14'60\"N 8°W", "up to 59"),
+        ("43.5°14'N 8°W", "only the last"),
+        ("43°14'44.6\" 8°54'12.1\"W", "must look like"),  # no hemisphere
+        ("91°N 0°E", "out of range"),
+    ],
+)
+def test_parse_corner_says_what_is_wrong_with_degrees(bad, message):
+    with pytest.raises(ValueError, match=message):
+        parse_corner(bad)
+
+
 def test_paper_sizes():
     assert paper_size("A4", "portrait") == (210, 297)
     assert paper_size("a3", "landscape") == (420, 297)

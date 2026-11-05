@@ -118,6 +118,15 @@ def test_the_make_command_quotes_what_the_shell_would_eat():
     assert "OUT=out/my map.svg" in words
 
 
+def test_corners_as_google_maps_copies_them_go_through_untouched():
+    tl, br = "43°14'44.6\"N 8°54'12.1\"W", "43°13'N 8°50'W"
+    a = Answers(area=Area(tl=tl, br=br), title='O "meu" Cecebre\'s')
+    assert (parse(a).tl, parse(a).br) == (tl, br)  # no shell between the wizard and the CLI
+    words = shlex.split(wizard.to_make(a))  # and the make command quotes them right
+    assert f"TL={tl}" in words and f"BR={br}" in words
+    assert 'TITLE=O "meu" Cecebre\'s' in words
+
+
 def test_every_make_variable_is_passed_by_the_makefile_as_its_option():
     makefile = (Path(__file__).parents[1] / "Makefile").read_text(encoding="utf-8")
     passed = dict(re.findall(r"\$\(if \$\((\w+)\),(--[\w-]+)", makefile))

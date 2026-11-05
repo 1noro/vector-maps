@@ -7,6 +7,7 @@ paper. That is what lets two areas with different zoom share the same page.
 """
 
 import math
+import re
 from dataclasses import dataclass
 
 from pyproj import CRS, Transformer
@@ -113,13 +114,52 @@ class Frame:
         return [s, 0.0, 0.0, -s, self.map_x - self.xmin * s, self.map_y + self.ymax * s]
 
 
+_NUM = r"(\d+(?:\.\d+)?)"
+# One coordinate in degrees, minutes and seconds and its hemisphere, as Google Maps
+# copies it and the legend writes it (COORDS=dms, dm): 43°14'44.6"N, 43°14.743'N,
+# 43.2457°N. The minutes' mark can be ' ′ ’, the seconds' " ″ ” or two of the former.
+_ANGLE = rf"{_NUM}\s*°?\s*(?:{_NUM}\s*['′’]\s*(?:{_NUM}\s*(?:\"|″|”|''|′′|’’)\s*)?)?([NSEW])"
+_DMS = re.compile(rf"\s*{_ANGLE}\s*,?\s*{_ANGLE}\s*", re.IGNORECASE)
+CORNER_FORMATS = "LAT,LON (42.88,-8.54) or 42°52'48.0\"N 8°32'24.0\"W"
+
+
+def _angle(deg: str, mins: str | None, secs: str | None, hemisphere: str) -> tuple[str, float]:
+    """(hemisphere, degrees) of one coordinate in degrees, minutes and seconds."""
+    if mins is not None and "." in deg or secs is not None and "." in mins:
+        raise ValueError("only the last of degrees, minutes and seconds can have decimals")
+    if float(mins or 0) >= 60 or float(secs or 0) >= 60:
+        raise ValueError("minutes and seconds go up to 59")
+    return hemisphere.upper(), float(deg) + float(mins or 0) / 60 + float(secs or 0) / 3600
+
+
+def _parse_dms(text: str) -> tuple[float, float] | None:
+    """(lat, lon) of '43°14'44.6"N 8°54'12.1"W' and the like, or None if it is not one."""
+    m = _DMS.fullmatch(text)
+    if not m:
+        return None
+    a, b = _angle(*m.groups()[:4]), _angle(*m.groups()[4:])
+    if a[0] in "EW" and b[0] in "NS":  # longitude first: take it the other way round
+        a, b = b, a
+    if a[0] not in "NS" or b[0] not in "EW":
+        raise ValueError("give a latitude (N or S) and a longitude (E or W)")
+    return (a[1] if a[0] == "N" else -a[1]), (b[1] if b[0] == "E" else -b[1])
+
+
 def parse_corner(text: str) -> tuple[float, float]:
-    """Parse 'LAT,LON' into (lat, lon), validating ranges."""
+    """Parse a point into (lat, lon), validating ranges: 'LAT,LON' in decimal degrees,
+    or degrees, minutes and seconds with their hemispheres, as Google Maps copies them
+    (43°14'44.6"N 8°54'12.1"W) and as the legend writes them."""
     try:
-        lat_s, lon_s = text.split(",")
-        lat, lon = float(lat_s), float(lon_s)
-    except ValueError:
-        raise ValueError(f"corner must look like LAT,LON (got {text!r})") from None
+        point = _parse_dms(text)
+    except ValueError as err:
+        raise ValueError(f"{err} (got {text!r})") from None
+    if point is None:
+        try:
+            lat_s, lon_s = text.split(",")
+            point = float(lat_s), float(lon_s)
+        except ValueError:
+            raise ValueError(f"corner must look like {CORNER_FORMATS} (got {text!r})") from None
+    lat, lon = point
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
         raise ValueError(f"corner out of range: {text!r}")
     return lat, lon

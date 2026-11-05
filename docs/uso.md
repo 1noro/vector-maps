@@ -40,7 +40,7 @@ make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
 
 | Variable | Defecto | Qué hace |
 |---|---|---|
-| `TL`, `BR` | (una de las dos formas) | Esquinas arriba-izquierda y abajo-derecha, `LAT,LON` en grados |
+| `TL`, `BR` | (una de las dos formas) | Esquinas arriba-izquierda y abajo-derecha, `LAT,LON` en grados, o en grados, minutos y segundos (ver «Las coordenadas») |
 | `CENTER`, `RADIUS` | (la otra forma) | Centro `LAT,LON` y radio en km, en vez de `TL`/`BR`. El círculo de ese radio se ve siempre entero; el papel añade más mapa por el lado largo. No se mezclan con `TL`/`BR` |
 | `PAPER` | `A4` | `A0`, `A1`, `A2`, `A3`, `A4` o `A5` |
 | `SHAPE` | `rect` | Cómo se imprime el mapa en el papel (aparte del papel): `rect` llena la hoja; `square` es un cuadrado centrado y `circle` un círculo centrado, los dos tan anchos como el lado corto de la hoja. El círculo lleva un borde fino y lo de fuera queda en blanco. Con `circle` y `TL`/`BR` el círculo contiene todo el rectángulo (su diámetro es la diagonal); con `CENTER`/`RADIUS` es exactamente el de radio R |
@@ -61,6 +61,32 @@ make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
 
 La zona pedida **se amplía, nunca se recorta**, hasta tener la forma del papel;
 el log dice cuánto ("grown 11 % to fit the paper") y la escala (`1:4120`).
+
+### Las coordenadas
+
+`TL`, `BR`, `CENTER` y sus `…2` admiten dos formas:
+
+- **Grados decimales**, `LAT,LON`: `42.8845,-8.5510`. Es lo que copia Google Maps
+  al hacer clic derecho en el mapa y pulsar la primera línea del menú.
+- **Grados, minutos y segundos con su hemisferio**, como los enseña Google Maps
+  en la ficha de un punto y como los escribe la leyenda (`COORDS=dms` o `dm`), así
+  que las esquinas del pie se pueden volver a pegar: `43°14'44.6"N 8°54'12.1"W`,
+  `43°14.743'N 8°54.202'W` o `43.2457°N 8.9034°W`. Sirven también `′ ″`, las comillas
+  tipográficas `’ ”`, dos `''` en vez de `"`, la coma entre las dos y la longitud
+  primero.
+
+En **`make wizard`** se pegan tal cual. En **`make map`** el valor lleva a la vez
+`'` y `"`, así que la shell pide comillas: entre comillas dobles, con la `"` escapada.
+
+```bash
+make map TL="43°14'44.6\"N 8°54'12.1\"W" BR="43°13'50.2\"N 8°52'01.5\"W"
+```
+
+El `Makefile` lo pasa al contenedor sin volver a interpretarlo, así que basta con
+que lo entienda tu shell. Lo mismo vale para `TITLE`.
+
+Los **plus codes** de Google Maps (`63WW+7MR Ponteceso`) todavía no: ver el TODO 8
+de [`desarrollo.md`](desarrollo.md).
 
 ### Capas
 

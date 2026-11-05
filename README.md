@@ -23,7 +23,8 @@ make map TL=42.8845,-8.5510 BR=42.8775,-8.5385 OUT=out/santiago.svg
 ```
 
 `TL` es la esquina de arriba a la izquierda y `BR` la de abajo a la derecha,
-ambas `LAT,LON`. El área también se da por centro y radio en km
+ambas `LAT,LON` o como las copia Google Maps
+(`TL="43°14'44.6\"N 8°54'12.1\"W"`; ver [`docs/uso.md`](docs/uso.md)). El área también se da por centro y radio en km
 (`CENTER=42.88,-8.54 RADIUS=2`), y `SHAPE=circle` (o `square`) imprime el mapa
 como un círculo (o cuadrado) centrado en la hoja, en vez de llenarla. Quedan en `./out/` el SVG y un PDF del tamaño
 del papel (`santiago.pdf`), los dos con tu usuario (no de root). Con `PDF=0`,

@@ -14,6 +14,7 @@ vector-maps: mapas de OpenStreetMap en SVG por capas, para imprimir.
 Uso: make <objetivo> [VARIABLE=valor …]
 
   map      un mapa:  make map TL=lat,lon BR=lat,lon [opciones]
+             (o como las copia Google Maps: TL="43°14'44.6\"N 8°54'12.1\"W", con la \")
            o por centro y radio:  make map CENTER=lat,lon RADIUS=km [opciones]
              (el círculo de ese radio se ve siempre entero; no se mezcla con TL/BR)
              PAPER=A4            A0…A5
@@ -144,13 +145,16 @@ list: .image
 # y los nombres (street-names, places) no salen por defecto: se añaden con
 # INCLUDE_LAYERS o se piden en LAYERS (ADR 0006, 0008 y 0010).
 # Se pasa con `--tl=` (con el igual) para que una latitud negativa no se lea como flag.
+# Las esquinas, los centros y el título se leen del entorno ("$$TL", no "$(TL)"): make
+# exporta las variables de la línea de comandos, y así las comillas de un
+# 43°14'44.6"N 8°54'12.1"W o de un título llegan tal cual, sin romper la receta.
 map: .image data-dir
-	test \( -n "$(TL)" -a -n "$(BR)" \) -o \( -n "$(CENTER)" -a -n "$(RADIUS)" \) || { echo "falta el área: TL=lat,lon BR=lat,lon, o CENTER=lat,lon RADIUS=km" >&2; exit 1; }
+	test \( -n "$$TL" -a -n "$$BR" \) -o \( -n "$$CENTER" -a -n "$(RADIUS)" \) || { echo "falta el área: TL=lat,lon BR=lat,lon, o CENTER=lat,lon RADIUS=km" >&2; exit 1; }
 	# PDF y PBF se confunden al teclear: PDF solo admite 1 o 0.
 	test -z "$(PDF)" -o "$(PDF)" = 1 -o "$(PDF)" = 0 || { echo "PDF=0 quita el PDF (sale por defecto); para un extracto local es PBF=$(PDF)" >&2; exit 1; }
 	$(DOCKER_RUN) python -m vectormaps map \
-		$(if $(TL),--tl="$(TL)") $(if $(BR),--br="$(BR)") \
-		$(if $(CENTER),--center="$(CENTER)") $(if $(RADIUS),--radius $(RADIUS)) \
+		$(if $(TL),--tl="$$TL") $(if $(BR),--br="$$BR") \
+		$(if $(CENTER),--center="$$CENTER") $(if $(RADIUS),--radius $(RADIUS)) \
 		$(if $(PAPER),--paper $(PAPER)) \
 		$(if $(ORIENTATION),--orientation $(ORIENTATION)) \
 		$(if $(MARGIN),--margin $(MARGIN)) \
@@ -161,14 +165,14 @@ map: .image data-dir
 		$(if $(THEME),--theme $(THEME)) \
 		$(if $(TINT),--tint="$(TINT)") \
 		$(if $(LABEL_LANG),--lang $(LABEL_LANG)) \
-		$(if $(TITLE),--title="$(TITLE)") \
+		$(if $(TITLE),--title="$$TITLE") \
 		$(if $(OUT),--out $(OUT)) \
 		$(if $(filter 0,$(PDF)),--no-pdf,$(if $(PDF),--pdf)) \
 		$(if $(LEGEND),--legend $(LEGEND)) \
 		$(if $(COORDS),--coords $(COORDS)) \
 		$(if $(PBF),--pbf $(PBF)) \
-		$(if $(TL2),--over-tl="$(TL2)") $(if $(BR2),--over-br="$(BR2)") \
-		$(if $(CENTER2),--over-center="$(CENTER2)") $(if $(RADIUS2),--over-radius $(RADIUS2)) \
+		$(if $(TL2),--over-tl="$$TL2") $(if $(BR2),--over-br="$$BR2") \
+		$(if $(CENTER2),--over-center="$$CENTER2") $(if $(RADIUS2),--over-radius $(RADIUS2)) \
 		$(if $(LAYERS2),--over-layers $(LAYERS2)) \
 		$(if $(INCLUDE_LAYERS2),--over-include-layers $(INCLUDE_LAYERS2)) \
 		$(if $(EXCLUDE_LAYERS2),--over-exclude-layers $(EXCLUDE_LAYERS2)) \
