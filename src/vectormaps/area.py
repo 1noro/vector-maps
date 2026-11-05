@@ -15,8 +15,8 @@ from vectormaps.paper import ORIENTATIONS, paper_size
 
 MIN_MARGIN_MM = 6.0  # the attribution line lives in the margin
 SHAPES = ("rect", "square", "circle")
-TITLE_SHARE = 0.07  # the title's band over the map, as a share of the paper's short side
-TITLE_MAX = 40.0  # mm: on an A0 it would be too tall otherwise
+TITLE_SHARE = 0.055  # the title's band over the map, as a share of the paper's short side
+TITLE_MAX = 31.5  # mm: on an A0 it would be too tall otherwise
 
 
 @dataclass(frozen=True)

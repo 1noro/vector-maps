@@ -31,9 +31,8 @@ SHORT_ATTRIBUTION = "© OpenStreetMap"  # the short form OSM accepts; the minima
 LEGENDS = ("full", "minimal")
 COORDS = ("dd", "dm", "dms")  # decimal degrees, degrees and decimal minutes, d-m-s
 LEGEND_SIZE = 2.4  # mm; smaller on small margins or long lines, so everything fits
-QUIET_SCALE = 0.7  # the relief's notice in a minimal legend: this much smaller, and grey
-QUIET_OPACITY = 0.6
-TITLE_FILL = 0.55  # the title's letters, as a share of the height of its band
+TITLE_FILL = 0.7  # the title's letters, as a share of the height of its band
+CAP_HEIGHT = 0.7  # of a capital, in em: what centres the title (DejaVu 0.73, Garamond 0.65)
 
 
 @dataclass
@@ -488,6 +487,7 @@ def legend_lines(jobs: list[Job], legend: str = "full", coords: str = "dd") -> t
 
     Both: the corners, the scales and the attribution (ODbL asks for it on every map).
     Full also gives the paper, before the attribution, and writes that one in full.
+    With relief, a second line: its credit (ADR 0008).
     """
     if legend not in LEGENDS:
         raise ValueError(f"unknown legend {legend!r}; use {', '.join(LEGENDS)}")
@@ -508,37 +508,34 @@ def legend_lines(jobs: list[Job], legend: str = "full", coords: str = "dd") -> t
             zones.append(f"{prefix}↖ {_corner(tl, coords)} · ↘ {_corner(br, coords)}")
     corners = "   |   ".join(zones)
     if legend == "minimal":
-        return (f"{corners} · {scales} · {SHORT_ATTRIBUTION}",)
-    return (f"{corners} · {scales} · {f.paper} {f.orientation} · {ATTRIBUTION}",)
+        line = f"{corners} · {scales} · {SHORT_ATTRIBUTION}"
+    else:
+        line = f"{corners} · {scales} · {f.paper} {f.orientation} · {ATTRIBUTION}"
+    # The relief's credit, under it: its licence asks for it, and has no short form.
+    return (line, relief.ATTRIBUTION) if uses_relief(jobs) else (line,)
 
 
 def uses_relief(jobs: list[Job]) -> bool:
     return any(j.features.get(layer.name) for j in jobs for layer in j.layers if layer.dem)
 
 
+def _legend_size(jobs: list[Job], legend: str, coords: str) -> float:
+    """The size of the legend's letters: as big as the margin allows, smaller if its
+    longest line would not fit the width."""
+    f = jobs[0].frame
+    widest = max(len(line) for line in (*legend_lines(jobs, legend, coords), MARK))
+    size = min(LEGEND_SIZE, f.margin / 3, f.print_w / (widest * CHAR_WIDTH))
+    return math.floor(size * 100) / 100  # down to what `_num` writes, so it still fits
+
+
 def _legend(jobs: list[Job], ink: str, legend: str, coords: str) -> list[str]:
+    """The lines at the bottom and the mark top right, each centred in its margin."""
     f = jobs[0].frame
     lines = legend_lines(jobs, legend, coords)
-    # The relief's attribution (its licence asks for it) goes top left, beside the mark.
-    top = relief.ATTRIBUTION if uses_relief(jobs) else ""
-    # A minimal legend writes it small and grey, so it neither shrinks the rest nor
-    # competes with the map; it cannot be shortened (its licence has no short form).
-    quiet = legend == "minimal"
-    widest = max(*(len(line) for line in lines), 0 if quiet else len(top) + len(MARK) + 4)
-    size = min(LEGEND_SIZE, f.margin / 3, f.print_w / (widest * CHAR_WIDTH))
-    size = math.floor(size * 100) / 100  # down to what `_num` writes, so it still fits
-    # The lines centred in the bottom margin, the mark centred in the top one.
+    size = _legend_size(jobs, legend, coords)
     pad = (f.margin - size - (len(lines) - 1) * 1.35 * size) / 2
     y1 = f.page_h - f.margin + pad + 0.85 * size
     common = f'font-family="sans-serif" font-size="{_num(size)}" fill="{ink}"'
-    top_common = common
-    if quiet and top:
-        room = f.print_w - (len(MARK) + 4) * size * CHAR_WIDTH  # what the mark leaves
-        top_size = min(size * QUIET_SCALE, room / (len(top) * CHAR_WIDTH))
-        top_common = (
-            f'font-family="sans-serif" font-size="{_num(top_size)}" fill="{ink}" '
-            f'fill-opacity="{QUIET_OPACITY:g}"'
-        )
     return [
         '<g id="legend" inkscape:groupmode="layer" inkscape:label="legend">',
         *(
@@ -548,20 +545,8 @@ def _legend(jobs: list[Job], ink: str, legend: str, coords: str) -> list[str]:
         ),
         f'<text x="{_num(f.page_w - f.margin)}" y="{_num(f.margin / 2 + 0.35 * size)}" '
         f'text-anchor="end" {common}>{escape(MARK)}</text>',
-        *(
-            [
-                f'<text x="{_num(f.margin)}" y="{_num(f.margin / 2 + 0.35 * size)}" '
-                f"{top_common}>{escape(top)}</text>"
-            ]
-            if top
-            else []
-        ),
         "</g>",
     ]
-
-
-def _credits(jobs: list[Job]) -> tuple[str, ...]:
-    return ((relief.ATTRIBUTION,) if uses_relief(jobs) else ()) + (MARK,)
 
 
 NORTH_SHARE = 0.045  # the north arrow's height, as a share of the map's short side
@@ -591,19 +576,24 @@ def _lettering(theme: Theme) -> tuple[str, str]:
     return family, slant
 
 
-def _title(f: Frame, theme: Theme, title: str) -> list[str]:
-    """The title, centred in its band between the top margin and the map, in the
-    theme's lettering and ink; as big as the band allows, smaller if it is too long."""
-    if not (title and f.title_band):
-        return []
+def _title_layout(f: Frame, title: str) -> tuple[float, float]:
+    """(size, baseline) of the title, centred between the top of the paper and the
+    bottom of the band (the map, in a rect): its capitals halfway. As big as the band
+    allows, smaller if it is too long. Its capitals stay well under the mark, which
+    keeps its place in the middle of the top margin."""
+    size = min(f.title_band * TITLE_FILL, f.print_w / (len(title) * CHAR_WIDTH))
+    band_bottom = f.margin + f.title_band  # the map's top in a rect, above it otherwise
+    return size, band_bottom / 2 + CAP_HEIGHT / 2 * size
+
+
+def _title(f: Frame, theme: Theme, title: str, size: float, baseline: float) -> list[str]:
+    """The title, centred on the page, in the theme's lettering and ink."""
     family, slant = _lettering(theme)
     weight = theme.layers.get("places", {}).get("city", {}).get("font-weight")
     bold = f' font-weight="{weight}"' if weight else ""
-    size = min(f.title_band * TITLE_FILL, f.print_w / (len(title) * CHAR_WIDTH))
-    y = f.margin + f.title_band / 2 + 0.35 * size
     return [
         '<g id="title" inkscape:groupmode="layer" inkscape:label="title">',
-        f'<text x="{_num(f.page_w / 2)}" y="{_num(y)}" text-anchor="middle" '
+        f'<text x="{_num(f.page_w / 2)}" y="{_num(baseline)}" text-anchor="middle" '
         f"font-family={quoteattr(family)}{slant}{bold} "
         f'font-size="{_num(size)}" fill="{theme.page["ink"]}">{escape(title)}</text>',
         "</g>",
@@ -682,7 +672,8 @@ def render(jobs: list[Job], legend: str = "full", coords: str = "dd", title: str
     f = first.frame
     page = first.theme.page
     ink = page["ink"]
-    head = (title,) if title and f.title_band else ()
+    titled = bool(title and f.title_band)
+    head = (title,) if titled else ()
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<svg xmlns="http://www.w3.org/2000/svg" '
@@ -690,8 +681,7 @@ def render(jobs: list[Job], legend: str = "full", coords: str = "dd", title: str
         'xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" '
         f'width="{_num(f.page_w)}mm" height="{_num(f.page_h)}mm" '
         f'viewBox="0 0 {_num(f.page_w)} {_num(f.page_h)}">',
-        f"<title>{escape(' — '.join(head + legend_lines(jobs, legend, coords) + _credits(jobs)))}"
-        "</title>",
+        f"<title>{escape(' — '.join(head + legend_lines(jobs, legend, coords) + (MARK,)))}</title>",
         '<g id="page" inkscape:groupmode="layer" inkscape:label="page">',
         *_paper(f, page),
         "</g>",
@@ -702,7 +692,7 @@ def render(jobs: list[Job], legend: str = "full", coords: str = "dd", title: str
         '<g id="frame" inkscape:groupmode="layer" inkscape:label="frame">',
         _outline(f, ink, page["frame-width"]),
         "</g>",
-        *_title(f, first.theme, title),
+        *(_title(f, first.theme, title, *_title_layout(f, title)) if titled else []),
         *_legend(jobs, ink, legend, coords),
         "</svg>",
     ]

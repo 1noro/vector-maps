@@ -133,6 +133,10 @@ tema— se marca con **BREAKING** y sube la versión mayor.
 
 ### Cambiado
 
+- **La atribución de Copernicus, abajo**: con relieve, es una segunda línea bajo
+  la de la leyenda, con su misma letra y color (ya no va pequeña y gris en la
+  mínima). Arriba quedan solo la marca, en su sitio, y el título, si lo hay
+  (ADR 0004 y 0008).
 - **`LEGEND=full` en una sola línea**, en el orden de la mínima: esquinas,
   escala, papel y atribución, en vez de dos líneas con la atribución delante
   (ADR 0004).

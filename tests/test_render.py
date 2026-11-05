@@ -9,6 +9,7 @@ from vectormaps.labels import CHAR_WIDTH
 from vectormaps.layers import select
 from vectormaps.pipeline import Item
 from vectormaps.render import (
+    CAP_HEIGHT,
     MARK,
     Job,
     _corner,
@@ -440,9 +441,13 @@ def _title(root):
     return root.find(".//svg:g[@id='title']/svg:text", NS)
 
 
+def _mark(root):
+    return root.find(".//svg:g[@id='legend']/svg:text[@text-anchor='end']", NS)
+
+
 @pytest.mark.parametrize("shape", ["rect", "circle"])
 @pytest.mark.parametrize("legend", ["full", "minimal"])
-def test_the_title_sits_in_its_band_clear_of_the_legend_the_mark_and_the_map(shape, legend):
+def test_the_title_sits_under_the_mark_and_nothing_else_is_on_top(shape, legend):
     frame = fit(TL, BR, "A5", shape=shape, titled=True)
     job = Job("a", frame, load("vintage"), select(["roads"]), {})
     root = ET.fromstring(render([job], legend, title="Santiago de Compostela"))
@@ -450,10 +455,15 @@ def test_the_title_sits_in_its_band_clear_of_the_legend_the_mark_and_the_map(sha
     size, y = float(t.get("font-size")), float(t.get("y"))
     assert t.text == "Santiago de Compostela"
     assert (t.get("text-anchor"), float(t.get("x"))) == ("middle", pytest.approx(frame.page_w / 2))
-    top, bottom = y - 0.75 * size, y + 0.25 * size  # cap height and descenders, roughly
-    assert frame.margin <= top and bottom <= frame.map_y  # under the mark, over the map
+    assert y - CAP_HEIGHT * size > 0 and y < frame.map_y  # over the map, on the paper
+    # the mark keeps its place top right, centred in the margin, well over the capitals
+    mark = _mark(root)
+    mark_size = float(mark.get("font-size"))
+    assert float(mark.get("y")) == pytest.approx(frame.margin / 2 + 0.35 * mark_size, abs=0.01)
+    assert float(mark.get("y")) + 0.25 * mark_size < y - CAP_HEIGHT * size
+    # the rest of the legend is under the map
     for other in root.findall(".//svg:g[@id='legend']/svg:text", NS):
-        assert float(other.get("y")) < frame.margin or float(other.get("y")) > frame.map_y
+        assert other is mark or float(other.get("y")) > frame.map_y + frame.map_h
     # in the theme's lettering and ink
     assert "Garamond" in t.get("font-family") and t.get("font-style") == "italic"
     assert t.get("fill") == job.theme.page["ink"]
@@ -467,7 +477,7 @@ def test_a_circle_with_a_title_is_centred_under_the_band():
         root.find(".//svg:clipPath[@id='clip-a']/svg:circle", NS),
         root.find(".//svg:g[@id='frame']/svg:circle", NS),
     ):
-        assert float(circle.get("cy")) == pytest.approx(frame.map_cy)
+        assert float(circle.get("cy")) == pytest.approx(frame.map_cy, abs=0.01)
         assert float(circle.get("cy")) > frame.page_h / 2
 
 
@@ -483,3 +493,24 @@ def test_no_title_no_band_no_layer():
     root = ET.fromstring(render([make_job("a", TL, BR, "bw")], title="Ignored"))
     assert _title(root) is None  # the frame left no band for it
     assert root.find(".//svg:g[@id='title']", NS) is None
+
+
+@pytest.mark.parametrize("paper", ["A5", "A4", "A0"])
+@pytest.mark.parametrize("legend", ["full", "minimal"])
+@pytest.mark.parametrize("shape", ["rect", "circle"])
+def test_the_title_row_is_centred_between_the_top_of_the_paper_and_the_band(paper, legend, shape):
+    frame = fit(TL, BR, paper, margin=6, shape=shape, orientation="portrait", titled=True)
+    root = ET.fromstring(render([Job("a", frame, load("vintage"), [], {})], legend, title="Ab"))
+    t = _title(root)
+    size, baseline = float(t.get("font-size")), float(t.get("y"))
+    above = baseline - CAP_HEIGHT * size  # the paper's edge to the capitals
+    below = frame.margin + frame.title_band - baseline  # the baseline to the band's bottom
+    assert above > 0 and above == pytest.approx(below, abs=0.02)
+    assert frame.margin + frame.title_band <= frame.map_y + 1e-9
+
+
+def test_without_a_title_the_mark_is_in_the_middle_of_the_top_margin():
+    job = make_job("a", TL, BR, "bw")
+    mark = _mark(ET.fromstring(render([job])))
+    size = float(mark.get("font-size"))
+    assert float(mark.get("y")) == pytest.approx(job.frame.margin / 2 + 0.35 * size, abs=0.01)

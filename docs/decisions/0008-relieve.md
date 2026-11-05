@@ -129,3 +129,14 @@ más por cada banda más empinada.
   tamaño.
 - Lleva la misma atribución de Copernicus: sigue siendo un derivado del DEM.
 - `monochrome` tiñe los colores de las bandas como los de las tramas.
+
+## Añadido del 05/11/2026: la atribución, abajo
+
+A petición del usuario, la atribución de Copernicus deja el margen de arriba,
+donde estaba a la izquierda de la marca, y pasa a **una segunda línea en el
+margen de abajo, bajo la de la leyenda y con su misma letra, tamaño y color**,
+con cualquiera de las dos leyendas. Desaparece la versión pequeña y gris de la
+leyenda mínima. Sigue saliendo **solo si el mapa lleva relieve**, y entera: la
+licencia no tiene forma corta. Las dos líneas comparten tamaño, así que en un
+papel estrecho, como un A5 vertical, se encogen juntas para que quepa la larga.
+Así el margen de arriba queda para la marca y el título (ADR 0004).

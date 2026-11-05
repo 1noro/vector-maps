@@ -263,3 +263,29 @@ la mínima, con el papel antes de la atribución:
 Como cualquier línea de la leyenda, si no cabe en el ancho de la parte
 imprimible, la letra se encoge. El tamaño se redondea hacia abajo a las
 centésimas que se escriben en el SVG, para que el redondeo no la saque del ancho.
+
+## Añadido del 05/11/2026: el título, centrado a la vista
+
+Centrado en su banda, el título quedaba más cerca del mapa que de la línea de
+arriba, porque esa línea (la marca y la nota de Copernicus) va a media altura
+del margen y no en su borde. Ahora **sus mayúsculas quedan a medio camino entre
+la línea base de la línea de arriba y el borde del mapa**, y los dos huecos miden
+lo mismo. La altura de las mayúsculas se estima en 0,7 em, como término medio
+de las letras de los temas (DejaVu 0,73, Garamond 0,65); en una serifa queda
+algo menos de medio milímetro más abajo que en una sans.
+
+## Añadido del 05/11/2026: arriba, solo el título y la marca
+
+El centrado anterior seguía sin convencer, y el usuario pidió dejar arriba solo
+el título y la marca. La atribución de Copernicus baja a una segunda línea de la
+leyenda (ADR 0008). **El título se centra entre el borde del papel y el fondo de
+la banda** (el mapa, en `rect`), con las mayúsculas a medio camino. **La marca no
+se mueve**: sigue arriba a la derecha, centrada en el margen, haya título o no.
+Las mayúsculas del título quedan siempre por debajo de ella (en un A5, más de
+3 mm). Esto sustituye al «centrado a la vista» del apartado anterior.
+
+## Añadido del 05/11/2026: el título llena más la banda
+
+Con la banda más estrecha (ADR 0003), el título pasa a medir el **70 % de su
+alto** (antes el 55 %), y sale del mismo tamaño que antes con menos hueco
+alrededor: en A4, unos 6 mm por encima y por debajo, en vez de 7,5.

@@ -146,8 +146,8 @@ make map TL=… BR=… INCLUDE_LAYERS=hillshade,contours
     { slope = 20, spacing = 0.6, angle = -30, width = 0.09, color = "#8a3a1e" },
   ]
   ```
-- Con relieve, el margen de arriba lleva a la izquierda la **atribución de
-  Copernicus**, que exige su licencia.
+- Con relieve, el margen de abajo lleva una segunda línea, bajo la de la leyenda y
+  con la misma letra, con la **atribución de Copernicus**, que exige su licencia.
 - El DEM mide la superficie (con edificios y árboles): en un plano urbano las
   curvas tienen pequeños bultos. Por qué y qué alternativas se miraron, en el
   ADR 0008.
@@ -233,7 +233,8 @@ crece hasta la forma de la hoja), la escala, el papel y la atribución larga de 
 `TL`/`BR` dan el mapa entero pero un ~2 % más alejado, por cómo se proyecta el
 rectángulo; para repetir un mapa exacto, repite las esquinas que pediste. El
 margen de arriba, a la derecha, lleva la marca
-«Generated with vector-maps by 1noro». Con dos zonas se listan las dos esquinas.
+«Generated with vector-maps by 1noro», haya título o no. Con relieve,
+debajo va una segunda línea con la atribución de Copernicus, con la misma letra. Con dos zonas se listan las dos esquinas.
 Si la línea no cabe a lo ancho (dos zonas en un A5, por ejemplo), la letra se encoge. Con `SHAPE=circle` no hay esquinas que dar: la leyenda lleva en su lugar las
 coordenadas del centro del mapa, `⌖ lat, lon`.
 
@@ -249,10 +250,11 @@ datos (ODbL) pide que el mapa lo diga (ADR 0004).
 
 ### El título
 
-Con `TITLE="…"` el mapa lleva un título **centrado en una banda propia, entre el
-margen de arriba y el mapa**, así que no choca con la leyenda, la marca, la
-atribución de Copernicus ni la flecha del norte. La banda mide un 7 % del lado corto
-del papel (unos 15 mm en A4), con un tope de 40 mm, y el mapa queda esa altura más
+Con `TITLE="…"` el mapa lleva un título en una **banda propia entre el margen de
+arriba y el mapa**, centrado entre el borde del papel y el mapa. La marca sigue en
+su sitio, arriba a la derecha, por encima del título. Arriba no hay nada más (la
+atribución de Copernicus va abajo), así que no choca con nada. La banda mide un 5,5 % del lado corto
+del papel (unos 11,5 mm en A4), con un tope de 31,5 mm, y el mapa queda esa altura más
 bajo. Como con el papel, la zona **crece y no se recorta** para la forma nueva. Con
 `square` y `circle`, la caja del mapa es la que queda debajo de la banda, así que
 sale algo más pequeña.

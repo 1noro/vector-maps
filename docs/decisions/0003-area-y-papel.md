@@ -105,3 +105,10 @@ página. Se eligió una banda propia, y no el margen ni una cartela sobre el map
 porque es la única posición en la que el título no puede chocar con la leyenda,
 la marca ni la flecha, y en la que cabe una letra de título de verdad: con el
 margen de 6 mm, en el margen solo caben unos 4 mm de letra.
+
+## Añadido del 05/11/2026: una banda más estrecha
+
+A petición del usuario, la banda del título pasa del 7 % al **5,5 % del lado corto
+del papel**, con un tope de **31,5 mm** (antes 40), para dejar menos hueco por
+encima y por debajo del título. El título mide lo mismo que antes, porque ocupa
+más parte de la banda (ADR 0004): en A4, 8,1 mm de letra en 11,6 mm de banda.

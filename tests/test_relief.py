@@ -167,15 +167,27 @@ def _notice(svg):
     raise AssertionError("no relief notice")
 
 
-def test_a_minimal_legend_writes_the_relief_notice_small_and_grey_but_whole(hill_cache):
+@pytest.mark.parametrize("legend", ["full", "minimal"])
+def test_the_relief_notice_is_a_second_line_at_the_bottom_like_the_first(hill_cache, legend):
     frame = fit(TL, BR, "A4")
     layers = select(["hillshade", "contours"])
     feats = load_features(frame, layers, source=None, cache=hill_cache)
-    full = _notice(render([Job("a", frame, load("bw"), layers, feats)], "full"))
-    quiet = _notice(render([Job("a", frame, load("bw"), layers, feats)], "minimal"))
-    assert quiet.text == full.text == relief.ATTRIBUTION
-    assert float(quiet.get("font-size")) < float(full.get("font-size"))
-    assert quiet.get("fill-opacity") and not full.get("fill-opacity")
+    svg = render([Job("a", frame, load("bw"), layers, feats)], legend)
+    notice = _notice(svg)
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    first = ET.fromstring(svg).find(".//svg:g[@id='legend']/svg:text", ns)
+    assert notice.text == relief.ATTRIBUTION  # whole: its licence has no short form
+    assert float(first.get("y")) < float(notice.get("y")) < frame.page_h
+    assert float(first.get("y")) > frame.map_y + frame.map_h  # both under the map
+    assert first.get("x") == notice.get("x")
+    for attr in ("font-family", "font-size", "fill", "fill-opacity"):
+        assert notice.get(attr) == first.get(attr)
+
+
+def test_without_relief_there_is_no_notice(hill_cache):
+    frame = fit(TL, BR, "A4")
+    svg = render([Job("a", frame, load("bw"), select(["roads"]), {})], "full")
+    assert "Relief produced" not in svg
 
 
 def test_a_hatch_only_draws_where_the_grid_is_above_its_threshold():
