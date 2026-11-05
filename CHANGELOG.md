@@ -140,6 +140,9 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   `stream`) y `green-names` (`park`, `reserve`), que no salen por defecto
   (`INCLUDE_LAYERS=water-names,green-names`). Un río, a lo largo del cauce; un
   lago o un parque, dentro, y solo si cabe (ADR 0006, añadido del 05/11).
+- **`NORTH=0`** (`--no-north`, y su pregunta en el wizard): el mapa sin la flecha
+  del norte, que sigue saliendo por defecto. Sin ella, los nombres pueden ir en
+  esa esquina (ADR 0004, añadido del 05/11).
 - **Clase `hamlet` en `places`**: el lugar (`place=hamlet`), con letra entre la
   del barrio y la del pueblo.
 

@@ -257,3 +257,15 @@ def test_a_crowded_map_has_no_two_names_on_top_of_each_other():
     assert_no_overlap(found)
     kinds = {k for k, _, _ in found}
     assert {"places.village", "places.hamlet", "water-names.lake", "street-names.major"} <= kinds
+
+
+def test_without_the_arrow_a_name_may_go_where_it_was():
+    arrow = _north_box(FRAME)
+    x, y = arrow.centroid.x, arrow.centroid.y
+    feats = {"places": [Item("village", point(x - 4, y), "Norte")]}
+    job = Job("a", FRAME, load("color"), select(["places"]), feats)
+    root = ET.fromstring(render([job], north=False))
+    assert [t.text for t in root.findall(".//svg:g[@id='a-places-village']/svg:text", NS)] == [
+        "Norte"
+    ]
+    assert not ET.fromstring(render([job])).findall(".//svg:g[@id='a-places-village']", NS)

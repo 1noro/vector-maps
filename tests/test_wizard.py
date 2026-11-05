@@ -44,6 +44,7 @@ def test_centre_and_radius_and_the_rest_of_the_options():
         pbf="data/pbf/galicia-latest.osm.pbf",
         out="out/test.svg",
         pdf=False,
+        north=False,
     )
     ns = parse(a)
     assert (ns.center, ns.radius, ns.tl, ns.br) == ("42.88,-8.54", 1.5, None, None)
@@ -51,7 +52,8 @@ def test_centre_and_radius_and_the_rest_of_the_options():
     assert (ns.theme, ns.tint, ns.lang) == ("monochrome", "#7a2e1f", "gl,es")
     assert (ns.legend, ns.coords, ns.pdf) == ("full", "dd", False)
     assert ns.title == "Cecebre e Abegondo"
-    assert "PDF=0" in wizard.to_make(a)
+    assert "PDF=0" in wizard.to_make(a) and "NORTH=0" in wizard.to_make(a)
+    assert ns.north is False and parse(Answers(area=a.area)).north is True
     assert "TITLE=Cecebre e Abegondo" in shlex.split(wizard.to_make(a))
     assert ns.pbf == Path("data/pbf/galicia-latest.osm.pbf")
     assert ns.out == Path("out/test.svg")
@@ -132,6 +134,8 @@ def test_every_make_variable_is_passed_by_the_makefile_as_its_option():
     passed = dict(re.findall(r"\$\(if \$\((\w+)\),(--[\w-]+)", makefile))
     if "$(if $(filter 0,$(PDF)),--no-pdf," in makefile:
         passed["PDF"] = "--no-pdf"  # PDF=0; the PDF is drawn by default
+    if "$(if $(filter 0,$(NORTH)),--no-north," in makefile:
+        passed["NORTH"] = "--no-north"  # NORTH=0; the arrow is drawn by default
     a = Answers(
         area=CORNERS,
         paper="A3",
@@ -148,6 +152,7 @@ def test_every_make_variable_is_passed_by_the_makefile_as_its_option():
         pbf="x.osm.pbf",
         out="out/x.svg",
         pdf=False,
+        north=False,
         overlay=True,
         over_area=Area(mode="center", center="1,1", radius="1"),
         over_layers=["roads", "places", "water", "green", "buildings", "contours"],

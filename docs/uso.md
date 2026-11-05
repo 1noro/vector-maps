@@ -32,7 +32,7 @@ sale bien; para empezar de cero, borra `data/wizard.json`.
 ```bash
 make map TL=lat,lon BR=lat,lon [PAPER=A4] [SHAPE=rect] [ORIENTATION=landscape] [MARGIN=6] \
          [LAYERS=water,roads] [INCLUDE_LAYERS=places] [EXCLUDE_LAYERS=railways] [THEME=bw] [TINT=#1f3b5c] [LABEL_LANG=es] [PBF=ruta] \
-         [TITLE="Cecebre"] [OUT=out/map.svg] [PDF=0] [LEGEND=full] [COORDS=dms]
+         [TITLE="Cecebre"] [OUT=out/map.svg] [PDF=0] [LEGEND=full] [COORDS=dms] [NORTH=0]
 
 # o el área por centro y radio (km), en vez de TL y BR:
 make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
@@ -57,6 +57,7 @@ make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
 | `OUT` | `out/map.svg` | Fichero de salida |
 | `PDF` | `1` | Además del SVG, un PDF del tamaño del papel al lado (`out/map.pdf`). `PDF=0`: solo el SVG |
 | `COORDS` | `dms` | Formato de las coordenadas de la leyenda: `dd` grados decimales (`42.88000, -8.54000`), `dm` grados y minutos decimales (`42°52.800'N 8°32.400'W`) o `dms` grados, minutos y segundos (`42°52'48.0"N 8°32'24.0"W`) |
+| `NORTH` | `1` | La flecha al norte arriba a la derecha del mapa. `NORTH=0`: sin ella |
 | `LEGEND` | `minimal` | `minimal`: solo las esquinas, la escala, `© OpenStreetMap` y la marca; `full`: también el papel y la atribución larga |
 
 La zona pedida **se amplía, nunca se recorta**, hasta tener la forma del papel;
@@ -304,13 +305,14 @@ queda como antes.
 
 ### El norte
 
-Todo mapa lleva, arriba a la derecha dentro del mapa, una **flecha al norte**: media
+Por defecto, el mapa lleva, arriba a la derecha dentro del mapa, una **flecha al norte**: media
 en tinta y media en el color del papel, con una «N» en la letra de los nombres
 del tema y un halo para leerse sobre cualquier cosa. Apunta al **norte
 geográfico**, no al de la cuadrícula: el mapa se dibuja en UTM, cuyo norte se
 separa de los meridianos cuanto más lejos del meridiano central del huso (medio
 grado en Cecebre, hasta ~2,5° al borde del huso). Su tamaño va con el del mapa,
-hasta 24 mm. Está en su propia capa de Inkscape, `north`.
+hasta 24 mm. Está en su propia capa de Inkscape, `north`. Con `NORTH=0` no sale, y
+los nombres pueden ir en esa esquina.
 
 ## Superponer dos zonas
 

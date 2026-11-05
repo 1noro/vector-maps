@@ -36,6 +36,7 @@ Uso: make <objetivo> [VARIABLE=valor …]
                                  (por defecto; LEGEND=full añade el papel y la atribución larga)
              COORDS=dms          coordenadas de la leyenda: dd (42.88000, -8.54000),
                                  dm (42°52.800'N 8°32.400'W), dms (42°52'48.0"N 8°32'24.0"W)
+             NORTH=1             la flecha al norte arriba a la derecha (por defecto; NORTH=0, sin ella)
              PBF=data/pbf/x.osm.pbf   datos de un extracto local, no de Overpass
                                  (sin PBF, si Overpass falla y un extracto de data/pbf/
                                  cubre el área, se usa solo, con aviso)
@@ -137,6 +138,7 @@ list: .image
 #          [PDF=0]           (sin el PDF del tamaño del papel que sale, por defecto, al lado)
 #          [COORDS=dd|dm|dms]  (formato de las coordenadas de la leyenda; por defecto dms)
 #          [LEGEND=full]     (con el papel y la atribución larga; por defecto, la mínima; ADR 0004)
+#          [NORTH=0]         (sin la flecha del norte, que sale por defecto; ADR 0004)
 #          [THEME=monochrome TINT=#1f3b5c]   (el bw tintado de un color; # opcional)
 # Datos: por defecto Overpass; con PBF=ruta.osm.pbf, desde un extracto local.
 # Y, para superponer una segunda área encima (mismo papel, otro zoom):
@@ -153,6 +155,7 @@ map: .image data-dir
 	test \( -n "$$TL" -a -n "$$BR" \) -o \( -n "$$CENTER" -a -n "$(RADIUS)" \) || { echo "falta el área: TL=lat,lon BR=lat,lon, o CENTER=lat,lon RADIUS=km" >&2; exit 1; }
 	# PDF y PBF se confunden al teclear: PDF solo admite 1 o 0.
 	test -z "$(PDF)" -o "$(PDF)" = 1 -o "$(PDF)" = 0 || { echo "PDF=0 quita el PDF (sale por defecto); para un extracto local es PBF=$(PDF)" >&2; exit 1; }
+	test -z "$(NORTH)" -o "$(NORTH)" = 1 -o "$(NORTH)" = 0 || { echo "NORTH=0 quita la flecha del norte (sale por defecto); NORTH solo admite 1 o 0" >&2; exit 1; }
 	$(DOCKER_RUN) python -m vectormaps map \
 		$(if $(TL),--tl="$$TL") $(if $(BR),--br="$$BR") \
 		$(if $(CENTER),--center="$$CENTER") $(if $(RADIUS),--radius $(RADIUS)) \
@@ -171,6 +174,7 @@ map: .image data-dir
 		$(if $(filter 0,$(PDF)),--no-pdf,$(if $(PDF),--pdf)) \
 		$(if $(LEGEND),--legend $(LEGEND)) \
 		$(if $(COORDS),--coords $(COORDS)) \
+		$(if $(filter 0,$(NORTH)),--no-north,$(if $(NORTH),--north)) \
 		$(if $(PBF),--pbf $(PBF)) \
 		$(if $(TL2),--over-tl="$$TL2") $(if $(BR2),--over-br="$$BR2") \
 		$(if $(CENTER2),--over-center="$$CENTER2") $(if $(RADIUS2),--over-radius $(RADIUS2)) \

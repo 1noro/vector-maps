@@ -289,3 +289,11 @@ Las mayúsculas del título quedan siempre por debajo de ella (en un A5, más de
 Con la banda más estrecha (ADR 0003), el título pasa a medir el **70 % de su
 alto** (antes el 55 %), y sale del mismo tamaño que antes con menos hueco
 alrededor: en A4, unos 6 mm por encima y por debajo, en vez de 7,5.
+
+## Añadido del 05/11/2026: la flecha del norte se puede quitar
+
+A petición del usuario, la flecha del norte (añadido del 04/11) **deja de ser
+obligatoria**: sigue saliendo por defecto, pero `NORTH=0` (`--no-north`, y su
+pregunta en el wizard) la quita. Sin ella no hay capa `north`, y los nombres
+pueden ocupar la esquina donde iba (ADR 0006, añadido del 05/11). La atribución
+sigue sin opción (ODbL).

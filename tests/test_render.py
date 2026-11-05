@@ -514,3 +514,10 @@ def test_without_a_title_the_mark_is_in_the_middle_of_the_top_margin():
     mark = _mark(ET.fromstring(render([job])))
     size = float(mark.get("font-size"))
     assert float(mark.get("y")) == pytest.approx(job.frame.margin / 2 + 0.35 * size, abs=0.01)
+
+
+def test_north_false_leaves_the_arrow_out():
+    job = make_job("a", TL, BR, "dark")
+    root = ET.fromstring(render([job], north=False))
+    assert root.find(".//svg:g[@id='north']", NS) is None
+    assert root.find(".//svg:g[@id='frame']", NS) is not None  # the rest is still there

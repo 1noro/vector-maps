@@ -69,8 +69,9 @@ tocar código.
    (añadido del 03/11). **No se pisan**: se colocan por `LABEL_PRIORITY` y el que
    no encuentra sitio no sale (añadido del 05/11).
 8. **La leyenda lleva las esquinas del mapa tal como está en el papel y la marca
-   «Generated with vector-maps by 1noro»** (ADR 0004, añadido del 03/11), y todo
-   mapa, **una flecha al norte geográfico** (añadido del 04/11).
+   «Generated with vector-maps by 1noro»** (ADR 0004, añadido del 03/11), y por
+   defecto **una flecha al norte geográfico** (añadido del 04/11), que `NORTH=0`
+   quita (añadido del 05/11).
 9. **El PDF sale del SVG con Inkscape** (ADR 0007): es el único conversor que
    pinta `textPath` y los halos. Ni librsvg ni CairoSVG.
 10. **El relieve (`hillshade`, `contours`) sale del DEM Copernicus GLO-30 con
@@ -122,6 +123,7 @@ make map TL=lat,lon BR=lat,lon [PAPER=A4] [THEME=bw|color] [LAYERS=a,b] [OUT=out
                               # por defecto: apaisado, margen 6, bw, leyenda mínima, dms y PDF
 make map … THEME=monochrome TINT=#7a2e1f                        # el bw tintado de un color
 make map … PDF=0                                                # sin el PDF (sale por defecto)
+make map … NORTH=0                                              # sin la flecha del norte
 make map … LEGEND=full                                          # leyenda larga (papel, © completa)
 make map … INCLUDE_LAYERS=hillshade,contours | EXCLUDE_LAYERS=railways # añadir | quitar capas
 make map … LABEL_LANG=gl                                         # idioma de los nombres (es por defecto)

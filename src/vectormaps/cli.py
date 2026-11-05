@@ -109,6 +109,13 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help="a title over the map, in a band of its own (the map gets that much shorter)",
     )
+    m.add_argument(
+        "--north",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="draw the arrow to true north in the top right corner of the map "
+        "(default; --no-north: without it)",
+    )
     m.add_argument("--cache", type=Path, default=Path("data/cache"))
     m.add_argument("--pbf", type=Path, help="read a local .osm.pbf instead of asking Overpass")
     m.add_argument("--overpass-url", help="default: $OVERPASS_URL or the public server")
@@ -269,7 +276,7 @@ def _map(a: argparse.Namespace) -> int:
         jobs = _load_jobs(specs, source, langs, a.cache)
 
     with Spinner("drawing the SVG"):
-        svg = render(jobs, a.legend, a.coords, title)
+        svg = render(jobs, a.legend, a.coords, title, a.north)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     tmp = tmp_beside(a.out)
     try:

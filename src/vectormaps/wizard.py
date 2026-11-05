@@ -51,6 +51,7 @@ class Answers:
     title: str = ""  # empty: no title
     legend: str = "minimal"
     coords: str = "dms"
+    north: bool = True
     pbf: str = ""  # empty: Overpass
     out: str = "out/map.svg"
     pdf: bool = True
@@ -86,13 +87,14 @@ def _area_options(area: Area, prefix: str) -> list[tuple[str, str, str]]:
     return [(f"TL{prefix}", "tl", area.tl), (f"BR{prefix}", "br", area.br)]
 
 
-FLAGS = {"pdf", "no-pdf"}
+FLAGS = {"pdf", "no-pdf", "north", "no-north"}
 
 
 def options(a: Answers) -> list[tuple[str, str, str]]:
     """(make variable, CLI option, value) for every answer that is not the default.
 
-    The options in FLAGS take no value on the command line (--no-pdf, but PDF=0).
+    The options in FLAGS take no value on the command line (--no-pdf, but PDF=0;
+    --no-north, but NORTH=0).
     """
     opts: list[tuple[str, str, str]] = list(_area_options(a.area, ""))
     defaults = Answers()
@@ -120,6 +122,8 @@ def options(a: Answers) -> list[tuple[str, str, str]]:
         opts.append(("LEGEND", "legend", a.legend))
     if a.coords != defaults.coords:
         opts.append(("COORDS", "coords", a.coords))
+    if a.north != defaults.north:
+        opts.append(("NORTH", "north", "1") if a.north else ("NORTH", "no-north", "0"))
     if a.pbf:
         opts.append(("PBF", "pbf", a.pbf))
     if a.out != defaults.out:
@@ -358,8 +362,16 @@ def ask_style(a: Answers) -> Answers:
         ],
         a.coords,
     )
+    north = questionary.confirm("North arrow?", default=a.north).unsafe_ask()
     return dataclasses.replace(
-        a, theme=theme, tint=tint, lang=lang, title=title, legend=legend, coords=coords
+        a,
+        theme=theme,
+        tint=tint,
+        lang=lang,
+        title=title,
+        legend=legend,
+        coords=coords,
+        north=north,
     )
 
 

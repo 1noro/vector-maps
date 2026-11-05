@@ -422,7 +422,7 @@ def _area_label(geom: BaseGeometry, text: str, style: dict, whole, placer: Place
     return None
 
 
-def _place_labels(job: Job, tr: Transformer) -> tuple[list[str], Labels]:
+def _place_labels(job: Job, tr: Transformer, north: bool = True) -> tuple[list[str], Labels]:
     """Every name of the zone, placed most important first (`LABEL_PRIORITY`) so that
     none overlaps another or the north arrow: one that finds its place taken tries the
     others it has (`POINT_SHIFTS`, a line's `street_slots`) and, if none is free, is
@@ -434,7 +434,7 @@ def _place_labels(job: Job, tr: Transformer) -> tuple[list[str], Labels]:
     """
     f = job.frame
     whole = _map_area(f)
-    placer = Placer([_north_box(f)])
+    placer = Placer([_north_box(f)] if north else [])
     present = {layer.name for layer in job.layers if layer.text}
     defs: list[str] = []
     labels: Labels = {}
@@ -503,7 +503,7 @@ def _text_layer(job: Job, layer: Layer, labels: Labels) -> list[str]:
     return groups
 
 
-def _job_group(job: Job) -> str:
+def _job_group(job: Job, north: bool = True) -> str:
     tr = Transformer.from_crs(4326, job.frame.crs, always_xy=True)
     label = f"{job.label.upper()} 1:{job.frame.scale} {job.theme.name}"
     opacity = f' opacity="{job.opacity:g}"' if job.opacity < 1 else ""
@@ -517,7 +517,7 @@ def _job_group(job: Job) -> str:
             f'<rect x="{_num(f.map_x)}" y="{_num(f.map_y)}" '
             f'width="{_num(f.map_w)}" height="{_num(f.map_h)}"/>'
         )
-    paths, labels = _place_labels(job, tr)
+    paths, labels = _place_labels(job, tr, north)
     out = [
         f'<g id="area-{job.label}" inkscape:groupmode="layer" '
         f'inkscape:label={quoteattr(label)}{opacity} clip-path="url(#clip-{job.label})">',
@@ -756,9 +756,12 @@ def _paper(f: Frame, page: dict) -> list[str]:
     return [sheet.format(page["margin"]), inner]
 
 
-def render(jobs: list[Job], legend: str = "full", coords: str = "dd", title: str = "") -> str:
+def render(
+    jobs: list[Job], legend: str = "full", coords: str = "dd", title: str = "", north: bool = True
+) -> str:
     """The SVG of the stacked zones. A `title` goes in the band the frame left for it
-    (`fit(..., titled=True)`); without the band it is not drawn."""
+    (`fit(..., titled=True)`); without the band it is not drawn. `north=False` leaves
+    out the north arrow, and the names may then go where it was."""
     first = jobs[0]
     f = first.frame
     page = first.theme.page
@@ -777,9 +780,9 @@ def render(jobs: list[Job], legend: str = "full", coords: str = "dd", title: str
         *_paper(f, page),
         "</g>",
     ]
-    parts += [_job_group(j) for j in jobs]
+    parts += [_job_group(j, north) for j in jobs]
     parts += [
-        _north(f, first.theme),
+        *([_north(f, first.theme)] if north else []),
         '<g id="frame" inkscape:groupmode="layer" inkscape:label="frame">',
         _outline(f, ink, page["frame-width"]),
         "</g>",
