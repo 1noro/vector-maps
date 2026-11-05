@@ -38,6 +38,7 @@ def test_centre_and_radius_and_the_rest_of_the_options():
         theme="monochrome",
         tint="#7a2e1f",
         lang="gl,es",
+        title="Cecebre e Abegondo",
         legend="full",
         coords="dd",
         pbf="data/pbf/galicia-latest.osm.pbf",
@@ -49,7 +50,9 @@ def test_centre_and_radius_and_the_rest_of_the_options():
     assert (ns.paper, ns.orientation, ns.shape, ns.margin) == ("A3", "portrait", "circle", 12.0)
     assert (ns.theme, ns.tint, ns.lang) == ("monochrome", "#7a2e1f", "gl,es")
     assert (ns.legend, ns.coords, ns.pdf) == ("full", "dd", False)
+    assert ns.title == "Cecebre e Abegondo"
     assert "PDF=0" in wizard.to_make(a)
+    assert "TITLE=Cecebre e Abegondo" in shlex.split(wizard.to_make(a))
     assert ns.pbf == Path("data/pbf/galicia-latest.osm.pbf")
     assert ns.out == Path("out/test.svg")
 
@@ -130,6 +133,7 @@ def test_every_make_variable_is_passed_by_the_makefile_as_its_option():
         theme="monochrome",
         tint="#123",
         lang="gl",
+        title="Cecebre e Abegondo",
         legend="full",
         coords="dm",
         pbf="x.osm.pbf",

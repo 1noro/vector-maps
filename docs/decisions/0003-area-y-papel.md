@@ -88,3 +88,20 @@ Ahora **todas las formas llevan el `<clipPath>`** en el grupo de cada zona, no
 solo el círculo: en `rect` y `square` es el rectángulo del mapa (`map_x`,
 `map_y`, `map_w`, `map_h`). Se suelta en Inkscape igual que el del círculo. El
 marco sigue dibujándose encima, fuera del recorte.
+
+## Añadido del 05/11/2026: la banda del título
+
+Con `--title` (`TITLE` en `make`), **la parte imprimible pierde por arriba una
+banda para el título**: `fit(..., titled=True)` la mide como un 7 % del lado
+corto del papel, con un tope de 40 mm, y `Frame.title_band` la guarda (0 sin
+título). `print_h` ya la descuenta, y `map_y` cuenta desde debajo de ella; el
+centro de la caja (`map_cx`, `map_cy`) deja de ser el de la hoja, y el círculo
+se centra ahí.
+
+Lo demás no cambia: con `rect` la zona **crece** hasta la forma nueva, más
+apaisada, y con `square` y `circle` la caja es el cuadrado que cabe debajo de la
+banda. Las dos zonas superpuestas llevan la misma banda, porque comparten la
+página. Se eligió una banda propia, y no el margen ni una cartela sobre el mapa,
+porque es la única posición en la que el título no puede chocar con la leyenda,
+la marca ni la flecha, y en la que cabe una letra de título de verdad: con el
+margen de 6 mm, en el margen solo caben unos 4 mm de letra.

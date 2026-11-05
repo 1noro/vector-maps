@@ -27,6 +27,8 @@ Uso: make <objetivo> [VARIABLE=valor …]
                                  poster, monochrome, o un .toml
              TINT=#1f3b5c        color de THEME=monochrome
              LABEL_LANG=es       idioma de los nombres (es, gl, en…; local)
+             TITLE="Cecebre"     un título encima del mapa, en una banda propia
+                                 (el mapa queda más bajo; sin TITLE, no hay banda)
              OUT=out/map.svg     fichero de salida
              PDF=1               también un PDF del tamaño del papel (por defecto; PDF=0, solo el SVG)
              LEGEND=minimal      leyenda corta: esquinas, escala, © OpenStreetMap y marca
@@ -129,6 +131,7 @@ list: .image
 #          [SHAPE=rect|square|circle]   (cómo se imprime el mapa en el papel; por defecto rect)
 #          [ORIENTATION=landscape|portrait|auto] [MARGIN=6] [OUT=out/map.svg]
 #          [LABEL_LANG=es]   (idioma de los nombres: es, gl, en… o varios: gl,es)
+#          [TITLE="Cecebre"]  (un título en una banda propia encima del mapa; ADR 0003 y 0004)
 #          [PDF=0]           (sin el PDF del tamaño del papel que sale, por defecto, al lado)
 #          [COORDS=dd|dm|dms]  (formato de las coordenadas de la leyenda; por defecto dms)
 #          [LEGEND=full]     (con el papel y la atribución larga; por defecto, la mínima; ADR 0004)
@@ -158,6 +161,7 @@ map: .image data-dir
 		$(if $(THEME),--theme $(THEME)) \
 		$(if $(TINT),--tint="$(TINT)") \
 		$(if $(LABEL_LANG),--lang $(LABEL_LANG)) \
+		$(if $(TITLE),--title="$(TITLE)") \
 		$(if $(OUT),--out $(OUT)) \
 		$(if $(filter 0,$(PDF)),--no-pdf,$(if $(PDF),--pdf)) \
 		$(if $(LEGEND),--legend $(LEGEND)) \

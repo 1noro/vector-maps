@@ -33,6 +33,7 @@ COORDS = ("dd", "dm", "dms")  # decimal degrees, degrees and decimal minutes, d-
 LEGEND_SIZE = 2.4  # mm; smaller on small margins or long lines, so everything fits
 QUIET_SCALE = 0.7  # the relief's notice in a minimal legend: this much smaller, and grey
 QUIET_OPACITY = 0.6
+TITLE_FILL = 0.55  # the title's letters, as a share of the height of its band
 
 
 @dataclass
@@ -437,9 +438,7 @@ def _job_group(job: Job) -> str:
     # Every zone is clipped to the map: the geometry is cut at the edge, but a round
     # line end, a casing or a stroke along the edge would still reach past it by half a width.
     if f.shape == "circle":
-        shape = (
-            f'<circle cx="{_num(f.page_w / 2)}" cy="{_num(f.page_h / 2)}" r="{_num(f.map_w / 2)}"/>'
-        )
+        shape = f'<circle cx="{_num(f.map_cx)}" cy="{_num(f.map_cy)}" r="{_num(f.map_w / 2)}"/>'
     else:
         shape = (
             f'<rect x="{_num(f.map_x)}" y="{_num(f.map_y)}" '
@@ -485,10 +484,10 @@ def _corner(c: tuple[float, float], coords: str = "dd") -> str:
 
 
 def legend_lines(jobs: list[Job], legend: str = "full", coords: str = "dd") -> tuple[str, ...]:
-    """The bottom lines of the legend.
+    """The bottom lines of the legend: one, shrunk by `_legend` if it is too long.
 
-    Full: attribution, paper and scales; then the corners. Minimal: one line with the
-    corners, the scales and the short attribution (ODbL asks for it on every map).
+    Both: the corners, the scales and the attribution (ODbL asks for it on every map).
+    Full also gives the paper, before the attribution, and writes that one in full.
     """
     if legend not in LEGENDS:
         raise ValueError(f"unknown legend {legend!r}; use {', '.join(LEGENDS)}")
@@ -510,7 +509,7 @@ def legend_lines(jobs: list[Job], legend: str = "full", coords: str = "dd") -> t
     corners = "   |   ".join(zones)
     if legend == "minimal":
         return (f"{corners} · {scales} · {SHORT_ATTRIBUTION}",)
-    return f"{ATTRIBUTION} · {f.paper} {f.orientation} · {scales}", corners
+    return (f"{corners} · {scales} · {f.paper} {f.orientation} · {ATTRIBUTION}",)
 
 
 def uses_relief(jobs: list[Job]) -> bool:
@@ -527,6 +526,7 @@ def _legend(jobs: list[Job], ink: str, legend: str, coords: str) -> list[str]:
     quiet = legend == "minimal"
     widest = max(*(len(line) for line in lines), 0 if quiet else len(top) + len(MARK) + 4)
     size = min(LEGEND_SIZE, f.margin / 3, f.print_w / (widest * CHAR_WIDTH))
+    size = math.floor(size * 100) / 100  # down to what `_num` writes, so it still fits
     # The lines centred in the bottom margin, the mark centred in the top one.
     pad = (f.margin - size - (len(lines) - 1) * 1.35 * size) / 2
     y1 = f.page_h - f.margin + pad + 0.85 * size
@@ -582,14 +582,40 @@ def true_north(f: Frame) -> float:
     return math.degrees(math.atan2(nx - x, ny - y))
 
 
-def _north(f: Frame, theme: Theme) -> str:
-    """The north arrow, in the top right corner of the map: half ink, half paper, an N
-    over it, all with a halo of paper so it reads over anything. Always drawn. The N
-    in the theme's lettering (that of its city names), sans-serif if it has none."""
-    ink, paper = theme.page["ink"], theme.page["background"]
+def _lettering(theme: Theme) -> tuple[str, str]:
+    """The theme's lettering (that of its city names; sans-serif if it has none): the
+    font family, and the font-style attribute if it has one."""
     font = theme.layers.get("places", {}).get("city", {})  # a partial theme may lack it
     family = font.get("font-family", "sans-serif")
     slant = f' font-style="{font["font-style"]}"' if "font-style" in font else ""
+    return family, slant
+
+
+def _title(f: Frame, theme: Theme, title: str) -> list[str]:
+    """The title, centred in its band between the top margin and the map, in the
+    theme's lettering and ink; as big as the band allows, smaller if it is too long."""
+    if not (title and f.title_band):
+        return []
+    family, slant = _lettering(theme)
+    weight = theme.layers.get("places", {}).get("city", {}).get("font-weight")
+    bold = f' font-weight="{weight}"' if weight else ""
+    size = min(f.title_band * TITLE_FILL, f.print_w / (len(title) * CHAR_WIDTH))
+    y = f.margin + f.title_band / 2 + 0.35 * size
+    return [
+        '<g id="title" inkscape:groupmode="layer" inkscape:label="title">',
+        f'<text x="{_num(f.page_w / 2)}" y="{_num(y)}" text-anchor="middle" '
+        f"font-family={quoteattr(family)}{slant}{bold} "
+        f'font-size="{_num(size)}" fill="{theme.page["ink"]}">{escape(title)}</text>',
+        "</g>",
+    ]
+
+
+def _north(f: Frame, theme: Theme) -> str:
+    """The north arrow, in the top right corner of the map: half ink, half paper, an N
+    over it, all with a halo of paper so it reads over anything. Always drawn. The N
+    in the theme's lettering."""
+    ink, paper = theme.page["ink"], theme.page["background"]
+    family, slant = _lettering(theme)
     h = min(NORTH_MAX, NORTH_SHARE * min(f.map_w, f.map_h))
     half, notch = h * 0.25, h * 0.2  # half the width; how far the base's notch goes in
     tip, base = -h / 2, h / 2
@@ -622,7 +648,7 @@ def _north(f: Frame, theme: Theme) -> str:
 def _outline(f: Frame, ink: str, width: float | str) -> str:
     if f.shape == "circle":
         return (
-            f'<circle cx="{_num(f.page_w / 2)}" cy="{_num(f.page_h / 2)}" '
+            f'<circle cx="{_num(f.map_cx)}" cy="{_num(f.map_cy)}" '
             f'r="{_num(f.map_w / 2)}" fill="none" stroke="{ink}" stroke-width="{width}"/>'
         )
     return (
@@ -639,7 +665,7 @@ def _paper(f: Frame, page: dict) -> list[str]:
         return [sheet.format(page["background"])]
     fill = page["background"]
     if f.shape == "circle":
-        cx, cy, r = _num(f.page_w / 2), _num(f.page_h / 2), _num(f.map_w / 2)
+        cx, cy, r = _num(f.map_cx), _num(f.map_cy), _num(f.map_w / 2)
         inner = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{fill}"/>'
     else:
         inner = (
@@ -649,11 +675,14 @@ def _paper(f: Frame, page: dict) -> list[str]:
     return [sheet.format(page["margin"]), inner]
 
 
-def render(jobs: list[Job], legend: str = "full", coords: str = "dd") -> str:
+def render(jobs: list[Job], legend: str = "full", coords: str = "dd", title: str = "") -> str:
+    """The SVG of the stacked zones. A `title` goes in the band the frame left for it
+    (`fit(..., titled=True)`); without the band it is not drawn."""
     first = jobs[0]
     f = first.frame
     page = first.theme.page
     ink = page["ink"]
+    head = (title,) if title and f.title_band else ()
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<svg xmlns="http://www.w3.org/2000/svg" '
@@ -661,7 +690,8 @@ def render(jobs: list[Job], legend: str = "full", coords: str = "dd") -> str:
         'xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" '
         f'width="{_num(f.page_w)}mm" height="{_num(f.page_h)}mm" '
         f'viewBox="0 0 {_num(f.page_w)} {_num(f.page_h)}">',
-        f"<title>{escape(' — '.join(legend_lines(jobs, legend, coords) + _credits(jobs)))}</title>",
+        f"<title>{escape(' — '.join(head + legend_lines(jobs, legend, coords) + _credits(jobs)))}"
+        "</title>",
         '<g id="page" inkscape:groupmode="layer" inkscape:label="page">',
         *_paper(f, page),
         "</g>",
@@ -672,6 +702,7 @@ def render(jobs: list[Job], legend: str = "full", coords: str = "dd") -> str:
         '<g id="frame" inkscape:groupmode="layer" inkscape:label="frame">',
         _outline(f, ink, page["frame-width"]),
         "</g>",
+        *_title(f, first.theme, title),
         *_legend(jobs, ink, legend, coords),
         "</svg>",
     ]

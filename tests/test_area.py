@@ -3,7 +3,7 @@ import math
 import pytest
 from pyproj import Transformer
 
-from vectormaps.area import corners_around, fit, parse_corner, utm_crs
+from vectormaps.area import TITLE_MAX, TITLE_SHARE, corners_around, fit, parse_corner, utm_crs
 from vectormaps.paper import paper_size
 
 # Roughly 1.0 km wide and 0.8 km high, in Santiago de Compostela.
@@ -173,3 +173,29 @@ def test_page_matrix_puts_the_box_on_the_page():
 def test_unknown_shape():
     with pytest.raises(ValueError, match="shape"):
         fit(TL, BR, "A4", shape="triangle")
+
+
+@pytest.mark.parametrize("shape", ["rect", "square", "circle"])
+@pytest.mark.parametrize("paper", ["A5", "A4", "A0"])
+def test_a_title_takes_a_band_over_the_map_and_the_area_still_grows(paper, shape):
+    plain = fit(TL, BR, paper, shape=shape)
+    f = fit(TL, BR, paper, shape=shape, titled=True)
+    assert plain.title_band == 0
+    assert 0 < f.title_band <= TITLE_MAX
+    assert f.title_band == pytest.approx(min(TITLE_MAX, TITLE_SHARE * min(f.page_w, f.page_h)))
+    # the map starts under the band, and stays inside the margins
+    assert f.map_y >= f.margin + f.title_band - 1e-9
+    assert f.map_y + f.map_h <= f.page_h - f.margin + 1e-9
+    assert f.map_cx == pytest.approx(f.page_w / 2)
+    if shape == "rect":
+        assert f.map_h == pytest.approx(plain.map_h - f.title_band)
+        assert (f.xmax - f.xmin) / (f.ymax - f.ymin) == pytest.approx(f.map_w / f.map_h)
+    # never cropped: it still holds the requested area
+    south, west, north, east = f.lonlat_bounds(pad=0)
+    assert north >= TL[0] and south <= BR[0] and west <= TL[1] and east >= BR[1]
+
+
+def test_the_page_matrix_follows_the_band():
+    f = fit(TL, BR, "A4", titled=True)
+    _, _, _, e, _, yoff = f.page_matrix()
+    assert e * f.ymax + yoff == pytest.approx(f.margin + f.title_band)

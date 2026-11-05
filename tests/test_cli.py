@@ -123,3 +123,14 @@ def test_list_tells_the_default_layers_paper_and_theme(capsys):
     assert "  hillshade " in off and "  places " in off and "  roads " not in off
     assert "A4 (default)" in out and "bw (default)" in out
     assert out.count("(default)") == 2
+
+
+def test_a_title_leaves_its_band_and_is_drawn_once_in_one_line(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli, "load_features", lambda *a: {})
+    out = tmp_path / "m.svg"
+    argv = [*MAP, f"--cache={tmp_path}", f"--out={out}", "--no-pdf"]
+    assert cli.main([*argv, "--title=  Cecebre\n  e Abegondo "]) == 0
+    svg = out.read_text(encoding="utf-8")
+    assert '<g id="title"' in svg and ">Cecebre e Abegondo</text>" in svg
+    assert cli.main(argv) == 0
+    assert '<g id="title"' not in out.read_text(encoding="utf-8")

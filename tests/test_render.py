@@ -123,11 +123,12 @@ def test_legend_has_the_corners_the_attribution_and_the_mark():
     job = make_job("a", TL, BR, "color")
     root = ET.fromstring(render([job]))
     texts = [t.text for t in root.findall(".//svg:g[@id='legend']/svg:text", NS)]
-    assert texts[0].startswith("© OpenStreetMap contributors (ODbL)")
-    assert f"1:{job.frame.scale}" in texts[0]
     tl, br = job.frame.corners()
-    assert texts[1] == f"↖ {tl[0]:.5f}, {tl[1]:.5f} · ↘ {br[0]:.5f}, {br[1]:.5f}"
-    assert texts[2] == "Generated with vector-maps by 1noro"
+    # all in one line, in the order of the minimal one, with the paper before the credit
+    corners = f"↖ {tl[0]:.5f}, {tl[1]:.5f} · ↘ {br[0]:.5f}, {br[1]:.5f}"
+    scale = f"1:{job.frame.scale}"
+    assert texts[0] == f"{corners} · {scale} · A4 landscape · © OpenStreetMap contributors (ODbL)"
+    assert texts[1:] == ["Generated with vector-maps by 1noro"]
     # The corners are the ones of the map on paper (it grew to the shape of the page).
     assert tl[0] >= TL[0] and br[0] <= BR[0] and tl[1] <= TL[1] and br[1] >= BR[1]
 
@@ -146,8 +147,9 @@ def test_minimal_legend_keeps_the_corners_the_scale_the_credit_and_the_mark():
 def test_overlay_legend_lists_both_zones():
     a = make_job("a", TL, BR, "color")
     b = make_job("b", TL2, BR2, "bw")
-    corners = legend_lines([a, b])[1]
-    assert corners.startswith("A: ↖ ") and "   |   B: ↖ " in corners
+    (line,) = legend_lines([a, b])
+    assert line.startswith("A: ↖ ") and "   |   B: ↖ " in line
+    assert " · A 1:" in line and " + B 1:" in line
 
 
 @pytest.mark.parametrize("legend", ["full", "minimal"])
@@ -206,11 +208,11 @@ def test_circle_legend_gives_the_centre_instead_of_the_corners():
     assert lat == pytest.approx((TL[0] + BR[0]) / 2, abs=1e-4)
     assert lon == pytest.approx((TL[1] + BR[1]) / 2, abs=1e-4)
     full = legend_lines([job])
-    assert full[1] == f"⌖ {lat:.5f}, {lon:.5f}"
+    assert full[0].startswith(f"⌖ {lat:.5f}, {lon:.5f} · 1:")
     assert "↖" not in "".join(full) and "↘" not in "".join(full)
     assert legend_lines([job], "minimal")[0].startswith(f"⌖ {lat:.5f}, {lon:.5f} · 1:")
     square = legend_lines([_shaped_job("square")])
-    assert "↖" in square[1]  # only the circle changes
+    assert "↖" in square[0]  # only the circle changes
 
 
 @pytest.mark.parametrize(
@@ -236,14 +238,14 @@ def test_legend_uses_the_chosen_coordinate_format():
     job = make_job("a", TL, BR, "color")
     for coords in ("dm", "dms"):
         lines = legend_lines([job], "full", coords)
-        assert "↖" in lines[1] and "°" in lines[1] and "." in lines[1]
+        assert "↖" in lines[0] and "°" in lines[0] and "." in lines[0]
         assert "°" in legend_lines([job], "minimal", coords)[0]
         assert "°" in render([job], "full", coords)
-    assert "°" not in legend_lines([job])[1]  # decimal degrees by default
+    assert "°" not in legend_lines([job])[0]  # decimal degrees by default
     with pytest.raises(ValueError, match="coordinate format"):
         legend_lines([job], "full", "utm")
     circle = legend_lines([_shaped_job("circle")], "full", "dms")
-    assert circle[1].startswith("⌖ 42°") and "N" in circle[1]
+    assert circle[0].startswith("⌖ 42°") and "N" in circle[0]
 
 
 def test_a_casing_is_a_wider_line_under_every_line_of_the_layer():
@@ -432,3 +434,52 @@ def test_shore_lines_follow_the_shore_but_not_the_edge_of_the_map():
     root = ET.fromstring(render([_water_job("vintage", {"water": [Item("water", sea)]})]))
     assert root.find(".//svg:path[@id='a-water-water']", NS) is not None
     assert root.find(".//svg:path[@id='a-water-water-shore']", NS) is None
+
+
+def _title(root):
+    return root.find(".//svg:g[@id='title']/svg:text", NS)
+
+
+@pytest.mark.parametrize("shape", ["rect", "circle"])
+@pytest.mark.parametrize("legend", ["full", "minimal"])
+def test_the_title_sits_in_its_band_clear_of_the_legend_the_mark_and_the_map(shape, legend):
+    frame = fit(TL, BR, "A5", shape=shape, titled=True)
+    job = Job("a", frame, load("vintage"), select(["roads"]), {})
+    root = ET.fromstring(render([job], legend, title="Santiago de Compostela"))
+    t = _title(root)
+    size, y = float(t.get("font-size")), float(t.get("y"))
+    assert t.text == "Santiago de Compostela"
+    assert (t.get("text-anchor"), float(t.get("x"))) == ("middle", pytest.approx(frame.page_w / 2))
+    top, bottom = y - 0.75 * size, y + 0.25 * size  # cap height and descenders, roughly
+    assert frame.margin <= top and bottom <= frame.map_y  # under the mark, over the map
+    for other in root.findall(".//svg:g[@id='legend']/svg:text", NS):
+        assert float(other.get("y")) < frame.margin or float(other.get("y")) > frame.map_y
+    # in the theme's lettering and ink
+    assert "Garamond" in t.get("font-family") and t.get("font-style") == "italic"
+    assert t.get("fill") == job.theme.page["ink"]
+    assert root.find("svg:title", NS).text.startswith("Santiago de Compostela — ")
+
+
+def test_a_circle_with_a_title_is_centred_under_the_band():
+    frame = fit(TL, BR, "A4", shape="circle", titled=True)
+    root = ET.fromstring(render([Job("a", frame, load("bw"), [], {})], title="X"))
+    for circle in (
+        root.find(".//svg:clipPath[@id='clip-a']/svg:circle", NS),
+        root.find(".//svg:g[@id='frame']/svg:circle", NS),
+    ):
+        assert float(circle.get("cy")) == pytest.approx(frame.map_cy)
+        assert float(circle.get("cy")) > frame.page_h / 2
+
+
+def test_a_long_title_shrinks_to_the_width_of_the_map():
+    frame = fit(TL, BR, "A5", titled=True)
+    title = "A very long title for such a small sheet of paper, it goes on and on"
+    t = _title(ET.fromstring(render([Job("a", frame, load("bw"), [], {})], title=title)))
+    # within the rounding of the size to hundredths of a mm
+    assert len(title) * float(t.get("font-size")) * CHAR_WIDTH <= frame.print_w * 1.005
+
+
+def test_no_title_no_band_no_layer():
+    root = ET.fromstring(render([make_job("a", TL, BR, "bw")], title="Ignored"))
+    assert _title(root) is None  # the frame left no band for it
+    assert root.find(".//svg:g[@id='title']", NS) is None

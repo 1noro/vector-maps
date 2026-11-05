@@ -102,6 +102,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="format of the coordinates in the legend: dd 42.88000, -8.54000; "
         "dm 42°52.800'N 8°32.400'W; dms 42°52'48.0\"N 8°32'24.0\"W. default: %(default)s",
     )
+    m.add_argument(
+        "--title",
+        default="",
+        help="a title over the map, in a band of its own (the map gets that much shorter)",
+    )
     m.add_argument("--cache", type=Path, default=Path("data/cache"))
     m.add_argument("--pbf", type=Path, help="read a local .osm.pbf instead of asking Overpass")
     m.add_argument("--overpass-url", help="default: $OVERPASS_URL or the public server")
@@ -214,17 +219,20 @@ def _map(a: argparse.Namespace) -> int:
     if not 0 <= a.over_opacity <= 1:
         raise ValueError("--over-opacity must be between 0 and 1")
 
+    title = " ".join(a.title.split())  # one line: no newlines, no runs of spaces
     langs = parse_langs(a.lang)
     layers = layer_defs.select(_split(a.layers), _split(a.exclude_layers), _split(a.include_layers))
     tl, br, radius = _corners(a.tl, a.br, a.center, a.radius)
-    base_frame = fit(tl, br, a.paper, a.margin, a.orientation, a.shape, radius)
+    base_frame = fit(tl, br, a.paper, a.margin, a.orientation, a.shape, radius, bool(title))
     specs = [("a", base_frame, layers, themes.load(a.theme, a.tint), 1.0)]
     if over:
-        # Same paper, orientation and margin: the page is the common shape.
+        # Same paper, orientation, margin and title band: the page is the common shape.
         o_tl, o_br, o_radius = _corners(
             a.over_tl, a.over_br, a.over_center, a.over_radius, "--over-"
         )
-        over_frame = fit(o_tl, o_br, a.paper, a.margin, base_frame.orientation, a.shape, o_radius)
+        over_frame = fit(
+            o_tl, o_br, a.paper, a.margin, base_frame.orientation, a.shape, o_radius, bool(title)
+        )
         over_layers = layer_defs.select(
             _split(a.over_layers) or [layer.name for layer in layers],
             _split(a.over_exclude_layers),
@@ -259,7 +267,7 @@ def _map(a: argparse.Namespace) -> int:
         jobs = _load_jobs(specs, source, langs, a.cache)
 
     with Spinner("drawing the SVG"):
-        svg = render(jobs, a.legend, a.coords)
+        svg = render(jobs, a.legend, a.coords, title)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     tmp = tmp_beside(a.out)
     try:

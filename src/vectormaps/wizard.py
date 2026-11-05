@@ -48,6 +48,7 @@ class Answers:
     theme: str = "bw"
     tint: str = ""  # empty: the default tint; only used by a tinted theme
     lang: str = DEFAULT_LANG
+    title: str = ""  # empty: no title
     legend: str = "minimal"
     coords: str = "dms"
     pbf: str = ""  # empty: Overpass
@@ -113,6 +114,8 @@ def options(a: Answers) -> list[tuple[str, str, str]]:
         opts.append(("TINT", "tint", a.tint))
     if a.lang != defaults.lang:
         opts.append(("LABEL_LANG", "lang", a.lang))
+    if a.title:
+        opts.append(("TITLE", "title", a.title))
     if a.legend != defaults.legend:
         opts.append(("LEGEND", "legend", a.legend))
     if a.coords != defaults.coords:
@@ -337,6 +340,7 @@ def ask_style(a: Answers) -> Answers:
         lang = _text(
             "Language of the names", a.lang, _check(parse_langs), "es, gl, en… or gl,es, or local"
         ).strip()
+    title = _text("Title", a.title, instruction="over the map; empty = none").strip()
     legend = _select(
         "Legend",
         [
@@ -354,7 +358,9 @@ def ask_style(a: Answers) -> Answers:
         ],
         a.coords,
     )
-    return dataclasses.replace(a, theme=theme, tint=tint, lang=lang, legend=legend, coords=coords)
+    return dataclasses.replace(
+        a, theme=theme, tint=tint, lang=lang, title=title, legend=legend, coords=coords
+    )
 
 
 def ask_overlay(a: Answers) -> Answers:

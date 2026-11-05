@@ -243,3 +243,23 @@ hoja entera en `margin` y, encima, el mapa (rectángulo, cuadrado o círculo) en
 `background`. `vintage` lo usa para dejar el crema solo en el mapa y el margen en
 blanco, como una hoja antigua pegada sobre papel. La flecha del norte y los halos
 siguen usando `background`, porque van dentro del mapa.
+
+## Añadido del 05/11/2026: el título
+
+El título (opcional, ADR 0003 para la banda) va en su propia capa de Inkscape,
+`title`, entre el marco y la leyenda: un `<text>` centrado en la banda, en la
+tinta del tema y con la letra de sus nombres de ciudad (`font-family`,
+`font-style` y `font-weight` de `[layers.places.city]`, como la «N» de la flecha).
+Mide el 55 % del alto de la banda, menos si no cabe a lo ancho de la parte
+imprimible, y va en una línea. También abre el `<title>` del SVG. La leyenda y la
+marca no se mueven.
+
+## Añadido del 05/11/2026: la leyenda larga, en una línea
+
+A petición del usuario, `LEGEND=full` deja de usar dos líneas (la atribución con
+el papel y la escala, y debajo las esquinas) y pasa a **una sola**, en el orden de
+la mínima, con el papel antes de la atribución:
+`↖ … · ↘ … · 1:13309 · A4 landscape · © OpenStreetMap contributors (ODbL)`.
+Como cualquier línea de la leyenda, si no cabe en el ancho de la parte
+imprimible, la letra se encoge. El tamaño se redondea hacia abajo a las
+centésimas que se escriben en el SVG, para que el redondeo no la saque del ancho.

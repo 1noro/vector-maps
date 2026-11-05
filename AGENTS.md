@@ -123,6 +123,7 @@ make map … PDF=0                                                # sin el PDF (
 make map … LEGEND=full                                          # leyenda larga (papel, © completa)
 make map … INCLUDE_LAYERS=hillshade,contours | EXCLUDE_LAYERS=railways # añadir | quitar capas
 make map … LABEL_LANG=gl                                         # idioma de los nombres (es por defecto)
+make map … TITLE="Cecebre"                                      # un título en una banda encima del mapa
 make map CENTER=lat,lon RADIUS=km                               # el área por centro y radio
 make map … SHAPE=circle                                         # rect (defecto), square o circle
 make map … TL2=lat,lon BR2=lat,lon [THEME2=bw] [OPACITY2=0.7]   # superponer otra zona

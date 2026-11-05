@@ -126,9 +126,16 @@ tema— se marca con **BREAKING** y sube la versión mayor.
   `© OpenStreetMap`, y la marca arriba (ADR 0004).
 - **Tema `monochrome`**: el `bw` tintado del color de `TINT=#rrggbb` (`TINT2`
   para la zona de encima; ADR 0004).
+- **Título opcional** (`TITLE="…"`, `--title`, y su pregunta en el wizard):
+  centrado en una banda propia entre el margen de arriba y el mapa, en la letra
+  del tema; el mapa queda más bajo y la zona crece a la forma nueva (ADR 0003 y
+  0004).
 
 ### Cambiado
 
+- **`LEGEND=full` en una sola línea**, en el orden de la mínima: esquinas,
+  escala, papel y atribución, en vez de dos líneas con la atribución delante
+  (ADR 0004).
 - **El margen de `vintage`, en blanco**: el crema queda solo dentro del mapa. Lo
   hace la clave nueva `margin` de `[page]`, opcional en cualquier tema (ADR 0004).
 - **El spinner de cada capa dice el paso del total y de dónde sale**

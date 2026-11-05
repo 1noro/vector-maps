@@ -15,6 +15,8 @@ from vectormaps.paper import ORIENTATIONS, paper_size
 
 MIN_MARGIN_MM = 6.0  # the attribution line lives in the margin
 SHAPES = ("rect", "square", "circle")
+TITLE_SHARE = 0.07  # the title's band over the map, as a share of the paper's short side
+TITLE_MAX = 40.0  # mm: on an A0 it would be too tall otherwise
 
 
 @dataclass(frozen=True)
@@ -33,6 +35,7 @@ class Frame:
     ymax: float
     growth: float  # how much the requested area grew to fit the paper (0.25 = +25% area)
     shape: str = "rect"  # rect: all the printable part; square, circle: a centred square box
+    title_band: float = 0.0  # mm between the top margin and the map, for the title; 0: none
 
     @property
     def print_w(self) -> float:
@@ -41,7 +44,8 @@ class Frame:
 
     @property
     def print_h(self) -> float:
-        return self.page_h - 2 * self.margin
+        """Height of the printable part: inside the margins and under the title's band."""
+        return self.page_h - 2 * self.margin - self.title_band
 
     @property
     def map_w(self) -> float:
@@ -54,11 +58,20 @@ class Frame:
     @property
     def map_x(self) -> float:
         """Left edge of the map box on the page, in mm."""
-        return (self.page_w - self.map_w) / 2
+        return self.margin + (self.print_w - self.map_w) / 2
 
     @property
     def map_y(self) -> float:
-        return (self.page_h - self.map_h) / 2
+        return self.margin + self.title_band + (self.print_h - self.map_h) / 2
+
+    @property
+    def map_cx(self) -> float:
+        """The centre of the map box on the page, in mm (that of the circle)."""
+        return self.map_x + self.map_w / 2
+
+    @property
+    def map_cy(self) -> float:
+        return self.map_y + self.map_h / 2
 
     @property
     def metres_per_mm(self) -> float:
@@ -145,6 +158,7 @@ def fit(
     orientation: str = "auto",
     shape: str = "rect",
     radius_km: float | None = None,
+    titled: bool = False,
 ) -> Frame:
     """Fit the area between two (lat, lon) corners to a paper size.
 
@@ -153,7 +167,8 @@ def fit(
     wide as the short side of the printable part, and hold the whole area: the square
     its longest side, the circle its diagonal. `radius_km` says the corners came from a
     centre and a radius (`corners_around`): then the square is 2R wide and the circle is
-    exactly the one of radius R.
+    exactly the one of radius R. `titled` leaves a band for the title between the top
+    margin and the map (`title_band`); the printable part is that much shorter.
     """
     (lat1, lon1), (lat2, lon2) = top_left, bottom_right
     if lat1 <= lat2:
@@ -180,12 +195,13 @@ def fit(
         # A nearly square area (within 5%), like a centre and a radius, is a tie: landscape wins.
         orientation = "landscape" if w >= h * 0.95 else "portrait"
     page_w, page_h = paper_size(paper, orientation)
-    if page_w - 2 * margin <= 0 or page_h - 2 * margin <= 0:
+    band = min(TITLE_MAX, TITLE_SHARE * min(page_w, page_h)) if titled else 0.0
+    if page_w - 2 * margin <= 0 or page_h - 2 * margin - band <= 0:
         raise ValueError("margin leaves no room for the map")
     cx, cy = (xmin + xmax) / 2, (ymin + ymax) / 2
 
     if shape == "rect":
-        target = (page_w - 2 * margin) / (page_h - 2 * margin)
+        target = (page_w - 2 * margin) / (page_h - 2 * margin - band)
         if w / h < target:  # too narrow for the paper: widen
             new_w, new_h = h * target, h
         else:  # too wide: heighten
@@ -215,4 +231,5 @@ def fit(
         ymax=cy + new_h / 2,
         growth=growth,
         shape=shape,
+        title_band=band,
     )

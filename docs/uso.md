@@ -32,7 +32,7 @@ sale bien; para empezar de cero, borra `data/wizard.json`.
 ```bash
 make map TL=lat,lon BR=lat,lon [PAPER=A4] [SHAPE=rect] [ORIENTATION=landscape] [MARGIN=6] \
          [LAYERS=water,roads] [INCLUDE_LAYERS=places] [EXCLUDE_LAYERS=railways] [THEME=bw] [TINT=#1f3b5c] [LABEL_LANG=es] [PBF=ruta] \
-         [OUT=out/map.svg] [PDF=0] [LEGEND=full] [COORDS=dms]
+         [TITLE="Cecebre"] [OUT=out/map.svg] [PDF=0] [LEGEND=full] [COORDS=dms]
 
 # o el área por centro y radio (km), en vez de TL y BR:
 make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
@@ -53,6 +53,7 @@ make map CENTER=lat,lon RADIUS=km [PAPER=A4] [SHAPE=circle] …
 | `THEME` | `bw` | `bw`, `color`, `street`, `dark`, `blueprint`, `vintage`, `vintage-bw`, `poster`, `monochrome`, o la ruta de un `.toml` propio |
 | `TINT` | `#1f3b5c` | Color del tema `monochrome`, en hexadecimal (`#` opcional) |
 | `PBF` | (Overpass) | Extracto local `.osm.pbf` en vez de Overpass |
+| `TITLE` | — | Un título encima del mapa, en una banda propia (ver «El título»). Con espacios, entre comillas: `TITLE="Encoro de Cecebre"` |
 | `OUT` | `out/map.svg` | Fichero de salida |
 | `PDF` | `1` | Además del SVG, un PDF del tamaño del papel al lado (`out/map.pdf`). `PDF=0`: solo el SVG |
 | `COORDS` | `dms` | Formato de las coordenadas de la leyenda: `dd` grados decimales (`42.88000, -8.54000`), `dm` grados y minutos decimales (`42°52.800'N 8°32.400'W`) o `dms` grados, minutos y segundos (`42°52'48.0"N 8°32'24.0"W`) |
@@ -226,13 +227,14 @@ pueden pisarse: no hay antichoque todavía (TODO 1).
 ### La leyenda
 
 Por defecto, la leyenda es la mínima (`LEGEND=minimal`, más abajo). Con
-`LEGEND=full`, el margen de abajo lleva dos líneas: la atribución de OSM con el papel y la
-escala, y las **esquinas `TL` y `BR` del mapa tal como está en el papel** (no
-las que pediste: la zona crece hasta la forma de la hoja). Pasadas de vuelta a
+`LEGEND=full`, el margen de abajo lleva una sola línea, en el mismo orden que la mínima: las
+**esquinas `TL` y `BR` del mapa tal como está en el papel** (no las que pediste: la zona
+crece hasta la forma de la hoja), la escala, el papel y la atribución larga de OSM. Pasadas de vuelta a
 `TL`/`BR` dan el mapa entero pero un ~2 % más alejado, por cómo se proyecta el
 rectángulo; para repetir un mapa exacto, repite las esquinas que pediste. El
 margen de arriba, a la derecha, lleva la marca
-«Generated with vector-maps by 1noro». Con dos zonas se listan las dos esquinas. Con `SHAPE=circle` no hay esquinas que dar: la leyenda lleva en su lugar las
+«Generated with vector-maps by 1noro». Con dos zonas se listan las dos esquinas.
+Si la línea no cabe a lo ancho (dos zonas en un A5, por ejemplo), la letra se encoge. Con `SHAPE=circle` no hay esquinas que dar: la leyenda lleva en su lugar las
 coordenadas del centro del mapa, `⌖ lat, lon`.
 
 Con `LEGEND=minimal`, la de por defecto, el pie se queda en una sola línea, sin
@@ -244,6 +246,22 @@ el papel ni la orientación:
 
 y la marca arriba. `© OpenStreetMap` no se puede quitar: la licencia de los
 datos (ODbL) pide que el mapa lo diga (ADR 0004).
+
+### El título
+
+Con `TITLE="…"` el mapa lleva un título **centrado en una banda propia, entre el
+margen de arriba y el mapa**, así que no choca con la leyenda, la marca, la
+atribución de Copernicus ni la flecha del norte. La banda mide un 7 % del lado corto
+del papel (unos 15 mm en A4), con un tope de 40 mm, y el mapa queda esa altura más
+bajo. Como con el papel, la zona **crece y no se recorta** para la forma nueva. Con
+`square` y `circle`, la caja del mapa es la que queda debajo de la banda, así que
+sale algo más pequeña.
+
+La letra es la de los nombres de ciudad del tema (DejaVu negrita en `bw`, Garamond
+cursiva en `vintage`…) y el color, la tinta. Si el título no cabe a lo ancho, la
+letra se encoge. Va en una sola línea: los saltos de línea se cambian por espacios.
+Está en su propia capa de Inkscape, `title`. Sin `TITLE` no hay banda y la hoja
+queda como antes.
 
 ### El norte
 
